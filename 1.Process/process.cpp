@@ -3,104 +3,117 @@
 #include <fcntl.h>
 #include <thread>
 #include <string>
-#include <vector>
 #include <iostream>
 #include <exception>
 #include "process.h"
 
-// using namespace std;
-
 #define _THROW_RUNTIME_ERR(x) throw std::runtime_error(x)
-#define _TRY(x) if((x) == -1) _THROW_RUNTIME_ERR(#x)
-
-enum ERROR {
-	FD = -1
-};
 
 Process::Process(const std::string& path)
 {
-	_TRY(pipe2(_pipe_out, O_CLOEXEC));
-	_TRY(pipe(_pipe_in));
-    
-	_TRY(_cpid = fork());
+	int pipe_in[2], pipe_out[2];
+	if(pipe2(pipe_out, O_CLOEXEC) == -1)
+		_THROW_RUNTIME_ERR("pipe from child");
 
-	if(_cpid == 0) { /* child process */
-
-		_TRY(dup2(_pipe_in[0], STDIN_FILENO)); /* Child now reads from replaced STDIN_FILENO */
-		_TRY(::close(_pipe_in[0]));			   /* Now we do not need the original one*/
-		
-		_TRY(dup2(_pipe_out[1], STDOUT_FILENO)); /* same */
-		_TRY(::close(_pipe_out[1]));
-		
-		_TRY(execl(path.c_str(), path.c_str(), nullptr)); /* executing.. */		
-    } else { /* parrent process */
-		_TRY(::close(_pipe_out[1])); /* Parent only reads from _pipe_out */
-		_TRY(::close(_pipe_in[0]));	 /* Parent only writes to  _pipe_in */
+	if(pipe(pipe_in) == -1) {
+		::close(pipe_out[0]);
+		::close(pipe_out[1]);
+		_THROW_RUNTIME_ERR("pipe to child");
 	}
+	
+	Descriptor w_pid_out(pipe_out[1]);
+			  _r_pid_out(pipe_out[0]);
+
+	Descriptor r_pid_in(pipe_in[0]);
+			  _w_pid_in(pipe_in[1]);
+
+	if((_cpid(fork())) == -1) 
+		_THROW_RUNTIME_ERR("fork");
+
+	if(_cpid() == 0) { /* child process */
+		if(::dup2(r_pid_in(), STDIN_FILENO) == -1) /* Child now reads from replaced STDIN_FILENO */
+			_THROW_RUNTIME_ERR("dup2 stdin");
+		r_pid_in.~Descriptor();			   /* Now we do not need the original one*/
+		
+		if(::dup2(w_pid_out(), STDOUT_FILENO) == -1) /* same */
+			_THROW_RUNTIME_ERR("dup2 stdout");
+		w_pid_out.~Descriptor();
+		
+		if(execl(path.c_str(), path.c_str(), nullptr) == -1) /* executing.. */		
+			_THROW_RUNTIME_ERR("execl");
+    }
+	// pipe_in[0] и pipe_out[1] закрываются через деструкторы
 }
 
 Process::~Process()
 {
-	if(_pipe_out[0] != ERROR::FD) {
-		::close(_pipe_out[0]);
-		_pipe_out[0] = ERROR::FD; 
+	_r_pid_out.~Descriptor();
+	_w_pid_in.~Descriptor();
+	try {
+		close();
+	} catch (std::runtime_error& re) {
+		std::cerr << re.what() << std::endl; 
 	}
-	closeStdin();
-	close();
 }
 
 size_t Process::write(const void* data, size_t len)
 {
-	if(_pipe_in[1] != ERROR::FD) {
-		long size;
-		_TRY(size = ::write(_pipe_in[1], data, len));
-		return static_cast<size_t> (size);
-	}
-	return 0u;
+	if(!_w_pid_in.isValid())
+		return 0u;
+	
+	ssize_t size = ::write(_w_pid_in(), data, len);
+	if(size == -1)
+		_THROW_RUNTIME_ERR("write");
+
+	return static_cast<size_t> (size);
 }
 
 void Process::writeExact(const void* data, size_t len)
 {
-	if(_pipe_in[1] != ERROR::FD) {
-		size_t counter = 0u;
-		const char* ch_data = static_cast<const char*> (data);
-		while(counter++ < len) {
-			_TRY(::write(_pipe_in[1], ch_data++, 1));
-		}
-	}
+	if(!_w_pid_in.isValid())
+		return;
+
+	size_t counter = 0u;
+	const char* ch_data = static_cast<const char*> (data);
+	while(counter < len) 
+		counter += Process::write(ch_data + counter, len - counter);
 }
 
 size_t Process::read(void* data, size_t len)
 {
-	if(_pipe_out[0] != ERROR::FD) {
-		long size;
-		_TRY(size = ::read(_pipe_out[0], data, len));
-		return static_cast<size_t> (size);
-	}
-	return 0u;
+	if(!_r_pid_out.isValid())
+		return 0u;
+		
+	ssize_t size = ::read(_r_pid_out(), data, len);
+	if (size == 0)
+		_THROW_RUNTIME_ERR("read pid failure");
+	else if (size == -1)
+		_THROW_RUNTIME_ERR("read internal failure");
+	
+	return static_cast<size_t> (size);
 }
 
 void Process::readExact(void* data, size_t len)
 {
-	if(_pipe_in[0] != ERROR::FD) {
-		size_t counter = 0u;
-		char* ch_data = static_cast<char*> (data);
-		while(counter++ < len) {
-			_TRY(::read(_pipe_out[0], ch_data++, 1));
-		}
-	}
+	if(!_r_pid_out.isValid())
+		return;
+
+	size_t counter = 0u;
+	char* ch_data = static_cast<char*> (data);
+	while(counter < len)
+		counter += Process::read(ch_data + counter, len - counter);
 }
 
 void Process::closeStdin()
 {
-	if(_pipe_in[1] != ERROR::FD) {
-		_TRY(::close(_pipe_in[1]));
-		_pipe_in[1] = ERROR::FD;
-	}
+	_w_pid_in.~Descriptor();
 }
 
 void Process::close()
 {
-	_TRY(kill(_cpid, SIGINT));
-	_TRY(waitpid(_cpid, nullptr, 0));
+	if(kill(_cpid(), SIGINT) == -1) 
+		_THROW_RUNTIME_ERR("kill");
+
+	if(waitpid(_cpid(), nullptr, 0) == -1)
+		_THROW_RUNTIME_ERR("waitpid");
 }

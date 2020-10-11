@@ -1,12 +1,12 @@
 #ifndef PROCESS_H
 #define PROCESS_H
+#include "descriptor.h"
 #include <string>
-#include <vector>
 
 class Process
 {
 public:
-    Process(const std::string& path);    
+    explicit Process(const std::string& path);    
 	~Process();
 
     size_t write(const void* data, size_t len);
@@ -18,9 +18,9 @@ public:
     void close();
 
 private:
-    pid_t _cpid;
-    int _pipe_in[2];
-    int _pipe_out[2];
+    Descriptor _cpid;	   /* child pid       */
+    Descriptor _w_pid_in;  /* write to child  */
+    Descriptor _r_pid_out; /* read from child */
 };
 
 #endif //PROCESS_H
