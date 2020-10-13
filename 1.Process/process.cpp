@@ -85,9 +85,7 @@ size_t Process::read(void* data, size_t len)
 		return 0u;
 		
 	ssize_t size = ::read(_r_pid_out(), data, len);
-	if (size == 0)
-		_THROW_RUNTIME_ERR("read pid failure");
-	else if (size == -1)
+	if (size == -1)
 		_THROW_RUNTIME_ERR("read internal failure");
 	
 	return static_cast<size_t> (size);
@@ -99,9 +97,14 @@ void Process::readExact(void* data, size_t len)
 		return;
 
 	size_t counter = 0u;
+	size_t current = 0u;
 	char* ch_data = static_cast<char*> (data);
-	while(counter < len)
-		counter += Process::read(ch_data + counter, len - counter);
+	while(counter < len) {
+		current  = Process::read(ch_data + counter, len - counter);
+		if(current == 0)
+			_THROW_RUNTIME_ERR("readExact pid failure");
+		counter += current;
+	}
 }
 
 void Process::closeStdin()
