@@ -1,6 +1,6 @@
 #ifndef PROCESS_H
 #define PROCESS_H
-#include "descriptor.h"
+#include "descripter.h"
 #include <string>
 
 class Process
@@ -18,9 +18,9 @@ public:
     void close();
 
 private:
-    Descriptor _cpid;	   /* child pid       */
-    Descriptor _w_pid_in;  /* write to child  */
-    Descriptor _r_pid_out; /* read from child */
+    int _cpid;	   /* child pid       */
+    Descripter _w_pid_in;  /* write to child  */
+    Descripter _r_pid_out; /* read from child */
 };
 
 #endif //PROCESS_H
