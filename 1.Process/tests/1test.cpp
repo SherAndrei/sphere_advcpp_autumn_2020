@@ -8,9 +8,9 @@ int main()
 	std::ofstream file("./tests/" + filename);
 	
 	if(!file.good())
-	 	std::cout << "Error in file" << std::endl;
+	 	std::cout << "Mistake" << std::endl;
 	else {
-		std::cout << "Success!" << std::endl;
+		std::cout << "Success" << std::endl;
 	}
 	file.close();
 }

@@ -17,6 +17,7 @@ int main()
 	size_t size;
 
 	{
+		//read date and logs it into stdout
 		Process proc("/usr/bin/date");
 		string str(512, '\0');
 		try{
@@ -28,7 +29,7 @@ int main()
 		LOG(size);
 	}
 	{
-		//creates a file with file name "somename"
+		//creates a file "./tests/somename.txt"
 		Process proc("./tests/1test");
 		string str = "somename.txt\n";
 		try{
@@ -45,10 +46,9 @@ int main()
 
 	{
 		//writesExact to a file with file name "somename" str
-
 		Process proc("./tests/2test");
 		try{
-			std::string file_cond(20, '\0'); 					 
+			std::string file_cond(8, '\0'); 					 
 			proc.read(file_cond.data(), file_cond.length());	// читаем состояние файла
 			LOG(file_cond);
 
@@ -56,32 +56,30 @@ int main()
 			
 			proc.writeExact(str.data(), str.length());			// все хорошо, пишется str.length()
 			proc.closeStdin();									// дескриптор становится невалидным
-			//proc.writeExact(str.data(), str.length());			// exception!
 
 			::sleep(1); // даем дочерернему процессу успеть записать слова в файл
 
 			proc.read(file_cond.data(), file_cond.length()); // считываем последнее слово
-			LOG(file_cond);									// выводим на экран					
+			LOG(file_cond);										// выводим на экран					
 		} catch (std::runtime_error& ex) {
 			LOG(ex.what());
 		}
 	}
-	// {
-	// 	Process proc("./tests/3test");
-	// 	try{
-	// 		std::string file_cond(20, '\0'); 					 
-	// 		proc.read(file_cond.data(), file_cond.length());	// читаем состояние файла
-	// 		LOG(file_cond);
+	{
+		// readExact слова из файла "./tests/somename.txt"
+		Process proc("./tests/3test");
+		try{
+			std::string file_cond(8, '\0'); 					 
+			proc.read(file_cond.data(), file_cond.length());	// читаем состояние файла
+			LOG(file_cond);
 
-	// 		std::string str(50, '\0');
-	// 		proc.readExact(str.data(), 20);
-
-	// 		// ::sleep(1); // даем дочерернему процессу успеть записать слова в файл
-	// 		LOG(str);	
-	// 	} catch (std::runtime_error& ex) {
-	// 		LOG(ex.what());
-	// 	}
-	// }
+			std::string str(50, '\0');
+			proc.readExact(str.data(), 20);
+			LOG(str);	
+		} catch (std::runtime_error& ex) {
+			LOG(ex.what());
+		}
+	}
 
     return 0;
 }

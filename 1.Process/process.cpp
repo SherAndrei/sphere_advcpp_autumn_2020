@@ -35,14 +35,19 @@ Process::Process(const std::string& path)
 			std::cerr << "dup2 stdin" << std::endl;
 			exit(EXIT_FAILURE);
 		} /* Child now reads from replaced STDIN_FILENO */
-		r_pid_in.close();			   /* Now we do not need the original one*/
+
+		/* Now we do not need the parent pipe*/
+		r_pid_in.close();			   
+		_w_pid_in.close();
 		
 		if(::dup2(w_pid_out.id(), STDOUT_FILENO) == -1) { /* same */
 			std::cerr << "dup2 stdout" << std::endl;
 			exit(EXIT_FAILURE);
-		} 
+		}
+
+		/*parent only reads from child with that pipe*/ 
 		w_pid_out.close();
-		
+
 		if(execl(path.c_str(), path.c_str(), nullptr) == -1) { /* executing.. */
 			std::cerr << "execl" << std::endl;
 			exit(EXIT_FAILURE);	
@@ -53,8 +58,6 @@ Process::Process(const std::string& path)
 
 Process::~Process()
 {
-	_r_pid_out.close();
-	_w_pid_in.close();
 	try {
 		close();
 	} catch (std::runtime_error& re) {
@@ -90,9 +93,6 @@ size_t Process::read(void* data, size_t len)
 
 void Process::readExact(void* data, size_t len)
 {
-	if(!_r_pid_out.isValid())
-		return;
-
 	size_t counter = 0u;
 	size_t current = 0u;
 	char* ch_data = static_cast<char*> (data);

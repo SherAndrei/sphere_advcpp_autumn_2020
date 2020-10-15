@@ -13,3 +13,5 @@ CTestTestfile.cmake
 _deps
 *.txt
 !CMakeLists.txt
+
+*.o
