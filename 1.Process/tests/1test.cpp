@@ -7,8 +7,10 @@ int main()
 	std::cin >> filename;
 	std::ofstream file("./tests/" + filename);
 	
-	if(!file.good())
-	 	std::cout << "Mistake" << std::endl;
+	if(!file.good()) {
+	 	std::cout << "Failure" << std::endl;
+		return -1;
+	}
 	else {
 		std::cout << "Success" << std::endl;
 	}

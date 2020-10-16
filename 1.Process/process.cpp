@@ -3,20 +3,22 @@
 #include <fcntl.h>
 #include <thread>
 #include <string>
+#include <vector>
 #include <iostream>
+#include <algorithm>
 #include <exception>
 #include "process.h"
 
 #define _THROW_RUNTIME_ERR(x) throw std::runtime_error(x)
 
-Process::Process(const std::string& path)
+Process::Process(const std::string& path, const std::string& params)
 {
-	open(path);
+	open(path, params);
 }
 
-void Process::open(const std::string& path)
+void Process::open(const std::string& path, const std::string& params)
 {
-	if(_r_pid_out.isValid() || _w_pid_in.isValid()) {
+	if(isRunning()) {
 		_THROW_RUNTIME_ERR("Nested processes are forbidden");
 	}
 	int pipe_in[2], pipe_out[2];
@@ -56,8 +58,8 @@ void Process::open(const std::string& path)
 		/*parent only reads from child with that pipe*/ 
 		w_pid_out.close();
 
-		if(execl(path.c_str(), path.c_str(), nullptr) == -1) { /* executing.. */
-			std::cerr << "execl" << std::endl;
+		if(execv(path.c_str(), argv(path, params).data()) == -1) { /* executing.. */
+			std::cerr << "execv" << std::endl;
 			exit(EXIT_FAILURE);	
 		} 		
     }
@@ -68,9 +70,7 @@ Process::~Process()
 {
 	try {
 		close();
-	} catch (std::runtime_error& re) {
-		std::cerr << re.what() << std::endl; 
-	}
+	} catch (std::runtime_error& re) {}
 }
 
 size_t Process::write(const void* data, size_t len)
@@ -127,4 +127,36 @@ void Process::close()
 
 	if(waitpid(_cpid, nullptr, 0) == -1)
 		_THROW_RUNTIME_ERR("waitpid");
+}
+
+std::vector<char *> Process::argv(const std::string& path, const std::string& params) const
+{
+	std::vector<std::string> result;
+
+	result.push_back(path);
+
+	auto beg = params.begin();
+	auto end = params.end();
+
+	while(true) {
+		auto it = std::find(beg, end, ' ');
+		result.push_back(std::string(beg, it));
+
+		if(it == end) break;
+		else beg = it + 1;
+	}
+
+	std::vector<char*> ch_res;
+	ch_res.reserve(result.size() + 1);
+
+	for(const auto& word : result)
+		ch_res.push_back(const_cast<char*>(word.c_str()));
+	
+	ch_res.push_back(nullptr);
+	return ch_res;
+}
+
+bool Process::isRunning() const
+{
+	return !waitpid(_cpid, nullptr, WNOHANG);;
 }

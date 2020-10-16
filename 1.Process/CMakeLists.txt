@@ -5,10 +5,10 @@ set(CMAKE_CXX_STANDARD 17)
 
 set(SRCS main.cpp descripter.cpp process.cpp)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfpmath=sse -fstack-protector-all -W -Wall -Wextra -Wunused -Wcast-align \
--Werror -pedantic -pedantic-errors -Wfloat-equal -Wpointer-arith -Wformat-security \
--Wmissing-format-attribute -Wformat=1 -Wwrite-strings -Wcast-align -Wno-long-long  \
--Wcast-qual -Wno-suggest-attribute=format-Werror -Wpedantic")
+add_compile_options(-mfpmath=sse -fstack-protector-all -W -Wall -Wextra -Wunused -Wcast-align 
+-Werror -pedantic -pedantic-errors -Wfloat-equal -Wpointer-arith -Wformat-security 
+-Wmissing-format-attribute -Wformat=1 -Wwrite-strings -Wcast-align -Wno-long-long  
+-Wcast-qual -Wno-suggest-attribute=format-Werror -Wpedantic)
 
 add_executable(main ${SRCS})
 
