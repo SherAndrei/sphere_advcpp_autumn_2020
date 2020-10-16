@@ -14,6 +14,7 @@ public:
     size_t read(void* data, size_t len);
     void   readExact(void* data, size_t len);
 
+	void open(const std::string& path);
     void closeStdin();
     void close();
 

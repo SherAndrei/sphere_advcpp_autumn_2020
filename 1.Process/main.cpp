@@ -68,6 +68,8 @@ int main()
 	{
 		// readExact слова из файла "./tests/somename.txt"
 		Process proc("./tests/3test");
+		proc.close();
+		proc.open("./tests/3test");
 		try{
 			std::string file_cond(8, '\0'); 					 
 			proc.read(file_cond.data(), file_cond.length());	// читаем состояние файла

@@ -11,6 +11,14 @@
 
 Process::Process(const std::string& path)
 {
+	open(path);
+}
+
+void Process::open(const std::string& path)
+{
+	if(_r_pid_out.isValid() || _w_pid_in.isValid()) {
+		_THROW_RUNTIME_ERR("Nested processes are forbidden");
+	}
 	int pipe_in[2], pipe_out[2];
 	if(pipe2(pipe_out, O_CLOEXEC) == -1)
 		_THROW_RUNTIME_ERR("pipe from child");
@@ -111,6 +119,9 @@ void Process::closeStdin()
 
 void Process::close()
 {
+	_w_pid_in.close();
+	_r_pid_out.close();
+
 	if(kill(_cpid, SIGINT) == -1) 
 		_THROW_RUNTIME_ERR("kill");
 
