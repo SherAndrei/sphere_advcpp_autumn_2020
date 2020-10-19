@@ -79,7 +79,7 @@ void TestParse()
 {
 	try {
 	{
-		Process pr("/usr/bin/echo", "word1 word2");
+		Process pr("/usr/bin/echo", {"word1", "word2"});
 		
 		size_t size;
 		std::string s_word(5, '\0');
@@ -91,7 +91,7 @@ void TestParse()
 		ASSERT_EQUAL(s_word, " word");
 	}
 	{
-		Process proc("/usr/bin/tr", "[a-z] [A-Z]");
+		Process proc("/usr/bin/tr", {"[a-z]", "[A-Z]"});
 		std::string word = "some word\n"; 
 		proc.write(word.data(), word.length());
 		proc.closeStdin();
@@ -133,7 +133,7 @@ void TestOpenClose()
 		} catch (...) {
 			ASSERT(true);
 		}
-		pr.open("/usr/bin/echo", "testing..");
+		pr.open("/usr/bin/echo", {"testing.."});
 		size_t size;
 		std::string s_word(9, '\0');
 		size = pr.read(s_word.data(), s_word.length());

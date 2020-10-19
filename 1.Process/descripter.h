@@ -9,7 +9,7 @@ public:
 public:
 	Descripter() = default;
 	explicit Descripter(int id);
-	Descripter(const Descripter& other);
+	Descripter(const Descripter& other) = delete;
 	~Descripter();
 public:
 	void close();

@@ -9,75 +9,93 @@
 #include <exception>
 #include "process.h"
 
-#define _THROW_RUNTIME_ERR(x) throw std::runtime_error(x)
+static void throw_runtime_err(const std::string& what) { throw std::runtime_error(what); }
 
-Process::Process(const std::string& path, const std::string& params)
+Process::Process(const std::string& path, const std::vector<std::string>& params)
 {
 	open(path, params);
 }
 
-void Process::open(const std::string& path, const std::string& params)
+static std::vector<char *> argv(std::string& path, std::vector<std::string>& params)
+{
+	std::vector<char*> result;
+	result.reserve(params.size() + 2);
+
+	result.push_back(path.data());
+
+	for(auto& word : params)
+		result.push_back(word.data());
+	
+	result.push_back(nullptr);
+	return result;
+}
+
+void Process::open(const std::string& path, const std::vector<std::string>& params)
 {
 	if(isRunning()) {
-		_THROW_RUNTIME_ERR("Nested processes are forbidden");
+		throw_runtime_err("Nested processes are forbidden");
 	}
 	int pipe_in[2], pipe_out[2];
 	if(pipe2(pipe_out, O_CLOEXEC) == -1)
-		_THROW_RUNTIME_ERR("pipe from child");
+		throw_runtime_err("pipe from child");
 
 	if(pipe(pipe_in) == -1) {
 		::close(pipe_out[0]);
 		::close(pipe_out[1]);
-		_THROW_RUNTIME_ERR("pipe to child");
+		throw_runtime_err("pipe to child");
 	}
 	
-	Descripter w_pid_out(pipe_out[1]);
-	_r_pid_out.setID(pipe_out[0]);
+	Descripter write_to_parent(pipe_out[1]);
+	_read_from_child.setID(pipe_out[0]);
 
-	Descripter r_pid_in(pipe_in[0]);
-	_w_pid_in.setID(pipe_in[1]);
+	Descripter read_from_parent(pipe_in[0]);
+	_write_to_child.setID(pipe_in[1]);
 
 	if((_cpid = fork()) == -1) 
-		_THROW_RUNTIME_ERR("fork");
+		throw_runtime_err("fork");
 
 	if(_cpid == 0) { /* child process */
-		if(::dup2(r_pid_in.id(), STDIN_FILENO) == -1) {
+		if(::dup2(read_from_parent.id(), STDIN_FILENO) == -1) { // replacing child stdin with pipe
 			std::cerr << "dup2 stdin" << std::endl;
 			exit(EXIT_FAILURE);
-		} /* Child now reads from replaced STDIN_FILENO */
+		} 
 
-		/* Now we do not need the parent pipe*/
-		r_pid_in.close();			   
-		_w_pid_in.close();
+		// closing pipe_in
+		read_from_parent.close();			   
+		_write_to_child.close();
 		
-		if(::dup2(w_pid_out.id(), STDOUT_FILENO) == -1) { /* same */
+		if(::dup2(write_to_parent.id(), STDOUT_FILENO) == -1) { // replasing child stdout with pipe
 			std::cerr << "dup2 stdout" << std::endl;
 			exit(EXIT_FAILURE);
 		}
 
-		/*parent only reads from child with that pipe*/ 
-		w_pid_out.close();
+		// closing pipe_out
+		write_to_parent.close();
+		_read_from_child.close();
 
-		if(execv(path.c_str(), argv(path, params).data()) == -1) { /* executing.. */
+		std::string path_copy = path;
+		std::vector<std::string> params_copy = params;
+
+		// executing program
+		if(execv(path.c_str(), argv(path_copy, params_copy).data()) == -1) {
 			std::cerr << "execv" << std::endl;
 			exit(EXIT_FAILURE);	
 		} 		
     }
-	// pipe_in[0] и pipe_out[1] закрываются через деструкторы
 }
 
 Process::~Process()
 {
 	try {
 		close();
-	} catch (std::runtime_error& re) {}
+	} catch (const std::runtime_error& re) {}
 }
 
 size_t Process::write(const void* data, size_t len)
 {
-	ssize_t size = ::write(_w_pid_in.id(), data, len);
+	ssize_t size = ::write(_write_to_child.id(), data, len);
 	if(size == -1)
-		_THROW_RUNTIME_ERR("write");
+		throw_runtime_err("write");
 
 	return static_cast<size_t> (size);
 }
@@ -92,9 +110,9 @@ void Process::writeExact(const void* data, size_t len)
 
 size_t Process::read(void* data, size_t len)
 {
-	ssize_t size = ::read(_r_pid_out.id(), data, len);
+	ssize_t size = ::read(_read_from_child.id(), data, len);
 	if (size == -1)
-		_THROW_RUNTIME_ERR("read internal failure");
+		throw_runtime_err("read internal failure");
 	
 	return static_cast<size_t> (size);
 }
@@ -107,53 +125,26 @@ void Process::readExact(void* data, size_t len)
 	while(counter < len) {
 		current  = read(ch_data + counter, len - counter);
 		if(current == 0)
-			_THROW_RUNTIME_ERR("readExact pid failure");
+			throw_runtime_err("readExact pid failure");
 		counter += current;
 	}
 }
 
 void Process::closeStdin()
 {
-	_w_pid_in.close();
+	_write_to_child.close();
 }
 
 void Process::close()
 {
-	_w_pid_in.close();
-	_r_pid_out.close();
+	_write_to_child.close();
+	_read_from_child.close();
 
 	if(kill(_cpid, SIGINT) == -1) 
-		_THROW_RUNTIME_ERR("kill");
+		throw_runtime_err("kill");
 
 	if(waitpid(_cpid, nullptr, 0) == -1)
-		_THROW_RUNTIME_ERR("waitpid");
-}
-
-std::vector<char *> Process::argv(const std::string& path, const std::string& params) const
-{
-	std::vector<std::string> result;
-
-	result.push_back(path);
-
-	auto beg = params.begin();
-	auto end = params.end();
-
-	while(true) {
-		auto it = std::find(beg, end, ' ');
-		result.push_back(std::string(beg, it));
-
-		if(it == end) break;
-		else beg = it + 1;
-	}
-
-	std::vector<char*> ch_res;
-	ch_res.reserve(result.size() + 1);
-
-	for(const auto& word : result)
-		ch_res.push_back(const_cast<char*>(word.c_str()));
-	
-	ch_res.push_back(nullptr);
-	return ch_res;
+		throw_runtime_err("waitpid");
 }
 
 bool Process::isRunning() const
