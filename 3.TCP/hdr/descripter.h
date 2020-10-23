@@ -1,6 +1,9 @@
 #ifndef DESCRIPTER_H
 #define DESCRIPTER_H
 
+namespace tcp
+{
+    
 class Descripter
 {
 public:
@@ -9,18 +12,20 @@ public:
 public:
 	Descripter() = default;
 	explicit Descripter(int id);
+    // TODO: Descripter(Descripter && d);
 	Descripter(const Descripter& other) = delete;
-    // TODO: Descripter()move;
 	~Descripter();
 public:
 	void close();
 
 public:
-	int  id() const;
-	void setID(int id);
+	int  fd() const;
+	void set_fd(int id);
 
 private:
 	int _id = -1;
 };
+
+} // namespace tcp
 
 #endif //DESCRIPTER_H

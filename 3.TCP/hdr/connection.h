@@ -3,6 +3,9 @@
 #include "descripter.h"
 #include <string>
 
+namespace tcp
+{
+    
 class Connection
 {
     friend class Server;
@@ -10,7 +13,7 @@ public:
     Connection();
     ~Connection();
     Connection(const std::string& addr, uint16_t port); // адрес и порт куда мы хотим подключиться
-    
+    // TODO: Connection(Connection &&);
     void connect(const std::string& addr, uint16_t port);
     void close();
     
@@ -22,7 +25,7 @@ public:
     void set_timeout(long sec, long usec = 0l) const;
 
     Connection(Connection& other) = delete;
-    // TODO: operator(move)();
+    // TODO: operator= (Connection &&);
 private:
     Connection(int client_fd);
 
@@ -31,5 +34,7 @@ private:
 private:
     Descripter c_sockfd;
 };
+
+} // namespace tcp
 
 #endif // CONNECTION_H
