@@ -3,20 +3,22 @@ project(TCP)
 
 set(CMAKE_CXX_STANDARD 17)
 
-set(HDR hdr)
-set(SRC src)
-set(TESTDIR tests)
+set(HDR include)
+set(LIB lib)
+set(TESTS tests)
 
-include_directories( ${HDR} )
-FILE(GLOB SRCS ${SRC}/connection.cpp ${SRC}/descripter.cpp ${SRC}/error.cpp ${SRC}/server.cpp)
-
+set(LIB_NAME tcp)
 add_compile_options(-mfpmath=sse -fstack-protector-all -W -Wall -Wextra -Wunused -Wcast-align 
 -Werror -pedantic -pedantic-errors -Wfloat-equal -Wpointer-arith -Wformat-security 
 -Wmissing-format-attribute -Wformat=1 -Wwrite-strings -Wcast-align -Wno-long-long  
 -Wcast-qual -Wno-suggest-attribute=format-Werror -Wpedantic)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../${TESTDIR})
+add_library(${LIB_NAME} STATIC ${LIB}/connection.cpp ${LIB}/descripter.cpp ${LIB}/error.cpp ${LIB}/server.cpp)
+target_include_directories(${LIB_NAME} PUBLIC include)
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../${TESTS})
 
 foreach(test testServer testClient)
-    add_executable(${test} ${TESTDIR}/${test}.cpp ${SRCS})
+    add_executable(${test} ${TESTS}/${test}.cpp)
+    target_link_libraries(${test} ${LIB_NAME})
 endforeach(test)
