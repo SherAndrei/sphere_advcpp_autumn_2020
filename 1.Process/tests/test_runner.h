@@ -95,14 +95,14 @@ private:
 };
 
 #define ASSERT_EQUAL(x, y) {             \
-  ostringstream _local_os;               \
+  std::ostringstream _local_os;               \
   _local_os << #x << " != " << #y << ", "\
     << __FILE__ << ":" << __LINE__;      \
   AssertEqual(x, y, _local_os.str());    \
 }
 
 #define ASSERT(x) {                 \
-  ostringstream _local_os;          \
+  std::ostringstream _local_os;          \
   _local_os << #x << " is false, "  \
     << __FILE__ << ":" << __LINE__; \
   Assert(x, _local_os.str());       \
