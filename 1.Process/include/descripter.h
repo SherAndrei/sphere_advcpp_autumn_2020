@@ -15,8 +15,8 @@ public:
 	void close();
 
 public:
-	int  id() const;
-	void setID(int id);
+	int  fd() const;
+	void set_fd(int id);
 
 private:
 	int _id = -1;

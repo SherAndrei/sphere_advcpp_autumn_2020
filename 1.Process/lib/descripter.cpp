@@ -23,12 +23,12 @@ void Descripter::close()
 	}	
 }
 
-pid_t Descripter::id() const
+pid_t Descripter::fd() const
 {
 	return _id;
 }
 
-void Descripter::setID(int id)
+void Descripter::set_fd(int id)
 {
 	_id = id;
 }

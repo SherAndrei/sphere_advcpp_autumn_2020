@@ -46,16 +46,16 @@ void Process::open(const std::string& path, const std::vector<std::string>& para
 	}
 	
 	Descripter write_to_parent(pipe_out[1]);
-	_read_from_child.setID(pipe_out[0]);
+	_read_from_child.set_fd(pipe_out[0]);
 
 	Descripter read_from_parent(pipe_in[0]);
-	_write_to_child.setID(pipe_in[1]);
+	_write_to_child.set_fd(pipe_in[1]);
 
 	if((_cpid = fork()) == -1) 
 		throw_runtime_err("fork");
 
 	if(_cpid == 0) { /* child process */
-		if(::dup2(read_from_parent.id(), STDIN_FILENO) == -1) { // replacing child stdin with pipe
+		if(::dup2(read_from_parent.fd(), STDIN_FILENO) == -1) { // replacing child stdin with pipe
 			std::cerr << "dup2 stdin" << std::endl;
 			exit(EXIT_FAILURE);
 		} 
@@ -64,7 +64,7 @@ void Process::open(const std::string& path, const std::vector<std::string>& para
 		read_from_parent.close();			   
 		_write_to_child.close();
 		
-		if(::dup2(write_to_parent.id(), STDOUT_FILENO) == -1) { // replasing child stdout with pipe
+		if(::dup2(write_to_parent.fd(), STDOUT_FILENO) == -1) { // replasing child stdout with pipe
 			std::cerr << "dup2 stdout" << std::endl;
 			exit(EXIT_FAILURE);
 		}
@@ -93,7 +93,7 @@ Process::~Process()
 
 size_t Process::write(const void* data, size_t len)
 {
-	ssize_t size = ::write(_write_to_child.id(), data, len);
+	ssize_t size = ::write(_write_to_child.fd(), data, len);
 	if(size == -1)
 		throw_runtime_err("write");
 
@@ -110,7 +110,7 @@ void Process::writeExact(const void* data, size_t len)
 
 size_t Process::read(void* data, size_t len)
 {
-	ssize_t size = ::read(_read_from_child.id(), data, len);
+	ssize_t size = ::read(_read_from_child.fd(), data, len);
 	if (size == -1)
 		throw_runtime_err("read internal failure");
 	
