@@ -1,12 +1,12 @@
-#include <vector>
-#include <map>
+#include <memory>
+#include <ostream>
 #include "level.h"
 #include "baselogger.h"
 
 using namespace log;
-
+// чтобы шаред птр не попытался удалить поток
 BaseLogger::BaseLogger(std::ostream& another, LEVEL l)
-    : _out(another), _level(l)
+    : _out(&another, [] (void*) {}), _level(l)
 {}
 
 BaseLogger::~BaseLogger()
@@ -20,11 +20,11 @@ void  BaseLogger::error(const std::string& message) { log("[ERROR]: "   + messag
 void  BaseLogger::set_level(LEVEL lev) { _level = lev; }
 LEVEL BaseLogger::level() const { return _level; }
 
-void BaseLogger::flush() { _out.flush(); }
+void BaseLogger::flush() { _out->flush(); }
 
 void BaseLogger::log(const std::string& m, LEVEL l)
 {
     if(l >= _level)
-        _out << m << std::endl;
+        (*_out) << m << std::endl;
 }
 

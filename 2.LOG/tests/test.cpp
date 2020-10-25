@@ -1,6 +1,7 @@
 #include "stderrlogger.h"
 #include "stdoutlogger.h"
 #include "filelogger.h"
+#include "globallogger.h"
 
 int main()
 {
@@ -19,5 +20,9 @@ int main()
         lg.flush();
         lg.info("Hello world!");
         lg.error("Hello world!");
+    }
+    {
+        log::init_with_file_logger("globallog.txt", log::LEVEL::INFO);
+        log::error("Feeling good");
     }
 }

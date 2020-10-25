@@ -1,6 +1,7 @@
 #ifndef BASELOGGER_H
 #define BASELOGGER_H
 #include <ostream>
+#include <memory>
 #include "level.h"
 
 namespace log
@@ -24,7 +25,8 @@ public:
 protected:
     void log(const std::string& m, LEVEL l);
 protected:
-    std::ostream& _out;
+    // хотим чтобы поток жил пока жив baselogger
+    std::shared_ptr<std::ostream> _out;
     LEVEL _level;
 };
 	
