@@ -1,5 +1,5 @@
-#ifndef SHMAP_H
-#define SHMAP_H
+#ifndef SHMEM_MAP_H
+#define SHMEM_MAP_H
 #include <map>
 #include <utility>
 #include <functional>
@@ -15,13 +15,11 @@ namespace shmem
 struct BlockSize {
     size_t value;
     explicit BlockSize(size_t num) : value(num) {}
-    operator size_t() { return value; }
 };
 
 struct BlockCount {
     size_t value;
     explicit BlockCount(size_t num) : value(num) {}
-    operator size_t() { return value; }
 };
 
 template<class Key, class Value>
@@ -35,22 +33,24 @@ class SharedMap
 {
 public:
     SharedMap(BlockSize block_size, BlockCount block_count) 
-        : mmap_(sizeof(Semaphore) + sizeof(ShMemState) + block_count + sizeof(ShMap<Key, Value>) + block_size * block_count)
+        : mmap_(sizeof(Semaphore) + sizeof(ShMemState) 
+              + block_count.value + sizeof(ShMap<Key, Value>)
+              + block_size.value * block_count.value)
         , s_(new (mmap_.get()) Semaphore{})
     {
         // sizeof(Semaphore)               sizeof(ShMap<Key, Value>) 
         //        ||    sizeof(ShMemState)            ||
-        //        \/          \/      block_count     \/
-        //  | Semaphore | ShMemState | BlockTable |  ShMap  |   Blocks  |
-        //  |___________|____________|____________|_________|__|__|__|__|
+        //        \/          \/      block_count     \/     block_size * block_count
+        //  | Semaphore | ShMemState | BlockTable |  ShMap  |          Blocks        |
+        //  |___________|____________|____________|_________|________________________|
         ShMemState* sh_state = new (mmap_.get() + sizeof(Semaphore)) ShMemState{};
-        sh_state->block_size   = block_size;
-        sh_state->blocks_count = block_count;
+        sh_state->block_size   = block_size.value;
+        sh_state->blocks_count = block_count.value;
         sh_state->used_blocks_table = mmap_.get() + sizeof(Semaphore) + sizeof(ShMemState);
         ::memset(sh_state->used_blocks_table, FREE_BLOCK, sh_state->blocks_count);
 
         ShAlloc<ShMap<Key, Value>> alloc{sh_state};
-        p_map_ = new (mmap_.get() + sizeof(Semaphore) + sizeof(ShMemState) + block_count) ShMap<Key, Value>{alloc};
+        p_map_ = new (mmap_.get() + sizeof(Semaphore) + sizeof(ShMemState) + sh_state->blocks_count) ShMap<Key, Value>{alloc};
         
         sh_state->first_block = sh_state->used_blocks_table + sh_state->blocks_count + sizeof(ShMap<Key, Value>);
     }
@@ -87,4 +87,4 @@ private:
 
 } // namespace shmem
 
-#endif // SHAREDMAP_H
+#endif // SHMEM_MAP_H

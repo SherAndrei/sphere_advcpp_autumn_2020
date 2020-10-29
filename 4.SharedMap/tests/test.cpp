@@ -47,6 +47,7 @@ void TestFork()
             ASSERT(map.at(1) == 2);
             ASSERT(map.at(2) == 1);
             map.erase(2);
+            std::cout << "Child ";
             return;
         }
         waitpid(child, nullptr, 0);
@@ -57,11 +58,12 @@ void TestFork()
 
         int child = ::fork();
         if(child == 0) {
-            map.insert(1, 2);
             map[2] = 1;
+            map.insert(1, 2);
             ASSERT(map.size() == 2);
             sleep(1);
             ASSERT(map.size() == 1);
+            std::cout << "Child ";
             return;
         } else {
             sleep(1);
@@ -72,11 +74,33 @@ void TestFork()
     
 }
 
+void TestString()
+{
+    using namespace shmem;
+    {
+        SharedMap<std::string, int> map(BlockSize{128}, BlockCount{4});
+        map["one"] = 1;
+        map["two"] = 2;
+        map["one million two hundred twelve thousand and three"] = 1'212'003;
+        ASSERT(map.at("two") == 2);
+        ASSERT(map.at("one million two hundred twelve thousand and three") == 1'212'003);        
+    }
+    {
+        SharedMap<int, std::string> map(BlockSize{128}, BlockCount{4});
+        map[1] = "one";
+        map[2] = "two";
+        map[1'212'003] = "one million two hundred twelve thousand and three";
+        ASSERT(map.at(2) == "two");
+        ASSERT(map.at(1'212'003) == "one million two hundred twelve thousand and three");        
+    }
+}
+
 int main()
 {
 
     TestRunner tr;
     RUN_TEST(tr, TestBadAlloc);
+    RUN_TEST(tr, TestString);
     RUN_TEST(tr, TestFork);
 
     return 0;

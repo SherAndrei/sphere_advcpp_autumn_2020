@@ -1,5 +1,5 @@
-#ifndef SH_MMAP_H
-#define SH_MMAP_H
+#ifndef SHMEM_MMAP_H
+#define SHMEM_MMAP_H
 
 namespace shmem
 {
@@ -18,4 +18,4 @@ private:
 
 } // namespace shmem
 
-#endif // SH_MMAP_H
+#endif // SHMEM_MMAP_H

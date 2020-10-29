@@ -1,5 +1,5 @@
-#ifndef SHSEMAPHORE_H
-#define SHSEMAPHORE_H
+#ifndef SHMEM_SEMAPHORE_H
+#define SHMEM_SEMAPHORE_H
 #include <semaphore.h>
 
 namespace shmem
@@ -20,4 +20,4 @@ private:
 
 } // namespace shmem
 
-#endif // SHSEMAPHORE_H
+#endif // SHMEM_SEMAPHORE_H

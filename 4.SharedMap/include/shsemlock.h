@@ -1,5 +1,5 @@
-#ifndef SHSEMLOCK_H
-#define SHSEMLOCK_H
+#ifndef SHMEM_SEMLOCK_H
+#define SHMEM_SEMLOCK_H
 #include "shsemaphore.h"
 
 namespace shmem
@@ -18,4 +18,4 @@ private:
 } // namespace shmem
 
 
-#endif // SHSEMLOCK_H
+#endif // SHMEM_SEMLOCK_H

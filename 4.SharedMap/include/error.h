@@ -1,5 +1,5 @@
-#ifndef SHMEMERROR_H
-#define SHMEMERROR_H
+#ifndef SHMEM_ERROR_H
+#define SHMEM_ERROR_H
 #include <stdexcept>
 
 namespace shmem
@@ -25,4 +25,4 @@ public:
 
 } // namespace shmem
 
-#endif // SHMEMERROR_H
+#endif // SHMEM_ERROR_H

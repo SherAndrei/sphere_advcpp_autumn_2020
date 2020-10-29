@@ -1,3 +1,5 @@
+#ifndef SHMEM_ALLOCATOR_H
+#define SHMEM_ALLOCATOR_H
 #include <iostream>
 #include <memory>
 #include <cmath>
@@ -78,3 +80,5 @@ bool operator!=(const ShAlloc<T>&a, const ShAlloc<U>&b) {
 }
 
 } // namespace shmem
+
+#endif // SHMEM_ALLOCATOR_H
