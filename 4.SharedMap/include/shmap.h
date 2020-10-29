@@ -12,6 +12,18 @@
 namespace shmem
 {
 
+struct BlockSize {
+    size_t value;
+    explicit BlockSize(size_t num) : value(num) {}
+    operator size_t() { return value; }
+};
+
+struct BlockCount {
+    size_t value;
+    explicit BlockCount(size_t num) : value(num) {}
+    operator size_t() { return value; }
+};
+
 template<class Key, class Value>
 using ShPairAlloc = ShAlloc< std::pair<const Key, Value>>;
 
@@ -22,9 +34,9 @@ template<class Key, class Value>
 class SharedMap
 {
 public:
-    SharedMap(size_t block_size, size_t block_count) 
+    SharedMap(BlockSize block_size, BlockCount block_count) 
         : mmap_(sizeof(Semaphore) + sizeof(ShMemState) + block_count + sizeof(ShMap<Key, Value>) + block_size * block_count)
-        , s_(new (mmap_.get()) Semaphore)
+        , s_(new (mmap_.get()) Semaphore{})
     {
         // sizeof(Semaphore)               sizeof(ShMap<Key, Value>) 
         //        ||    sizeof(ShMemState)            ||
@@ -44,10 +56,10 @@ public:
     }
     ~SharedMap() 
     {
-        s_->~Semaphore();
         p_map_->~map();
+        s_->~Semaphore();
     }
-    auto operator[](const Key& k){
+    Value& operator[](const Key& k){
         SemLock sl(*s_);
         return p_map_->operator[](k);
     }
@@ -61,7 +73,11 @@ public:
     }
     auto erase(const Key& k) {
         SemLock sl(*s_);
-        p_map_->erase(k);
+        return p_map_->erase(k);
+    }
+    auto size() const {
+        SemLock sl(*s_);
+        return p_map_->size();
     }
 private:
     ShMMap mmap_;

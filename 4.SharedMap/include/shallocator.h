@@ -49,6 +49,8 @@ public:
   }
 
   T* allocate(std::size_t n) {
+    if(state_->block_size == 0) 
+        throw std::bad_alloc{};
     size_t blocks_needed = get_size_in_blocks(sizeof(T) * n, state_->block_size);
     std::string_view table{state_->used_blocks_table, state_->blocks_count};
     size_t blocks_pos = find_free_blocks(blocks_needed, table);
