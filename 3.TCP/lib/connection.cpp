@@ -9,7 +9,11 @@
 
 using namespace tcp;
 
-static void throw_error(const std::string& what) { throw tcp::Error(what); }
+static void handle_error(int errnum) 
+{ 
+    if(errnum == -1)
+        throw tcp::Error(std::strerror(errno)); 
+}
 
 Connection::Connection() : c_addr({}, 0) { setSocket(); }
 Connection::~Connection() { c_sockfd.close(); }
@@ -26,7 +30,7 @@ Connection::Connection(const int client_fd, const Address& addr)
 }
 
 Connection::Connection(Connection && other)
-    : c_addr(std::move(other.c_addr))
+    :   c_addr(std::move(other.c_addr))
     , c_sockfd(std::move(other.c_sockfd))
 {}
 
@@ -51,9 +55,8 @@ void Connection::connect(const Address& addr)
 
 size_t Connection::write(const void* data, size_t len)
 {
-	ssize_t size = ::write(c_sockfd.fd(), data, len);
-	if(size == -1)
-		throw tcp::Error(std::strerror(errno));
+	ssize_t size;
+	handle_error(size = ::write(c_sockfd.fd(), data, len));
 
 	return static_cast<size_t> (size);
 }
@@ -67,9 +70,8 @@ void   Connection::writeExact(const void* data, size_t len)
 }
 size_t Connection::read(void* data, size_t len)
 {
-	ssize_t size = ::read(c_sockfd.fd(), data, len);
-	if (size == -1)
-		throw_error(std::strerror(errno));
+	ssize_t size;
+	handle_error(size = ::read(c_sockfd.fd(), data, len));
 	
 	return static_cast<size_t> (size);
 }
@@ -81,7 +83,7 @@ void   Connection::readExact(void* data, size_t len)
 	while(counter < len) {
 		current  = read(ch_data + counter, len - counter);
 		if(current == 0u)
-			throw_error("readExact pid failure");
+			throw DescripterError("readExact failure");
 		counter += current;
     }
 }
@@ -89,8 +91,7 @@ void   Connection::readExact(void* data, size_t len)
 void Connection::setSocket()
 {
     c_sockfd.set_fd(::socket(AF_INET, SOCK_STREAM, 0));
-    if(!c_sockfd.valid())
-        throw_error(std::strerror(errno));
+    handle_error(c_sockfd.fd());
 }
 
 void Connection::close()
@@ -100,8 +101,7 @@ void Connection::close()
 void Connection::set_timeout(long sec, long usec) const
 {
     timeval timeout = { sec, usec };
-    if(setsockopt(c_sockfd.fd(), SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)) == -1)
-        throw_error(std::strerror(errno));
+    handle_error(setsockopt(c_sockfd.fd(), SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)));
 }
 
 Connection& Connection::operator= (Connection && other)

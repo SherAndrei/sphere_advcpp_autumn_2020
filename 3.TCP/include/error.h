@@ -10,6 +10,11 @@ public:
     using std::runtime_error::runtime_error;
 };
 
+class DescripterError : public Error {
+public:
+    DescripterError(const std::string& what);
+};
+
 class AddressError : public Error {
 private:
     const Address _addr;

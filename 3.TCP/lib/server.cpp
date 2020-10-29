@@ -9,8 +9,11 @@
 #include "address.h"
 #include "error.h"
 
-static void throw_error(const std::string& what) 
-    { throw tcp::Error(what); }
+static void handle_error(int errnum) 
+{ 
+    if(errnum == -1)
+        throw tcp::Error(std::strerror(errno)); 
+}
 
 using namespace tcp;
 
@@ -54,9 +57,8 @@ Connection Server::accept()
 {
     sockaddr_in peer_addr{};
     socklen_t s = sizeof(peer_addr);
-    int client = ::accept(s_sockfd.fd(),reinterpret_cast<sockaddr*>(&peer_addr), &s);
-    if(client == -1)
-        throw_error(std::strerror(errno));
+    int client;
+    handle_error(client = ::accept(s_sockfd.fd(),reinterpret_cast<sockaddr*>(&peer_addr), &s));
 
     return Connection{client, Address{std::string(::inet_ntoa(peer_addr.sin_addr)), peer_addr.sin_port}};
 }
@@ -69,16 +71,13 @@ void Server::close()
 void Server::set_timeout(long sec, long usec) const
 {
     timeval timeout = { sec, usec };
-    if(setsockopt(s_sockfd.fd(), SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)) == -1)
-        throw_error(std::strerror(errno));
-   
+    handle_error(setsockopt(s_sockfd.fd(), SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)));
 }
 
 void Server::setSocket()
 {
     s_sockfd.set_fd(::socket(AF_INET, SOCK_STREAM, 0));
-    if(!s_sockfd.valid())
-        throw_error(std::strerror(errno));
+    handle_error(s_sockfd.fd());
 }
 
 Server& Server::operator= (Server&& other)
