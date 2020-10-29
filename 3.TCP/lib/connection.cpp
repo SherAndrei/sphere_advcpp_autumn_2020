@@ -11,14 +11,8 @@ using namespace tcp;
 
 static void throw_error(const std::string& what) { throw tcp::Error(what); }
 
-Connection::Connection()
-{
-    setSocket();
-}
-Connection::~Connection()
-{
-    c_sockfd.close();
-}
+Connection::Connection()  { setSocket(); }
+Connection::~Connection() { c_sockfd.close(); }
 Connection::Connection(const std::string& addr, uint16_t port)
 {
     setSocket();
@@ -28,10 +22,15 @@ Connection::Connection(int client_fd)
 {
     c_sockfd.set_fd(client_fd);
 }
+
+Connection::Connection(Connection && other)
+    : c_sockfd(std::move(other.c_sockfd))
+{}
+
 void Connection::connect(const std::string& addr, uint16_t port)
 {
     int error; 
-    if(!c_sockfd.isValid()) {
+    if(!c_sockfd.valid()) {
         setSocket();
     }
 
@@ -87,7 +86,7 @@ void   Connection::readExact(void* data, size_t len)
 void Connection::setSocket()
 {
     c_sockfd.set_fd(::socket(AF_INET, SOCK_STREAM, 0));
-    if(!c_sockfd.isValid())
+    if(!c_sockfd.valid())
         throw_error(std::strerror(errno));
 }
 
@@ -100,4 +99,10 @@ void Connection::set_timeout(long sec, long usec) const
     timeval timeout = { sec, usec };
     if(setsockopt(c_sockfd.fd(), SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)) == -1)
         throw_error(std::strerror(errno));
+}
+
+Connection& Connection::operator= (Connection && other)
+{
+    c_sockfd = std::move(other.c_sockfd);
+    return *this;
 }

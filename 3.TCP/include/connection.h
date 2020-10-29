@@ -8,12 +8,18 @@ namespace tcp
     
 class Connection
 {
+private:
     friend class Server;
+    Connection(int client_fd);
+
 public:
     Connection();
     ~Connection();
     Connection(const std::string& addr, uint16_t port); // адрес и порт куда мы хотим подключиться
-    // TODO: Connection(Connection &&);
+    
+    Connection(const Connection& other) = delete;
+    Connection(Connection && other);
+    
     void connect(const std::string& addr, uint16_t port);
     void close();
     
@@ -24,10 +30,8 @@ public:
  
     void set_timeout(long sec, long usec = 0l) const;
 
-    Connection(Connection& other) = delete;
-    // TODO: operator= (Connection &&);
-private:
-    Connection(int client_fd);
+    Connection& operator= (const Connection &  other) = delete;
+    Connection& operator= (Connection && other);
 
 private:
     void setSocket();

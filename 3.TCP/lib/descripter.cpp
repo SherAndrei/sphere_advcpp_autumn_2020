@@ -3,35 +3,27 @@
 
 using namespace tcp;
 
-bool Descripter::isValid() const
-{
-	return _id != -1;
-}
+bool Descripter::valid() const { return _id != -1; }
+void Descripter::invalidate()  { _id = -1; }
 
-Descripter::Descripter(int id) 
-	: _id(id)
-{}
-
-Descripter::~Descripter() 
-{
-	Descripter::close();
-}
+Descripter::Descripter(int id)              : _id(id)        {}
+Descripter::Descripter(Descripter && other) : _id(other._id) { other.invalidate(); }
+Descripter::~Descripter() { Descripter::close(); }
 
 void Descripter::close()
 {
-	if(isValid()) {
+	if(valid()) {
 		::close(_id);
-		_id = -1;
+		invalidate();
 	}	
 }
 
-pid_t Descripter::fd() const
-{
-	return _id;
-}
+int  Descripter::fd() const     { return _id; }
+void Descripter::set_fd(int id) { _id = id; }
 
-void Descripter::set_fd(int id)
+Descripter& Descripter::operator= (Descripter && other)
 {
-	_id = id;
+    _id = other._id;
+    other.invalidate();
+    return *this;
 }
-

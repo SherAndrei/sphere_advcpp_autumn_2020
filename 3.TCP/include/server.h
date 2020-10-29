@@ -11,15 +11,18 @@ class Server
 public:
     Server();
     Server(const std::string&  addr, uint16_t port); // то куда мы встаем и слушаем 
-    //TODO: Server(Server&&)
-
+    Server(const Server&  other) = delete;
+    Server(Server&& other);
+    ~Server();
+    
     void listen(const std::string&  addr, uint16_t port);
     Connection accept();
     
     void close(); // сервер больше не слушает
     void set_timeout(long sec, long usec = 0l) const;
-    
-    //TODO: operator= (Server&&)
+
+    Server& operator= (const Server&  other) = delete;
+    Server& operator= (Server&& other);
 private:
     void setSocket();
 private:

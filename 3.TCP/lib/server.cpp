@@ -13,19 +13,22 @@ static void throw_error(const std::string& what)
 
 using namespace tcp;
 
-Server::Server()
-{
-    setSocket();
-}
+Server::Server() { setSocket(); }
 Server::Server(const std::string&  addr, uint16_t port)
 {
     setSocket();
     listen(addr, port);
 }
+Server::~Server() { close(); }
+
+Server::Server(Server&& other) 
+    : s_sockfd(std::move(other.s_sockfd))
+{ }
+
 void Server::listen(const std::string&  addr, const uint16_t port)
 {
     int error;
-    if(!s_sockfd.isValid())
+    if(!s_sockfd.valid())
         setSocket();
 
     sockaddr_in sock_addr{};
@@ -54,11 +57,12 @@ Connection Server::accept()
 
     return Connection{client};
 }
+
 void Server::close()
 {
     s_sockfd.close();
 } 
-//TODO: operator move
+
 void Server::set_timeout(long sec, long usec) const
 {
     timeval timeout = { sec, usec };
@@ -70,6 +74,12 @@ void Server::set_timeout(long sec, long usec) const
 void Server::setSocket()
 {
     s_sockfd.set_fd(::socket(AF_INET, SOCK_STREAM, 0));
-    if(!s_sockfd.isValid())
+    if(!s_sockfd.valid())
         throw_error(std::strerror(errno));
+}
+
+Server& Server::operator= (Server&& other)
+{
+    s_sockfd = std::move(other.s_sockfd);
+    return *this;
 }
