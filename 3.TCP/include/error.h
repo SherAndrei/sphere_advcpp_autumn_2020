@@ -1,6 +1,7 @@
 #ifndef ERROR_H
 #define ERROR_H
 #include <stdexcept>
+#include "address.h"
 
 namespace tcp
 {
@@ -11,13 +12,11 @@ public:
 
 class AddressError : public Error {
 private:
-    std::string _addr;
-    uint16_t    _port;
+    const Address _addr;
 public:
-    AddressError(const std::string& what, const std::string&  addr, const uint16_t port);
+    AddressError(const std::string& what, const Address& addr);
 
-    std::string   addr() const;
-    std::uint16_t port() const;
+    Address address() const;
 };
 
 } // namespace tcp

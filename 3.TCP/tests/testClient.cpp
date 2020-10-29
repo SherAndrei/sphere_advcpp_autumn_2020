@@ -1,13 +1,14 @@
 #include "test_runner.h"
 #include "connection.h"
 #include "server.h"
+#include "address.h"
 #include "error.h"
 
 void TestConnect()
 {
     try {
         tcp::Connection c;
-        c.connect("something", 8080);
+        c.connect({"something", 8080});
         ASSERT(false);
     } catch (tcp::AddressError& ex) {
         std::string exep = "Incorrect address!";
@@ -16,10 +17,9 @@ void TestConnect()
 
     try {
         tcp::Connection c;
-        c.connect("127.0.0.1", 1000);
+        c.connect({"127.0.0.1", 1000});
         ASSERT(false);
     } catch (tcp::AddressError& ex) {
-        // std::cout << ex.what() << std::endl;
         std::string exep = "Connection refused";
         ASSERT(ex.what() == exep);
     }
@@ -29,7 +29,7 @@ void TestClient()
 {
     try {
         tcp::Connection con;
-        con.connect("127.0.0.1", 8080);
+        con.connect({"127.0.0.1", 8080});
 
         std::string text = "Studying sphere!\n";
         

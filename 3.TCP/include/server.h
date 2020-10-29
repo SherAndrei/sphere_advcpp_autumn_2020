@@ -1,7 +1,7 @@
 #ifndef SERVER_H
 #define SERVER_H
-#include <vector>
 #include "connection.h"
+#include "address.h"
 
 namespace tcp
 {
@@ -10,12 +10,12 @@ class Server
 {
 public:
     Server();
-    Server(const std::string&  addr, uint16_t port); // то куда мы встаем и слушаем 
+    Server(const Address& addr); // то куда мы встаем и слушаем 
     Server(const Server&  other) = delete;
     Server(Server&& other);
     ~Server();
-    
-    void listen(const std::string&  addr, uint16_t port);
+
+    void listen(const Address& addr);
     Connection accept();
     
     void close(); // сервер больше не слушает
@@ -26,6 +26,7 @@ public:
 private:
     void setSocket();
 private:
+    Address    s_addr;
     Descripter s_sockfd;
 };
 

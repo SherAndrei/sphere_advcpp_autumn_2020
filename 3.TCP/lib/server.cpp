@@ -6,6 +6,7 @@
 #include "descripter.h"
 #include "connection.h"
 #include "server.h"
+#include "address.h"
 #include "error.h"
 
 static void throw_error(const std::string& what) 
@@ -13,19 +14,21 @@ static void throw_error(const std::string& what)
 
 using namespace tcp;
 
-Server::Server() { setSocket(); }
-Server::Server(const std::string&  addr, uint16_t port)
+Server::Server() : s_addr({}, 0) { setSocket(); }
+Server::Server(const Address& addr)
+    : s_addr(addr)
 {
     setSocket();
-    listen(addr, port);
+    listen(addr);
 }
 Server::~Server() { close(); }
 
 Server::Server(Server&& other) 
-    : s_sockfd(std::move(other.s_sockfd))
+    :   s_addr(std::move(other.s_addr))
+    , s_sockfd(std::move(other.s_sockfd))
 { }
 
-void Server::listen(const std::string&  addr, const uint16_t port)
+void Server::listen(const Address& addr)
 {
     int error;
     if(!s_sockfd.valid())
@@ -33,19 +36,19 @@ void Server::listen(const std::string&  addr, const uint16_t port)
 
     sockaddr_in sock_addr{};
     sock_addr.sin_family = AF_INET;
-    sock_addr.sin_port = ::htons(port);
-    error = ::inet_aton(addr.data(), &sock_addr.sin_addr);
+    sock_addr.sin_port = ::htons(addr.port());
+    error = ::inet_aton(addr.address().data(), &sock_addr.sin_addr);
     if(error == 0)
-        throw tcp::AddressError("Incorrect address!", addr, port);
+        throw tcp::AddressError("Incorrect address!", addr);
 
     // привязываем дескриптор к сокету
     error = ::bind(s_sockfd.fd(), reinterpret_cast<sockaddr*>(&sock_addr), sizeof(sock_addr));
     if(error == -1)
-        throw tcp::AddressError(std::strerror(errno), addr, port);
+        throw tcp::AddressError(std::strerror(errno), addr);
 
     error = ::listen(s_sockfd.fd(), SOMAXCONN);
     if(error == -1)
-        throw tcp::AddressError(std::strerror(errno), addr, port);
+        throw tcp::AddressError(std::strerror(errno), addr);
 }
 Connection Server::accept()
 {
@@ -55,7 +58,7 @@ Connection Server::accept()
     if(client == -1)
         throw_error(std::strerror(errno));
 
-    return Connection{client};
+    return Connection{client, Address{std::string(::inet_ntoa(peer_addr.sin_addr)), peer_addr.sin_port}};
 }
 
 void Server::close()
@@ -80,6 +83,7 @@ void Server::setSocket()
 
 Server& Server::operator= (Server&& other)
 {
+    s_addr   = std::move(other.s_addr);
     s_sockfd = std::move(other.s_sockfd);
     return *this;
 }

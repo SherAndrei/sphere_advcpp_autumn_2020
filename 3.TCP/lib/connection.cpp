@@ -11,23 +11,26 @@ using namespace tcp;
 
 static void throw_error(const std::string& what) { throw tcp::Error(what); }
 
-Connection::Connection()  { setSocket(); }
+Connection::Connection() : c_addr({}, 0) { setSocket(); }
 Connection::~Connection() { c_sockfd.close(); }
-Connection::Connection(const std::string& addr, uint16_t port)
+Connection::Connection(const Address& addr)
+    : c_addr(addr)
 {
     setSocket();
-    connect(addr, port);
+    connect(addr);
 }
-Connection::Connection(int client_fd)
+Connection::Connection(const int client_fd, const Address& addr)
+    : c_addr(addr)
 {
     c_sockfd.set_fd(client_fd);
 }
 
 Connection::Connection(Connection && other)
-    : c_sockfd(std::move(other.c_sockfd))
+    : c_addr(std::move(other.c_addr))
+    , c_sockfd(std::move(other.c_sockfd))
 {}
 
-void Connection::connect(const std::string& addr, uint16_t port)
+void Connection::connect(const Address& addr)
 {
     int error; 
     if(!c_sockfd.valid()) {
@@ -36,14 +39,14 @@ void Connection::connect(const std::string& addr, uint16_t port)
 
     sockaddr_in sock_addr{};
     sock_addr.sin_family = AF_INET;
-    sock_addr.sin_port   = ::htons(port);
-    error = ::inet_aton(addr.data(), &sock_addr.sin_addr);
+    sock_addr.sin_port   = ::htons(addr.port());
+    error = ::inet_aton(addr.address().data(), &sock_addr.sin_addr);
     if(error == 0)
-        throw AddressError("Incorrect address!", addr, port);
+        throw AddressError("Incorrect address!", addr);
     
     error = ::connect(c_sockfd.fd(), reinterpret_cast<sockaddr*>(&sock_addr), sizeof(sock_addr));
     if(error == -1)
-        throw AddressError(std::strerror(errno), addr, port);
+        throw AddressError(std::strerror(errno), addr);
 }
 
 size_t Connection::write(const void* data, size_t len)
@@ -103,6 +106,7 @@ void Connection::set_timeout(long sec, long usec) const
 
 Connection& Connection::operator= (Connection && other)
 {
+    c_addr   = std::move(other.c_addr);
     c_sockfd = std::move(other.c_sockfd);
     return *this;
 }
