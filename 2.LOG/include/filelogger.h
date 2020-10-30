@@ -10,8 +10,7 @@ class FileLogger : public BaseLogger
 {
 public:
     FileLogger(const std::string& path, LEVEL l);
-    ~FileLogger() override;
-
+    ~FileLogger() = default;
 private:
     std::ofstream file;
 };

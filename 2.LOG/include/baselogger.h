@@ -11,7 +11,7 @@ class BaseLogger
 {
 public:
     BaseLogger(std::ostream& another, LEVEL l);
-    virtual ~BaseLogger();
+    virtual ~BaseLogger() = default;
 
     void debug(const std::string& message);
     void info (const std::string& message);

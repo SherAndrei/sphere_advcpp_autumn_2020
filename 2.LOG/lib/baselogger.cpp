@@ -9,10 +9,6 @@ BaseLogger::BaseLogger(std::ostream& another, LEVEL l)
     : _out(&another, [] (void*) {}), _level(l)
 {}
 
-BaseLogger::~BaseLogger()
-{
-    flush();
-}
 void  BaseLogger::debug(const std::string& message) { log("[DEBUG]: "   + message, LEVEL::DEBUG); }
 void  BaseLogger::info (const std::string& message) { log("[INFO]: "    + message, LEVEL::INFO);  }
 void  BaseLogger::warn (const std::string& message) { log("[WARNING]: " + message, LEVEL::WARN);  }

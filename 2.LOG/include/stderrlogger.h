@@ -9,6 +9,7 @@ class StderrLogger : public BaseLogger
 {
 public:
     StderrLogger(LEVEL l);
+    ~StderrLogger() = default;
 };
 
 } // namespace log

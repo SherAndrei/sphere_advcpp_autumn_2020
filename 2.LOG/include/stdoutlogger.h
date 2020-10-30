@@ -9,6 +9,7 @@ class StdoutLogger : public BaseLogger
 {
 public:
     StdoutLogger(LEVEL l);
+    ~StdoutLogger();
 };
 
 } // namespace log
