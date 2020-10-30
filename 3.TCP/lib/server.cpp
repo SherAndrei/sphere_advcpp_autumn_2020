@@ -17,15 +17,11 @@ static void handle_error(int errnum)
 
 using namespace tcp;
 
-Server::Server() : s_addr({}, 0) { setSocket(); }
 Server::Server(const Address& addr)
     : s_addr(addr)
 {
-    setSocket();
     listen(addr);
 }
-Server::~Server() { close(); }
-
 Server::Server(Server&& other) 
     :   s_addr(std::move(other.s_addr))
     , s_sockfd(std::move(other.s_sockfd))
@@ -34,13 +30,14 @@ Server::Server(Server&& other)
 void Server::listen(const Address& addr)
 {
     int error;
-    if(!s_sockfd.valid())
-        setSocket();
+    s_sockfd.set_fd(::socket(AF_INET, SOCK_STREAM, 0));
+    if(s_sockfd.fd())
+        throw SocketError(std::strerror(errno));
 
     sockaddr_in sock_addr{};
     sock_addr.sin_family = AF_INET;
-    sock_addr.sin_port = ::htons(addr.port());
-    error = ::inet_aton(addr.address().data(), &sock_addr.sin_addr);
+    sock_addr.sin_port = ::htons(addr.port);
+    error = ::inet_aton(addr.address.data(), &sock_addr.sin_addr);
     if(error == 0)
         throw tcp::AddressError("Incorrect address!", addr);
 
@@ -60,7 +57,8 @@ Connection Server::accept()
     int client;
     handle_error(client = ::accept(s_sockfd.fd(),reinterpret_cast<sockaddr*>(&peer_addr), &s));
 
-    return Connection{client, Address{std::string(::inet_ntoa(peer_addr.sin_addr)), peer_addr.sin_port}};
+    return Connection{ Descripter{client}, 
+                       Address{ ::inet_ntoa(peer_addr.sin_addr), peer_addr.sin_port } };
 }
 
 void Server::close()
@@ -74,15 +72,11 @@ void Server::set_timeout(long sec, long usec) const
     handle_error(setsockopt(s_sockfd.fd(), SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)));
 }
 
-void Server::setSocket()
-{
-    s_sockfd.set_fd(::socket(AF_INET, SOCK_STREAM, 0));
-    handle_error(s_sockfd.fd());
-}
-
 Server& Server::operator= (Server&& other)
 {
-    s_addr   = std::move(other.s_addr);
-    s_sockfd = std::move(other.s_sockfd);
+    this->s_addr.address  = std::move(other.s_addr.address);
+    this->s_addr.port     = other.s_addr.port;
+    other.s_addr.port = 0u;
+    this->s_sockfd = std::move(other.s_sockfd);
     return *this;
 }

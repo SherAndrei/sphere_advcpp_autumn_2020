@@ -7,29 +7,27 @@ namespace tcp
 class Descripter
 {
 public:
-	bool valid() const;
+    bool valid() const;
     void invalidate();
 
 public:
-	Descripter() = default;
-	explicit Descripter(int id);
-
-	Descripter(const Descripter& other) = delete;
+    Descripter() = default;
+    explicit Descripter(int id);
+    Descripter(const Descripter& other) = delete;
     Descripter(Descripter && other);
     ~Descripter();
-
 
     Descripter& operator= (const Descripter &  other) = delete;
     Descripter& operator= (Descripter && other);
 public:
-	void close();
+    void close();
 
 public:
-	int  fd() const;
-	void set_fd(int id);
+    int  fd() const;
+    void set_fd(int id);
 
 private:
-	int _id = -1;
+    int _id = -1;
 };
 
 } // namespace tcp

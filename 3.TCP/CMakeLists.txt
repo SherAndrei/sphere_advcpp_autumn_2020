@@ -13,7 +13,7 @@ add_compile_options(-mfpmath=sse -fstack-protector-all -W -Wall -Wextra -Wunused
 -Wmissing-format-attribute -Wformat=1 -Wwrite-strings -Wcast-align -Wno-long-long  
 -Wcast-qual -Wno-suggest-attribute=format -Wpedantic)
 
-add_library(${LIB_NAME} STATIC ${LIB}/connection.cpp ${LIB}/descripter.cpp ${LIB}/error.cpp ${LIB}/server.cpp ${LIB}/address.cpp)
+add_library(${LIB_NAME} STATIC ${LIB}/connection.cpp ${LIB}/descripter.cpp ${LIB}/error.cpp ${LIB}/server.cpp)
 target_include_directories(${LIB_NAME} PUBLIC include)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../${TESTS})

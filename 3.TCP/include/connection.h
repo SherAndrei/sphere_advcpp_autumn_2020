@@ -10,15 +10,14 @@ class Connection
 {
 private:
     friend class Server;
-    Connection(const int client_fd, const Address& addr);
+    Connection(Descripter && fd, Address&& addr);
 
 public:
-    Connection();
-    ~Connection();
+    Connection()  = default;
     Connection(const Address& addr); // адрес и порт куда мы хотим подключиться
-    
     Connection(const Connection& other) = delete;
     Connection(Connection && other);
+    ~Connection() = default;
     
     void connect(const Address& addr);
     void close();
@@ -33,8 +32,6 @@ public:
     Connection& operator= (const Connection &  other) = delete;
     Connection& operator= (Connection && other);
 
-private:
-    void setSocket();
 private:
     Address    c_addr;
     Descripter c_sockfd;

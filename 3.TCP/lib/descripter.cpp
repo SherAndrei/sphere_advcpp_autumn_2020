@@ -8,7 +8,7 @@ void Descripter::invalidate()  { _id = -1; }
 
 Descripter::Descripter(int id)              : _id(id)        {}
 Descripter::Descripter(Descripter && other) : _id(other._id) { other.invalidate(); }
-Descripter::~Descripter() { Descripter::close(); }
+Descripter::~Descripter() { close(); }
 
 void Descripter::close()
 {
@@ -23,7 +23,8 @@ void Descripter::set_fd(int id) { _id = id; }
 
 Descripter& Descripter::operator= (Descripter && other)
 {
-    _id = other._id;
+    this->close();   
+    this->_id = other._id;
     other.invalidate();
     return *this;
 }

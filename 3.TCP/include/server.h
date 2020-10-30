@@ -9,11 +9,14 @@ namespace tcp
 class Server
 {
 public:
-    Server();
-    Server(const Address& addr); // то куда мы встаем и слушаем 
+    Server() = default;
+    Server(const Address& addr);
     Server(const Server&  other) = delete;
     Server(Server&& other);
-    ~Server();
+    ~Server() = default;
+
+    Server& operator= (const Server&  other) = delete;
+    Server& operator= (Server&& other);
 
     void listen(const Address& addr);
     Connection accept();
@@ -21,10 +24,6 @@ public:
     void close(); // сервер больше не слушает
     void set_timeout(long sec, long usec = 0l) const;
 
-    Server& operator= (const Server&  other) = delete;
-    Server& operator= (Server&& other);
-private:
-    void setSocket();
 private:
     Address    s_addr;
     Descripter s_sockfd;

@@ -15,6 +15,11 @@ public:
     DescripterError(const std::string& what);
 };
 
+class SocketError : public Error {
+public:
+    SocketError(const std::string& what);
+};
+
 class AddressError : public Error {
 private:
     const Address _addr;
