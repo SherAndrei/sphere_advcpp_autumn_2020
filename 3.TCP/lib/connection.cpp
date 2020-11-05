@@ -33,8 +33,9 @@ Connection::Connection(Connection && other)
 void Connection::connect(const Address& addr)
 {
     int error; 
-    c_sockfd.set_fd(::socket(AF_INET, SOCK_STREAM, 0));
-    if(c_sockfd.fd())
+    // Строгая гарантия исключений 
+    Descripter temp(::socket(AF_INET, SOCK_STREAM, 0));
+    if(temp.fd())
         throw SocketError(std::strerror(errno));
 
     sockaddr_in sock_addr{};
@@ -44,9 +45,11 @@ void Connection::connect(const Address& addr)
     if(error == 0)
         throw AddressError("incorrect address", addr);
     
-    error = ::connect(c_sockfd.fd(), reinterpret_cast<sockaddr*>(&sock_addr), sizeof(sock_addr));
+    error = ::connect(temp.fd(), reinterpret_cast<sockaddr*>(&sock_addr), sizeof(sock_addr));
     if(error == -1)
         throw AddressError(std::strerror(errno), addr);
+    
+    c_sockfd = std::move(temp);
 }
 
 size_t Connection::write(const void* data, size_t len)
