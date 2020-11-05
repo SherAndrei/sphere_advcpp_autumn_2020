@@ -1,5 +1,5 @@
-#ifndef ERROR_H
-#define ERROR_H
+#ifndef TCP_ERROR_H
+#define TCP_ERROR_H
 #include <stdexcept>
 #include "address.h"
 
@@ -31,4 +31,4 @@ public:
 
 } // namespace tcp
 
-#endif // ERROR_H
+#endif // TCP_ERROR_H

@@ -1,5 +1,5 @@
-#ifndef DESCRIPTER_H
-#define DESCRIPTER_H
+#ifndef TCP_DESCRIPTER_H
+#define TCP_DESCRIPTER_H
 
 namespace tcp
 {
@@ -32,4 +32,4 @@ private:
 
 } // namespace tcp
 
-#endif //DESCRIPTER_H
+#endif //TCP_DESCRIPTER_H

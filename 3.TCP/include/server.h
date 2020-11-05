@@ -1,5 +1,5 @@
-#ifndef SERVER_H
-#define SERVER_H
+#ifndef TCP_SERVER_H
+#define TCP_SERVER_H
 #include "connection.h"
 #include "address.h"
 
@@ -31,4 +31,4 @@ private:
 
 } // namespace tcp
 
-#endif // SERVER_h
+#endif // TCP_SERVER_h

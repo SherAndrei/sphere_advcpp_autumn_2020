@@ -1,5 +1,5 @@
-#ifndef CONNECTION_H
-#define CONNECTION_H
+#ifndef TCP_CONNECTION_H
+#define TCP_CONNECTION_H
 #include "descripter.h"
 #include "address.h"
 
@@ -39,4 +39,4 @@ private:
 
 } // namespace tcp
 
-#endif // CONNECTION_H
+#endif // TCP_CONNECTION_H
