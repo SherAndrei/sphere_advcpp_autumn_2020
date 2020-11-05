@@ -30,25 +30,28 @@ Server::Server(Server&& other)
 void Server::listen(const Address& addr)
 {
     int error;
-    s_sockfd.set_fd(::socket(AF_INET, SOCK_STREAM, 0));
-    if(s_sockfd.fd())
+    // Для строгой гарантии исключений
+    Descripter temp(::socket(AF_INET, SOCK_STREAM, 0));
+    if(temp.fd())
         throw SocketError(std::strerror(errno));
 
     sockaddr_in sock_addr{};
     sock_addr.sin_family = AF_INET;
-    sock_addr.sin_port = ::htons(addr.port);
-    error = ::inet_aton(addr.address.data(), &sock_addr.sin_addr);
+    sock_addr.sin_port = ::htons(addr.port());
+    error = ::inet_aton(addr.address().data(), &sock_addr.sin_addr);
     if(error == 0)
         throw tcp::AddressError("Incorrect address!", addr);
 
     // привязываем дескриптор к сокету
-    error = ::bind(s_sockfd.fd(), reinterpret_cast<sockaddr*>(&sock_addr), sizeof(sock_addr));
+    error = ::bind(temp.fd(), reinterpret_cast<sockaddr*>(&sock_addr), sizeof(sock_addr));
     if(error == -1)
         throw tcp::AddressError(std::strerror(errno), addr);
 
-    error = ::listen(s_sockfd.fd(), SOMAXCONN);
+    error = ::listen(temp.fd(), SOMAXCONN);
     if(error == -1)
         throw tcp::AddressError(std::strerror(errno), addr);
+    
+    s_sockfd = std::move(temp); 
 }
 Connection Server::accept()
 {
@@ -70,13 +73,12 @@ void Server::set_timeout(long sec, long usec) const
 {
     timeval timeout = { sec, usec };
     handle_error(setsockopt(s_sockfd.fd(), SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)));
+    handle_error(setsockopt(s_sockfd.fd(), SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)));
 }
 
 Server& Server::operator= (Server&& other)
 {
-    this->s_addr.address  = std::move(other.s_addr.address);
-    this->s_addr.port     = other.s_addr.port;
-    other.s_addr.port = 0u;
+    this->s_addr   = std::move(other.s_addr);
     this->s_sockfd = std::move(other.s_sockfd);
     return *this;
 }

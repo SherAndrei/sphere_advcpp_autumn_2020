@@ -39,8 +39,8 @@ void Connection::connect(const Address& addr)
 
     sockaddr_in sock_addr{};
     sock_addr.sin_family = AF_INET;
-    sock_addr.sin_port   = ::htons(addr.port);
-    error = ::inet_aton(addr.address.data(), &sock_addr.sin_addr);
+    sock_addr.sin_port   = ::htons(addr.port());
+    error = ::inet_aton(addr.address().data(), &sock_addr.sin_addr);
     if(error == 0)
         throw AddressError("incorrect address", addr);
     
@@ -88,12 +88,12 @@ void Connection::set_timeout(long sec, long usec) const
 {
     timeval timeout = { sec, usec };
     handle_error(setsockopt(c_sockfd.fd(), SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)));
+    handle_error(setsockopt(c_sockfd.fd(), SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)));
 }
 
 Connection& Connection::operator= (Connection && other)
 {
-    c_addr   = std::move(other.c_addr);
-    other.c_addr.port = 0u;
-    c_sockfd = std::move(other.c_sockfd);
+    this->c_addr   = std::move(other.c_addr);
+    this->c_sockfd = std::move(other.c_sockfd);
     return *this;
 }
