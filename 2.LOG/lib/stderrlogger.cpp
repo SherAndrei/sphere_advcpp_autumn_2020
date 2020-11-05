@@ -4,5 +4,4 @@
 using namespace log;
 
 StderrLogger::StderrLogger(LEVEL l)
-    : BaseLogger(std::cerr, l)
-{}
+    : BaseLogger(std::cerr, l) {}

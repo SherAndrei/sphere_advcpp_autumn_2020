@@ -8,57 +8,33 @@
 #include "level.h"
 
 using namespace log;
-void log::init_with_stderr_logger(LEVEL l)
-{
-    Logger& lg = Logger::get_instance();
-    std::unique_ptr<BaseLogger> pbl(new StderrLogger(l));
-    lg.set_global_logger(std::move(pbl));
+void log::init_with_stderr_logger(LEVEL l) {
+    Logger::get_instance().set_global_logger(std::make_unique<StderrLogger>(l));
 }
-void log::init_with_stdout_logger(LEVEL l)
-{
-    Logger& lg = Logger::get_instance();
-    std::unique_ptr<BaseLogger> pbl(new StdoutLogger(l));
-    lg.set_global_logger(std::move(pbl));
+void log::init_with_stdout_logger(LEVEL l) {
+    Logger::get_instance().set_global_logger(std::make_unique<StdoutLogger>(l));
 }
-void log::init_with_file_logger(const std::string& path, LEVEL l)
-{
-    Logger& lg = Logger::get_instance();
-    std::unique_ptr<BaseLogger> pbl(new FileLogger(path, l));
-    lg.set_global_logger(std::move(pbl));
+void log::init_with_file_logger(const std::string& path, LEVEL l) {
+    Logger::get_instance().set_global_logger(std::make_unique<FileLogger>(path, l));
 }
-void log::debug(const std::string& message)
-{
-    Logger& lg = Logger::get_instance();
-    lg.get_global_logger().debug(message);
+void log::debug(const std::string& message) {
+    Logger::get_instance().get_global_logger().debug(message);
 }
-void log::info (const std::string& message)
-{
-    Logger& lg = Logger::get_instance();
-    lg.get_global_logger().info(message);
+void log::info (const std::string& message) {
+    Logger::get_instance().get_global_logger().info(message);
 }
-void log::warn (const std::string& message)
-{
-    Logger& lg = Logger::get_instance();
-    lg.get_global_logger().warn(message);
+void log::warn (const std::string& message) {
+    Logger::get_instance().get_global_logger().warn(message);
 }
-void log::error(const std::string& message)
-{
-    Logger& lg = Logger::get_instance();
-    lg.get_global_logger().error(message);
+void log::error(const std::string& message) {
+    Logger::get_instance().get_global_logger().error(message);
 }
-
-void  log::set_level(LEVEL lev)
-{
-    Logger& lg = Logger::get_instance();
-    lg.get_global_logger().set_level(lev);
+void  log::set_level(LEVEL lev) {
+    Logger::get_instance().get_global_logger().set_level(lev);
 }
-LEVEL log::level()
-{
-    Logger& lg = Logger::get_instance();
-    return lg.get_global_logger().level();
+LEVEL log::level() {
+    return Logger::get_instance().get_global_logger().level();
 }
-void log::flush()
-{
-    Logger& lg = Logger::get_instance();
-    lg.get_global_logger().flush();
+void log::flush() {
+    Logger::get_instance().get_global_logger().flush();
 }

@@ -4,7 +4,8 @@
 using namespace log;
 
 StdoutLogger::StdoutLogger(LEVEL l)
-    : BaseLogger(std::cout, l)
-{}
+    : BaseLogger(std::cout, l) {}
 
-StdoutLogger::~StdoutLogger() { flush(); }
+StdoutLogger::~StdoutLogger() {
+    flush();
+}
