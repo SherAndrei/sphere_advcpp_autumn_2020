@@ -25,8 +25,7 @@ public:
 protected:
     void log(const std::string& m, LEVEL l);
 protected:
-    // хотим чтобы поток жил пока жив baselogger
-    std::shared_ptr<std::ostream> _out;
+    std::ostream* _out;
     LEVEL _level;
 };
 	
