@@ -1,4 +1,3 @@
-#include <stdexcept>
 #include "tcperr.h"
 
 tcp::AddressError::AddressError(const std::string& what, const Address&  addr)

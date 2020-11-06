@@ -1,5 +1,6 @@
 #ifndef TCP_SOCKET_HPP
 #define TCP_SOCKET_HPP
+#include <sys/socket.h>
 #include "descripter.h"
 
 namespace tcp {

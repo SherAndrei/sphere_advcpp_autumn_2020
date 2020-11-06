@@ -1,4 +1,3 @@
-#include <sys/socket.h>
 #include <cstring>
 #include "tcperr.h"
 #include "socket.h"

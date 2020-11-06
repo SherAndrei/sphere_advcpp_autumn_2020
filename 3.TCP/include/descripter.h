@@ -1,5 +1,6 @@
 #ifndef TCP_DESCRIPTER_H
 #define TCP_DESCRIPTER_H
+#include <unistd.h>
 
 namespace tcp {
 

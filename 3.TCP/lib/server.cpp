@@ -1,11 +1,7 @@
 #include <arpa/inet.h>
 #include <netinet/ip.h>
-#include <unistd.h>
 #include <cstring>
-#include "descripter.h"
-#include "connection.h"
 #include "server.h"
-#include "address.h"
 #include "tcperr.h"
 
 static void handle_error(int errnum) {
@@ -22,8 +18,8 @@ tcp::Server::Server(tcp::Server&& other)
     : s_addr(std::move(other.s_addr))
     , s_sock(std::move(other.s_sock)) {}
 
-tcp::Server::Server(tcp::Socket && sock, tcp::Address&& addr)
-    : s_addr(std::move(addr))
+tcp::Server::Server(tcp::Socket && sock, const tcp::Address& addr)
+    : s_addr(addr)
     , s_sock(std::move(sock)) {}
 
 void tcp::Server::listen(const tcp::Address& addr) {

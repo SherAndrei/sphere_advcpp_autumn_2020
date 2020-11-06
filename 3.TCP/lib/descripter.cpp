@@ -1,5 +1,4 @@
 #include "descripter.h"
-#include <unistd.h>
 
 bool tcp::Descripter::valid() const { return _id != -1; }
 void tcp::Descripter::invalidate()  { _id = -1; }
