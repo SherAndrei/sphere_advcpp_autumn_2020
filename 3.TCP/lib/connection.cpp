@@ -1,11 +1,8 @@
-#include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/ip.h>
-#include <unistd.h>
 #include <cstring>
-#include "tcperr.h"
-#include "socket.h"
 #include "connection.h"
+#include "tcperr.h"
 
 static void handle_error(int errnum) {
     if (errnum == -1)
@@ -16,8 +13,8 @@ tcp::Connection::Connection(const Address& addr)
     : c_addr(addr) {
     connect(addr);
 }
-tcp::Connection::Connection(Socket && fd, Address&& addr)
-    : c_addr(std::move(addr))
+tcp::Connection::Connection(Socket && fd, const Address& addr)
+    : c_addr(addr)
     , c_sock(std::move(fd))
 {}
 

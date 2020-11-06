@@ -28,7 +28,7 @@ class Server {
 
  private:
     friend class Service;
-    Server(Socket &&, Address&&);
+    Server(Socket&& sock, const Address& addr);
 
  private:
     Address s_addr;

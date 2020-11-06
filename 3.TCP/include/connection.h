@@ -8,7 +8,7 @@ namespace tcp {
 class Connection {
  private:
     friend class Server;
-    Connection(Socket && fd, Address&& addr);
+    Connection(Socket && fd, const Address& addr);
 
  public:
     Connection()  = default;
