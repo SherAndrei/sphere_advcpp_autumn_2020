@@ -12,17 +12,17 @@ net::EPoll::EPoll() : event_queue(MAX_EVENTS), epoll_fd_(::epoll_create(1)) {
     handle_error(epoll_fd_.fd());
 }
 
-int net::EPoll::mod(tcp::Descripter&& fd) {
+int net::EPoll::mod(int fd, struct epoll_event* event) {
     handle_error(epoll_ctl(epoll_fd_.fd(), EPOLL_CTL_MOD,
-                           fd.fd(), NULL /*FIXME*/));
+                           fd, event));
 }
-int net::EPoll::add(tcp::Descripter&& fd) {
+int net::EPoll::add(int fd, struct epoll_event* event) {
     handle_error(epoll_ctl(epoll_fd_.fd(), EPOLL_CTL_ADD,
-                           fd.fd(), NULL /*FIXME*/));
+                           fd, event);
 }
-int net::EPoll::del(tcp::Descripter&& fd) {
+int net::EPoll::del(int fd, struct epoll_event* event) {
     handle_error(epoll_ctl(epoll_fd_.fd(), EPOLL_CTL_DEL,
-                 fd.fd(), NULL /*FIXME*/));
+                 fd, event);
 }
 
 void net::EPoll::wait(int timeout) {
