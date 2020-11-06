@@ -10,7 +10,6 @@ class Server {
  public:
     Server() = default;
     explicit Server(const Address& addr);
-    Server(const Address& addr, Socket&& s = Socket{AF_INET, SOCK_STREAM, 0});
 
     Server(const Server&  other) = delete;
     Server& operator= (const Server&  other) = delete;
@@ -21,14 +20,16 @@ class Server {
     ~Server() = default;
 
  public:
-    void listen(const Address&, Socket&& s = Socket{AF_INET, SOCK_STREAM, 0});
+    void listen(const Address& addr);
     Connection accept();
 
     void close();
     void set_timeout(ssize_t sec, ssize_t usec = 0l) const;
+    void set_nonblock() const;
 
  public:
     int fd() const;
+
  private:
     Address s_addr;
     Socket  s_sock;

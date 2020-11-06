@@ -10,14 +10,19 @@ class Error : public std::runtime_error {
     using std::runtime_error::runtime_error;
 };
 
-class DescripterError : public Error {
+class DescriptorError : public Error {
  public:
-    explicit DescripterError(const std::string& what);
+    explicit DescriptorError(const std::string& what);
 };
 
 class SocketError : public Error {
  public:
     explicit SocketError(const std::string& what);
+};
+
+class TimeOutError : public Error {
+ public:
+    explicit TimeOutError(const std::string& what);
 };
 
 class AddressError : public Error {

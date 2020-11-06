@@ -18,16 +18,16 @@ int  tcp::Socket::fd() const {
     return fd_.fd();
 }
 void tcp::Socket::open(int fd) {
-    this->close();
-    fd_.set_fd(fd);
-    if (!fd_.valid())
+    if (fd < 0)
         throw tcp::SocketError("invalid socket");
+    close();
+    fd_.set_fd(fd);
 }
 void tcp::Socket::open(int domain, int type, int protocol) {
-    this->close();
-    fd_.set_fd(::socket(domain, type, protocol));
-    if (!fd_.valid())
+    Descriptor temp(::socket(domain, type, protocol));
+    if (!temp.valid())
         throw tcp::SocketError(std::strerror(errno));
+    fd_ = std::move(temp);
 }
 void tcp::Socket::close() {
     fd_.close();

@@ -23,7 +23,7 @@ class Connection {
     ~Connection() = default;
 
  public:
-    void connect(const Address&, Socket&& s = Socket{AF_INET, SOCK_STREAM, 0});
+    void connect(const Address&);
     void close();
 
     size_t write(const void* data, size_t len);
@@ -32,6 +32,7 @@ class Connection {
     void   readExact(void* data, size_t len);
 
     void set_timeout(ssize_t sec, ssize_t usec = 0l) const;
+    void set_nonblock() const;
 
  public:
     int fd() const;
