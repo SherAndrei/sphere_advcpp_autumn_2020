@@ -2,20 +2,17 @@
 #define SHMEM_SEMLOCK_H
 #include "shsemaphore.h"
 
-namespace shmem
-{
+namespace shmem {
 
-class SemLock
-{
-public:
-    SemLock(Semaphore& s);
+class SemLock {
+ public:
+    explicit SemLock(Semaphore& s);
     ~SemLock();
-private:
+
+ private:
     Semaphore& _s;
 };
 
+}  // namespace shmem
 
-} // namespace shmem
-
-
-#endif // SHMEM_SEMLOCK_H
+#endif  // SHMEM_SEMLOCK_H

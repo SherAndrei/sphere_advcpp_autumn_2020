@@ -1,14 +1,15 @@
 #ifndef SHMEM_ALLOCATOR_H
 #define SHMEM_ALLOCATOR_H
-#include <iostream>
-#include <memory>
-#include <cmath>
-#include <cerrno>
-#include <cstring>
-#include <functional>
 #include <unistd.h>
 #include <sys/mman.h>
 #include <sys/wait.h>
+#include <iostream>
+#include <memory>
+#include <cmath>
+#include <string>
+#include <cerrno>
+#include <cstring>
+#include <functional>
 
 constexpr char USED_BLOCK = '1';
 constexpr char FREE_BLOCK = '0';
@@ -18,10 +19,11 @@ size_t get_size_in_blocks(size_t bytes, size_t block_size) {
   return std::ceil(blocks_needed);
 }
 
-size_t find_free_blocks(size_t blocks_count, const std::string_view& used_table) {
+size_t find_free_blocks(size_t blocks_count,
+                        const std::string_view& used_table) {
   std::string pattern(blocks_count, FREE_BLOCK);
   size_t pos = used_table.find(pattern);
-  if(pos == std::string::npos) {
+  if (pos == std::string::npos) {
     throw std::bad_alloc{};
   }
   return pos;
@@ -37,9 +39,8 @@ struct ShMemState {
 };
 
 template<typename T>
-class ShAlloc
-{
-public:
+class ShAlloc {
+ public:
   typedef T value_type;
 
   explicit ShAlloc(ShMemState* state)
@@ -51,7 +52,7 @@ public:
   }
 
   T* allocate(std::size_t n) {
-    if(state_->block_size == 0) 
+    if (state_->block_size == 0)
         throw std::bad_alloc{};
     size_t blocks_needed = get_size_in_blocks(sizeof(T) * n, state_->block_size);
     std::string_view table{state_->used_blocks_table, state_->blocks_count};
@@ -79,6 +80,6 @@ bool operator!=(const ShAlloc<T>&a, const ShAlloc<U>&b) {
   return a.state_ != b.state_;
 }
 
-} // namespace shmem
+}  // namespace shmem
 
-#endif // SHMEM_ALLOCATOR_H
+#endif  // SHMEM_ALLOCATOR_H

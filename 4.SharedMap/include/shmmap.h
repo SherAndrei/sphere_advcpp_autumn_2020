@@ -1,21 +1,19 @@
 #ifndef SHMEM_MMAP_H
 #define SHMEM_MMAP_H
 
-namespace shmem
-{
+namespace shmem {
  
-class ShMMap
-{
-public:
-    ShMMap(size_t length);
+class ShMMap {
+ public:
+    explicit ShMMap(size_t length);
     ~ShMMap();
 
     char* get();
-private:
+ private:
     void* _addr;
     size_t _length;
 };
 
-} // namespace shmem
+}  // namespace shmem
 
-#endif // SHMEM_MMAP_H
+#endif  // SHMEM_MMAP_H

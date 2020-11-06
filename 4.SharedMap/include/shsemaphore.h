@@ -2,22 +2,20 @@
 #define SHMEM_SEMAPHORE_H
 #include <semaphore.h>
 
-namespace shmem
-{
+namespace shmem {
 
-class Semaphore
-{
-public:
+class Semaphore {
+ public:
     Semaphore();
     ~Semaphore();
     void post();
     void wait();
     void destroy();
 
-private:
+ private:
     sem_t _sem;
 };
 
-} // namespace shmem
+}  // namespace shmem
 
-#endif // SHMEM_SEMAPHORE_H
+#endif  // SHMEM_SEMAPHORE_H
