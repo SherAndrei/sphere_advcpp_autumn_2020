@@ -2,33 +2,30 @@
 #define TCP_ADDRESS_H
 #include <string>
 
-namespace tcp
-{
+namespace tcp {
 
 class Address {
-public:
+ public:
     Address()  = default;
-    Address(const std::string& addr, const uint16_t port); 
-    
-    ~Address() = default;
-    
+    Address(const std::string& addr, const uint16_t port);
+
     Address(const Address& other)            = default;
     Address& operator=(const Address& other) = default;
 
     Address(Address&& other);
     Address& operator=(Address&& other);
 
+    ~Address() = default;
+
+ public:
     uint16_t    port()    const;
     std::string address() const;
 
-private:
+ private:
     std::string _address = {};
     uint16_t    _port    = 0u;
 };
 
+}  // namespace tcp
 
-
-} // namespace tcp
-
-
-#endif // TCP_ADDRESS_H
+#endif  // TCP_ADDRESS_H

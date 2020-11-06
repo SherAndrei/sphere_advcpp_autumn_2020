@@ -12,7 +12,7 @@ add_compile_options(-mfpmath=sse -fstack-protector-all -W -Wall -Wextra -Wunused
 -Wmissing-format-attribute -Wformat=1 -Wwrite-strings -Wcast-align -Wno-long-long  
 -Wcast-qual -Wno-suggest-attribute=format -Wpedantic)
 
-add_library(${LIB_NAME} STATIC ${LIB}/connection.cpp ${LIB}/address.cpp ${LIB}/descripter.cpp ${LIB}/error.cpp ${LIB}/server.cpp)
+add_library(${LIB_NAME} STATIC ${LIB}/connection.cpp ${LIB}/socket.cpp ${LIB}/address.cpp ${LIB}/descripter.cpp ${LIB}/tcperr.cpp ${LIB}/server.cpp)
 target_include_directories(${LIB_NAME} PUBLIC include)
 
 add_subdirectory(${TESTS})

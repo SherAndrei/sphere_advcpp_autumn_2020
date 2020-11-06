@@ -2,10 +2,9 @@
 #include "connection.h"
 #include "server.h"
 #include "address.h"
-#include "error.h"
+#include "tcperr.h"
 
-void TestConnect()
-{
+void TestConnect() {
     try {
         tcp::Connection c;
         c.connect({"something", 8080});
@@ -25,14 +24,13 @@ void TestConnect()
     }
 }
 
-void TestClient()
-{
+void TestClient() {
     try {
         tcp::Connection con;
         con.connect({"127.0.0.1", 8080});
 
         std::string text = "Studying sphere!\n";
-        
+
         con.write(text.data(), text.length());
         std::cout << "Success?" << std::endl;
 
@@ -44,8 +42,7 @@ void TestClient()
     }
 }
 
-int main()
-{
+int main() {
     TestRunner t;
 
     RUN_TEST(t, TestConnect);

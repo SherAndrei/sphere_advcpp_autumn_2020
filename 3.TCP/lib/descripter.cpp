@@ -1,29 +1,27 @@
 #include "descripter.h"
 #include <unistd.h>
 
-using namespace tcp;
+bool tcp::Descripter::valid() const { return _id != -1; }
+void tcp::Descripter::invalidate()  { _id = -1; }
 
-bool Descripter::valid() const { return _id != -1; }
-void Descripter::invalidate()  { _id = -1; }
+tcp::Descripter::Descripter(int id)              : _id(id)        {}
+tcp::Descripter::Descripter(Descripter && other) : _id(other._id) {
+    other.invalidate();
+}
+tcp::Descripter::~Descripter() { close(); }
 
-Descripter::Descripter(int id)              : _id(id)        {}
-Descripter::Descripter(Descripter && other) : _id(other._id) { other.invalidate(); }
-Descripter::~Descripter() { close(); }
-
-void Descripter::close()
-{
-	if(valid()) {
-		::close(_id);
-		invalidate();
-	}	
+void tcp::Descripter::close() {
+    if (valid()) {
+        ::close(_id);
+        invalidate();
+    }
 }
 
-int  Descripter::fd() const     { return _id; }
-void Descripter::set_fd(int id) { _id = id; }
+int  tcp::Descripter::fd() const     { return _id; }
+void tcp::Descripter::set_fd(int id) { _id = id; }
 
-Descripter& Descripter::operator= (Descripter && other)
-{
-    this->close();   
+tcp::Descripter& tcp::Descripter::operator= (Descripter && other) {
+    this->close();
     this->_id = other._id;
     other.invalidate();
     return *this;

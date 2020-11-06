@@ -1,34 +1,34 @@
 #ifndef TCP_ERROR_H
 #define TCP_ERROR_H
+#include <string>
 #include <stdexcept>
 #include "address.h"
 
-namespace tcp
-{
+namespace tcp {
 class Error : public std::runtime_error {
-public: 
+ public:
     using std::runtime_error::runtime_error;
 };
 
 class DescripterError : public Error {
-public:
-    DescripterError(const std::string& what);
+ public:
+    explicit DescripterError(const std::string& what);
 };
 
 class SocketError : public Error {
-public:
-    SocketError(const std::string& what);
+ public:
+    explicit SocketError(const std::string& what);
 };
 
 class AddressError : public Error {
-private:
+ private:
     const Address _addr;
-public:
-    AddressError(const std::string& what, const Address& addr);
+ public:
+    explicit AddressError(const std::string& what, const Address& addr);
 
     Address address() const;
 };
 
-} // namespace tcp
+}  // namespace tcp
 
-#endif // TCP_ERROR_H
+#endif  // TCP_ERROR_H

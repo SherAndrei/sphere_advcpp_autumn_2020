@@ -1,35 +1,36 @@
 #ifndef TCP_DESCRIPTER_H
 #define TCP_DESCRIPTER_H
 
-namespace tcp
-{
-    
-class Descripter
-{
-public:
+namespace tcp {
+
+class Descripter {
+ public:
     bool valid() const;
     void invalidate();
 
-public:
+ public:
     Descripter() = default;
     explicit Descripter(int id);
+
     Descripter(const Descripter& other) = delete;
+    Descripter& operator= (const Descripter &  other) = delete;
+
     Descripter(Descripter && other);
+    Descripter& operator= (Descripter && other);
+
     ~Descripter();
 
-    Descripter& operator= (const Descripter &  other) = delete;
-    Descripter& operator= (Descripter && other);
-public:
+ public:
     void close();
 
-public:
+ public:
     int  fd() const;
     void set_fd(int id);
 
-private:
+ private:
     int _id = -1;
 };
 
-} // namespace tcp
+}  // namespace tcp
 
-#endif //TCP_DESCRIPTER_H
+#endif  // TCP_DESCRIPTER_H
