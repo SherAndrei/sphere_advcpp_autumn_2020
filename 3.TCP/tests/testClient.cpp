@@ -10,7 +10,7 @@ void TestConnect() {
         c.connect({"something", 8080});
         ASSERT(false);
     } catch (tcp::AddressError& ex) {
-        std::string exep = "Incorrect address!";
+        std::string exep = "incorrect address";
         ASSERT(ex.what() == exep);
     }
 
@@ -37,7 +37,7 @@ void TestClient() {
         std::string buf(512, '\0');
         con.read(buf.data(), buf.length());
         std::cout << buf << std::endl;
-    } catch (...) {
+    } catch (std::exception& ex) {
         std::cout << "Fail!" << std::endl;
     }
 }

@@ -23,9 +23,8 @@ tcp::Connection::Connection(Connection && other)
     , c_sock(std::move(other.c_sock))
 {}
 
-void tcp::Connection::connect(const Address& addr) {
+void tcp::Connection::connect(const Address& addr, Socket&& s) {
     int error;
-    Socket temp(AF_INET, SOCK_STREAM, 0);
 
     sockaddr_in sock_addr{};
     sock_addr.sin_family = AF_INET;
@@ -34,12 +33,12 @@ void tcp::Connection::connect(const Address& addr) {
     if (error == 0)
         throw AddressError("incorrect address", addr);
 
-    error = ::connect(temp.fd(), reinterpret_cast<sockaddr*>(&sock_addr),
+    error = ::connect(s.fd(), reinterpret_cast<sockaddr*>(&sock_addr),
                       sizeof(sock_addr));
     if (error == -1)
         throw AddressError(std::strerror(errno), addr);
 
-    c_sock = std::move(temp);
+    c_sock = std::move(s);
 }
 
 size_t tcp::Connection::write(const void* data, size_t len) {
@@ -85,4 +84,8 @@ tcp::Connection& tcp::Connection::operator= (tcp::Connection && other) {
     this->c_addr = std::move(other.c_addr);
     this->c_sock = std::move(other.c_sock);
     return *this;
+}
+
+int tcp::Connection::fd() const {
+    return c_sock.fd();
 }
