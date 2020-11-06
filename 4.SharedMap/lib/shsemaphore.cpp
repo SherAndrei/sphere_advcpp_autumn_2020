@@ -12,8 +12,7 @@ shmem::Semaphore::Semaphore() {
 }
 shmem::Semaphore::~Semaphore() {
     try { destroy(); }
-    catch (const SemaphoreError& er)
-    {}
+    catch (...) {}
 }
 void shmem::Semaphore::post() {
     handle_error(::sem_post(&(_sem)));

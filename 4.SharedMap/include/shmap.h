@@ -3,7 +3,6 @@
 #include <map>
 #include <utility>
 #include <functional>
-#include <memory>
 #include "shsemlock.h"
 #include "shmmap.h"
 #include "shallocator.h"

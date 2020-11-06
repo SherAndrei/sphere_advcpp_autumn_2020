@@ -1,15 +1,8 @@
 #ifndef SHMEM_ALLOCATOR_H
 #define SHMEM_ALLOCATOR_H
-#include <unistd.h>
-#include <sys/mman.h>
-#include <sys/wait.h>
-#include <iostream>
-#include <memory>
 #include <cmath>
 #include <string>
-#include <cerrno>
 #include <cstring>
-#include <functional>
 
 constexpr char USED_BLOCK = '1';
 constexpr char FREE_BLOCK = '0';

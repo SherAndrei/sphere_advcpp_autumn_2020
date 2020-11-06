@@ -4,8 +4,7 @@
 #include "shmmap.h"
 
 shmem::ShMMap::ShMMap(size_t length)
-    : _length(length)
-{
+    : _length(length) {
     _addr = ::mmap(0, _length, PROT_READ | PROT_WRITE,
                                MAP_ANONYMOUS | MAP_SHARED,
                                -1, 0);
