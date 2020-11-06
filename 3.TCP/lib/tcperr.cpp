@@ -8,5 +8,8 @@ tcp::Address tcp::AddressError::address() const { return _addr; }
 tcp::SocketError::SocketError(const std::string& what)
     : Error{what} {}
 
-tcp::DescripterError::DescripterError(const std::string& what)
+tcp::TimeOutError::TimeOutError(const std::string& what)
+    : Error{what} {}
+
+tcp::DescriptorError::DescriptorError(const std::string& what)
     : Error{what} {}

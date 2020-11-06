@@ -1,7 +1,7 @@
 #ifndef TCP_SOCKET_HPP
 #define TCP_SOCKET_HPP
 #include <sys/socket.h>
-#include "descripter.h"
+#include "descriptor.h"
 
 namespace tcp {
 
@@ -25,7 +25,7 @@ class Socket {
     void close();
 
  private:
-    Descripter fd_;
+    Descriptor fd_;
 };
 
 }  // namespace tcp

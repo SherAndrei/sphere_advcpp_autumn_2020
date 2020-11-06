@@ -1,12 +1,20 @@
 #include <arpa/inet.h>
 #include <netinet/ip.h>
+#include <fcntl.h>
 #include <cstring>
 #include "connection.h"
 #include "tcperr.h"
 
 static void handle_error(int errnum) {
-    if (errnum == -1)
-        throw tcp::Error(std::strerror(errno));
+    if (errnum == -1) {
+        if (errno == EAGAIN ||
+            errno == EWOULDBLOCK ||
+            errno == EINPROGRESS) {
+            throw tcp::TimeOutError(std::strerror(errno));
+        } else {
+            throw tcp::Error(std::strerror(errno));
+        }
+    }
 }
 
 tcp::Connection::Connection(const Address& addr)
@@ -23,7 +31,7 @@ tcp::Connection::Connection(Connection && other)
     , c_sock(std::move(other.c_sock))
 {}
 
-void tcp::Connection::connect(const Address& addr, Socket&& s) {
+void tcp::Connection::connect(const Address& addr) {
     int error;
 
     sockaddr_in sock_addr{};
@@ -33,6 +41,7 @@ void tcp::Connection::connect(const Address& addr, Socket&& s) {
     if (error == 0)
         throw AddressError("incorrect address", addr);
 
+    Socket s(AF_INET, SOCK_STREAM, 0);
     error = ::connect(s.fd(), reinterpret_cast<sockaddr*>(&sock_addr),
                       sizeof(sock_addr));
     if (error == -1)
@@ -66,7 +75,7 @@ void tcp::Connection::readExact(void* data, size_t len) {
     while (counter < len) {
         current  = read(ch_data + counter, len - counter);
         if (current == 0u)
-            throw DescripterError("readExact failure");
+            throw DescriptorError("readExact failure");
         counter += current;
     }
 }
@@ -78,6 +87,12 @@ void tcp::Connection::set_timeout(ssize_t sec, ssize_t usec) const {
                             &timeout, sizeof(timeout)));
     handle_error(setsockopt(c_sock.fd(), SOL_SOCKET, SO_RCVTIMEO,
                             &timeout, sizeof(timeout)));
+}
+
+void tcp::Connection::set_nonblock() const {
+    int flags;
+    handle_error(flags = fcntl(c_sock.fd(), F_GETFL));
+    handle_error(fcntl(c_sock.fd(), F_SETFL, flags | O_NONBLOCK));
 }
 
 tcp::Connection& tcp::Connection::operator= (tcp::Connection && other) {
