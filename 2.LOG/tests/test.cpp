@@ -3,8 +3,7 @@
 #include "filelogger.h"
 #include "globallogger.h"
 
-int main()
-{
+int main() {
     {
         log::StdoutLogger lg(log::LEVEL::WARN);
         lg.debug("Hello world!");

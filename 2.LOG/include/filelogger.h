@@ -1,19 +1,19 @@
-#ifndef FILELOGGER_H
-#define FILELOGGER_H
-#include "baselogger.h"
+#ifndef LOG_FILELOGGER_H
+#define LOG_FILELOGGER_H
+#include <string>
 #include <fstream>
+#include "baselogger.h"
 
-namespace log
-{
-    
-class FileLogger : public BaseLogger
-{
-public:
+namespace log {
+
+class FileLogger : public BaseLogger {
+ public:
     FileLogger(const std::string& path, LEVEL l);
     ~FileLogger() = default;
-private:
+ private:
     std::ofstream file;
 };
 
-} // namespace log
-#endif // FILELOGGER_H
+}  // namespace log
+
+#endif  // LOG_FILELOGGER_H

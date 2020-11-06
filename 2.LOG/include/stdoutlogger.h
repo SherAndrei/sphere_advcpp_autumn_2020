@@ -1,18 +1,15 @@
-#ifndef STDOUTLOGGER_H
-#define STDOUTLOGGER_H
+#ifndef LOG_STDOUTLOGGER_H
+#define LOG_STDOUTLOGGER_H
 #include "baselogger.h"
 
-namespace log
-{
+namespace log {
 
-class StdoutLogger : public BaseLogger
-{
-public:
-    StdoutLogger(LEVEL l);
+class StdoutLogger : public BaseLogger {
+ public:
+    explicit StdoutLogger(LEVEL l);
     ~StdoutLogger();
 };
 
-} // namespace log
+}  // namespace log
 
-
-#endif // STDOUTLOGGER_H
+#endif  // LOG_STDOUTLOGGER_H

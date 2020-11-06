@@ -1,11 +1,9 @@
-#include "stdoutlogger.h"
 #include <iostream>
+#include "stdoutlogger.h"
 
-using namespace log;
-
-StdoutLogger::StdoutLogger(LEVEL l)
+log::StdoutLogger::StdoutLogger(LEVEL l)
     : BaseLogger(std::cout, l) {}
 
-StdoutLogger::~StdoutLogger() {
+log::StdoutLogger::~StdoutLogger() {
     flush();
 }

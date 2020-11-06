@@ -1,18 +1,15 @@
-#ifndef STDERRLOGGER_H
-#define STDERRLOGGER_H
+#ifndef LOG_STDERRLOGGER_H
+#define LOG_STDERRLOGGER_H
 #include "baselogger.h"
 
-namespace log
-{
+namespace log {
 
-class StderrLogger : public BaseLogger
-{
-public:
-    StderrLogger(LEVEL l);
+class StderrLogger : public BaseLogger {
+ public:
+    explicit StderrLogger(LEVEL l);
     ~StderrLogger() = default;
 };
 
-} // namespace log
+}  // namespace log
 
-
-#endif // STDERRLOGGER_H
+#endif  // LOG_STDERRLOGGER_H

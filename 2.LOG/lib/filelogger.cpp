@@ -1,9 +1,7 @@
-#include "filelogger.h"
 #include <fstream>
+#include "filelogger.h"
 
-using namespace log;
-
-FileLogger::FileLogger(const std::string& path, LEVEL l)
-    : BaseLogger(file, l) { 
-    file.open(path); 
+log::FileLogger::FileLogger(const std::string& path, LEVEL l)
+    : log::BaseLogger(file, l) {
+    file.open(path);
 }

@@ -14,10 +14,12 @@ add_compile_options(-mfpmath=sse -fstack-protector-all -W -Wall -Wextra -Wunused
 -Wmissing-format-attribute -Wformat=1 -Wwrite-strings -Wcast-align -Wno-long-long  
 -Wcast-qual -Wno-suggest-attribute=format -Wpedantic -Wmissing-declarations)
 
-add_library(${LIB_NAME} STATIC ${LIB}/baselogger.cpp ${LIB}/filelogger.cpp ${LIB}/stdoutlogger.cpp ${LIB}/stderrlogger.cpp ${LIB}/level.cpp ${LIB}/logger.cpp ${LIB}/globallogger.cpp)
-target_include_directories(${LIB_NAME} PUBLIC include)
+add_library(${LIB_NAME} STATIC ${LIB}/baselogger.cpp
+                               ${LIB}/filelogger.cpp
+                               ${LIB}/stdoutlogger.cpp
+                               ${LIB}/stderrlogger.cpp
+                               ${LIB}/globallogger.cpp
+                               ${LIB}/logger.cpp)
+target_include_directories(${LIB_NAME} PUBLIC ${HDR})
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../${TESTS})
-
-add_executable(test ${TESTS}/test.cpp)
-target_link_libraries(test ${LIB_NAME})
+add_subdirectory(${TESTS})

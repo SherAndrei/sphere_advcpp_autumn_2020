@@ -3,33 +3,31 @@
 #include "level.h"
 #include "baselogger.h"
 
-using namespace log;
-BaseLogger::BaseLogger(std::ostream& another, LEVEL l)
+log::BaseLogger::BaseLogger(std::ostream& another, LEVEL l)
     : _out(&another), _level(l) {}
 
-void  BaseLogger::debug(const std::string& message) {
-    log("[DEBUG]: "   + message, LEVEL::DEBUG); 
+void  log::BaseLogger::debug(const std::string& message) {
+    log("[DEBUG]: " + message, LEVEL::DEBUG);
 }
-void  BaseLogger::info (const std::string& message) {
-    log("[INFO]: "    + message, LEVEL::INFO);
+void  log::BaseLogger::info(const std::string& message) {
+    log("[INFO]: "  + message, LEVEL::INFO);
 }
-void  BaseLogger::warn (const std::string& message) {
+void  log::BaseLogger::warn(const std::string& message) {
     log("[WARNING]: " + message, LEVEL::WARN);
 }
-void  BaseLogger::error(const std::string& message) {
-    log("[ERROR]: "   + message, LEVEL::ERROR);
+void  log::BaseLogger::error(const std::string& message) {
+    log("[ERROR]: " + message, LEVEL::ERROR);
 }
-void  BaseLogger::set_level(LEVEL lev) {
+void  log::BaseLogger::set_level(LEVEL lev) {
     _level = lev;
 }
-LEVEL BaseLogger::level() const {
-    return _level; 
+log::LEVEL log::BaseLogger::level() const {
+    return _level;
 }
-void BaseLogger::flush() {
+void log::BaseLogger::flush() {
     _out->flush();
 }
-void BaseLogger::log(const std::string& m, LEVEL l) {
-    if(l >= _level)
+void log::BaseLogger::log(const std::string& m, LEVEL l) {
+    if (l >= _level)
         (*_out) << m << std::endl;
 }
-

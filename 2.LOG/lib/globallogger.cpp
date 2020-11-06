@@ -7,7 +7,6 @@
 #include "logger.h"
 #include "level.h"
 
-using namespace log;
 void log::init_with_stderr_logger(LEVEL l) {
     Logger::get_instance().set_global_logger(std::make_unique<StderrLogger>(l));
 }
@@ -20,10 +19,10 @@ void log::init_with_file_logger(const std::string& path, LEVEL l) {
 void log::debug(const std::string& message) {
     Logger::get_instance().get_global_logger().debug(message);
 }
-void log::info (const std::string& message) {
+void log::info(const std::string& message) {
     Logger::get_instance().get_global_logger().info(message);
 }
-void log::warn (const std::string& message) {
+void log::warn(const std::string& message) {
     Logger::get_instance().get_global_logger().warn(message);
 }
 void log::error(const std::string& message) {
@@ -32,7 +31,7 @@ void log::error(const std::string& message) {
 void  log::set_level(LEVEL lev) {
     Logger::get_instance().get_global_logger().set_level(lev);
 }
-LEVEL log::level() {
+log::LEVEL log::level() {
     return Logger::get_instance().get_global_logger().level();
 }
 void log::flush() {
