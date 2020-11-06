@@ -18,7 +18,7 @@ tcp::Server::Server(tcp::Server&& other)
     : s_addr(std::move(other.s_addr))
     , s_sock(std::move(other.s_sock)) {}
 
-tcp::Server::Server(tcp::Socket && sock, const tcp::Address& addr)
+tcp::Server::Server(tcp::Socket&& sock, const tcp::Address& addr)
     : s_addr(addr)
     , s_sock(std::move(sock)) {}
 

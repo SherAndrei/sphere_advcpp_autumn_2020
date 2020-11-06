@@ -10,6 +10,7 @@ class Server {
  public:
     Server() = default;
     explicit Server(const Address& addr);
+    Server(Socket&& sock, const Address& addr);
 
     Server(const Server&  other) = delete;
     Server& operator= (const Server&  other) = delete;
@@ -25,10 +26,6 @@ class Server {
 
     void close();
     void set_timeout(ssize_t sec, ssize_t usec = 0l) const;
-
- private:
-    friend class Service;
-    Server(Socket&& sock, const Address& addr);
 
  private:
     Address s_addr;
