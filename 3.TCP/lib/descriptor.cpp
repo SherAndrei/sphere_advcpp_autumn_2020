@@ -17,7 +17,10 @@ void tcp::Descriptor::close() {
 }
 
 int  tcp::Descriptor::fd() const     { return _id; }
-void tcp::Descriptor::set_fd(int id) { _id = id; }
+void tcp::Descriptor::set_fd(int id) {
+    close();
+    _id = id;
+}
 
 tcp::Descriptor& tcp::Descriptor::operator= (Descriptor && other) {
     close();
