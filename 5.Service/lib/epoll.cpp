@@ -12,21 +12,22 @@ net::EPoll::EPoll() : event_queue(MAX_EVENTS), epoll_fd_(::epoll_create(1)) {
     handle_error(epoll_fd_.fd());
 }
 
-int net::EPoll::mod(int fd, struct epoll_event* event) {
+void net::EPoll::mod(int fd, struct epoll_event* event) {
     handle_error(epoll_ctl(epoll_fd_.fd(), EPOLL_CTL_MOD,
                            fd, event));
 }
-int net::EPoll::add(int fd, struct epoll_event* event) {
+void net::EPoll::add(int fd, struct epoll_event* event) {
     handle_error(epoll_ctl(epoll_fd_.fd(), EPOLL_CTL_ADD,
-                           fd, event);
+                           fd, event));
 }
-int net::EPoll::del(int fd, struct epoll_event* event) {
+void net::EPoll::del(int fd, struct epoll_event* event) {
     handle_error(epoll_ctl(epoll_fd_.fd(), EPOLL_CTL_DEL,
-                 fd, event);
+                 fd, event));
 }
 
-void net::EPoll::wait(int timeout) {
-    ::epoll_wait(epoll_fd_.fd(),
-                 event_queue.data(), event_queue.size(), timeout);
+int net::EPoll::wait(int timeout) {
+    int result;
+    handle_error(result = ::epoll_wait(epoll_fd_.fd(),
+                 event_queue.data(), event_queue.size(), timeout));
+    return result;
 }
-

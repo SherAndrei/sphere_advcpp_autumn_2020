@@ -1,8 +1,13 @@
 #ifndef NET_BUFFERED_CONNECTION_H
 #define NET_BUFFERED_CONNECTION_H
+#include <string>
 #include "connection.h"
 
 namespace net {
+
+struct Buffer {
+    std::string buff;
+};
 
 class BufferedConnection {
  public:
@@ -10,10 +15,10 @@ class BufferedConnection {
     // TODO: unsubscribe(read and or write);
     // TODO: get_read_buf();
     // TODO: get_wtire_buf();
-    // TODO: close();
+    void close();
  private:
-    // TODO: read_buf_;
-    // TODO: write_buf_;
+    Buffer read_;
+    Buffer write_;
     tcp::Connection connection_;
 };
 

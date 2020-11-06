@@ -13,8 +13,8 @@ void net::Service::setListener(std::shared_ptr<IServiceListener> listener) {
 }
 
 void net::Service::open(const tcp::Address& addr) {
-    tcp::Server t_serv{ addr,
-                        tcp::Socket{AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0}};
+    tcp::Server t_serv{addr,
+                       tcp::Socket{AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0}};
     ::epoll_event event{};
     event.events = EPOLLIN;
     event.data.fd = t_serv.fd();
@@ -24,8 +24,9 @@ void net::Service::open(const tcp::Address& addr) {
 
 
 void net::Service::run() {
+    int epoll_events;
     while (true) {
-        // cc
+        epoll_events = epoll_.wait();
     }
 }
 

@@ -20,10 +20,10 @@ class EPoll {
     EPoll& operator = (EPoll&& other);
 
     // TODO: более сложная логика с передачей итератора?
-    int mod(int fd, struct epoll_event* event);
-    int add(int fd, struct epoll_event* event);
-    int del(int fd, struct epoll_event* event);
-    void wait(int timeout);
+    void mod(int fd, struct epoll_event* event);
+    void add(int fd, struct epoll_event* event);
+    void del(int fd, struct epoll_event* event);
+    int wait(int timeout);
  private:
     std::vector<::epoll_event> event_queue;
     tcp::Descripter epoll_fd_;
