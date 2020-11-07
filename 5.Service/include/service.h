@@ -5,24 +5,24 @@
 #include "address.h"
 #include "epoll.h"
 #include "server.h"
-#include "connection.h"
+#include "bufconnection.h"
 #include "listener.h"
 
 namespace net {
 
 class Service {
  public:
-    explicit Service(std::shared_ptr<IServiceListener> listener);
-    void setListener(std::shared_ptr<IServiceListener> listener);
+    explicit Service(IServiceListener* listener);
+    void setListener(IServiceListener* listener);
     void open(const tcp::Address& addr);
     void run();
     void close();
     void closeConnection(const BufferedConnection& bc);
-    void subscribeTo(const BufferedConnection& bc  /*, read and or write*/);
-    void unsubsribeFrom(const BufferedConnection& bc  /*, read and or write*/);
+    // void subscribeTo(const BufferedConnection& bc  /*, read and or write*/);
+    // void unsubsribeFrom(const BufferedConnection& bc  /*, read and or write*/);
  private:
-    std::shared_ptr<IServiceListener> listener_;
-    std::list<tcp::Connection> connections_;
+    IServiceListener* listener_;
+    std::list<net::BufferedConnection> connections_;
     tcp::Server server_;
     net::EPoll epoll_;
 };

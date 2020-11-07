@@ -16,26 +16,6 @@ class EPollError : public Error {
     explicit EPollError(const std::string& what);
 };
 
-class DescripterError : public Error {
- public:
-    explicit DescripterError(const std::string& what);
-};
-
-class SocketError : public Error {
- public:
-    explicit SocketError(const std::string& what);
-};
-
-class AddressError : public Error {
- private:
-    const tcp::Address _addr;
- public:
-    AddressError(const std::string& what, const tcp::Address& addr);
-
-    tcp::Address address() const;
-};
-
-
 }  // namespace net
 
 #endif  // NET_ERROR_H

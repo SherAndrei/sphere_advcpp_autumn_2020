@@ -2,14 +2,12 @@
 #define NET_EPOLL_H
 #include <sys/epoll.h>
 #include <vector>
-#include "descripter.h"
+#include "descriptor.h"
 
 namespace net {
 
 class EPoll {
  public:
-    static const int MAX_EVENTS = 1000;
-
     EPoll(/* args */);
     ~EPoll() = default;
 
@@ -19,14 +17,15 @@ class EPoll {
     EPoll(EPoll&& other);
     EPoll& operator = (EPoll&& other);
 
-    // TODO: более сложная логика с передачей итератора?
-    void mod(int fd, struct epoll_event* event);
-    void add(int fd, struct epoll_event* event);
-    void del(int fd, struct epoll_event* event);
-    int wait(int timeout);
+    void mod(const tcp::Descriptor& fd);
+    void add(const tcp::Descriptor& fd);
+    void del(const tcp::Descriptor& fd);
+    std::vector<::epoll_event> wait();
+
+    void set_max_events(size_t max_events);
  private:
     std::vector<::epoll_event> event_queue;
-    tcp::Descripter epoll_fd_;
+    tcp::Descriptor epoll_fd_;
 };
 
 }  // namespace net

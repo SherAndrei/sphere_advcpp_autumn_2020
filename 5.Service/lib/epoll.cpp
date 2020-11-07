@@ -7,27 +7,41 @@ static void handle_error(int err) {
         throw net::EPollError(std::strerror(errno));
     }
 }
+static const int MAX_EVENTS = 1000;
 
 net::EPoll::EPoll() : event_queue(MAX_EVENTS), epoll_fd_(::epoll_create(1)) {
     handle_error(epoll_fd_.fd());
 }
 
-void net::EPoll::mod(int fd, struct epoll_event* event) {
-    handle_error(epoll_ctl(epoll_fd_.fd(), EPOLL_CTL_MOD,
-                           fd, event));
-}
-void net::EPoll::add(int fd, struct epoll_event* event) {
-    handle_error(epoll_ctl(epoll_fd_.fd(), EPOLL_CTL_ADD,
-                           fd, event));
-}
-void net::EPoll::del(int fd, struct epoll_event* event) {
-    handle_error(epoll_ctl(epoll_fd_.fd(), EPOLL_CTL_DEL,
-                 fd, event));
+void net::EPoll::set_max_events(size_t max_events) {
+    event_queue.resize(max_events);
 }
 
-int net::EPoll::wait(int timeout) {
-    int result;
-    handle_error(result = ::epoll_wait(epoll_fd_.fd(),
-                 event_queue.data(), event_queue.size(), timeout));
-    return result;
+void net::EPoll::mod(const tcp::Descriptor& d) {
+    ::epoll_event event{};
+    event.events = EPOLLIN | EPOLLRDHUP;
+    event.data.fd = d.fd();
+    handle_error(epoll_ctl(epoll_fd_.fd(), EPOLL_CTL_MOD,
+                           d.fd(), &event));
+}
+void net::EPoll::add(const tcp::Descriptor& d) {
+    ::epoll_event event{};
+    event.events = EPOLLIN | EPOLLRDHUP;
+    event.data.fd = d.fd();
+    handle_error(epoll_ctl(epoll_fd_.fd(), EPOLL_CTL_ADD,
+                           d.fd(), &event));
+}
+void net::EPoll::del(const tcp::Descriptor& d) {
+    ::epoll_event event{};
+    event.events = EPOLLIN | EPOLLRDHUP;
+    event.data.fd = d.fd();
+    handle_error(epoll_ctl(epoll_fd_.fd(), EPOLL_CTL_DEL,
+                 d.fd(), &event));
+}
+
+std::vector<::epoll_event> net::EPoll::wait() {
+    int events_count;
+    handle_error(events_count = ::epoll_wait(epoll_fd_.fd(),
+                 event_queue.data(), event_queue.size(), -1));
+    return { event_queue.begin(), event_queue.begin() + events_count };
 }
