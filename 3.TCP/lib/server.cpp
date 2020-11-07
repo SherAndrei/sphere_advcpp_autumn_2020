@@ -69,16 +69,31 @@ void tcp::Server::close() {
 
 void tcp::Server::set_timeout(ssize_t sec, ssize_t usec) const {
     timeval timeout = { sec, usec };
-    handle_error(setsockopt(s_sock.fd(), SOL_SOCKET, SO_SNDTIMEO,
-                            &timeout, sizeof(timeout)));
-    handle_error(setsockopt(s_sock.fd(), SOL_SOCKET, SO_RCVTIMEO,
-                            &timeout, sizeof(timeout)));
+    if (setsockopt(s_sock.fd(), SOL_SOCKET, SO_SNDTIMEO,
+                   &timeout, sizeof(timeout)) == -1) {
+        throw SocketOptionError(std::strerror(errno), "SO_SNDTIMEO");
+    }
+    if (setsockopt(s_sock.fd(), SOL_SOCKET, SO_RCVTIMEO,
+                   &timeout, sizeof(timeout) == -1)) {
+        throw SocketOptionError(std::strerror(errno), "SO_RCVTIMEO");
+    }
 }
 
 void tcp::Server::set_nonblock() const {
     int flags;
-    handle_error(flags = fcntl(s_sock.fd(), F_GETFL));
-    handle_error(fcntl(s_sock.fd(), F_SETFL, flags | O_NONBLOCK));
+    if ((flags = fcntl(s_sock.fd(), F_GETFL)) == -1) {
+        throw SocketOptionError(std::strerror(errno), "O_NONBLOCK");
+    }
+    if ((fcntl(s_sock.fd(), F_SETFL, flags | O_NONBLOCK)) == -1) {
+        throw SocketOptionError(std::strerror(errno), "O_NONBLOCK");
+    }
+}
+
+void tcp::Server::set_reuseaddr() const {
+    int opt;
+    if (setsockopt(s_sock.fd(), SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int)) == -1) {
+        throw SocketOptionError(std::strerror(errno), "SO_REUSEADDR");
+    }
 }
 
 tcp::Server& tcp::Server::operator= (tcp::Server&& other) {
