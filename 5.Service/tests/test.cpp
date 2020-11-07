@@ -11,11 +11,12 @@ class EchoListner : public net::IServiceListener {
         std::cout << "Client disconnected!" << std::endl;
         (void) cn;
     }
-    void onWriteDone(const net::BufferedConnection& cn)     override {
+    void onWriteDone(net::BufferedConnection* cn)     override {
         (void) cn;
     }
-    void onReadAvailable(const net::BufferedConnection& cn) override {
-        (void) cn;
+    void onReadAvailable(net::BufferedConnection* cn) override {
+        std::string str = cn->read_buf().data;
+        std::cout << str << std::endl;
     }
     void onError(const net::BufferedConnection& cn)         override {
         (void) cn;

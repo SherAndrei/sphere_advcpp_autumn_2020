@@ -8,8 +8,8 @@ class IServiceListener {
  public:
     virtual void onNewConnection(const BufferedConnection& cn) = 0;
     virtual void onClose(const BufferedConnection& cn)         = 0;
-    virtual void onWriteDone(const BufferedConnection& cn)     = 0;
-    virtual void onReadAvailable(const BufferedConnection& cn) = 0;
+    virtual void onWriteDone(BufferedConnection* cn)     = 0;
+    virtual void onReadAvailable(BufferedConnection* cn) = 0;
     virtual void onError(const BufferedConnection& cn)         = 0;
 };
 

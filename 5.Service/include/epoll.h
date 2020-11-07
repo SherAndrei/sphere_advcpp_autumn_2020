@@ -6,16 +6,23 @@
 
 namespace net {
 
+enum class OPTION {
+    UNKNOW = -1,
+    READ   = EPOLLIN  | EPOLLRDHUP,
+    WRITE  = EPOLLOUT | EPOLLRDHUP,
+    READ_AND_WRITE = EPOLLIN | EPOLLOUT | EPOLLRDHUP
+};
+
 class EPoll {
  public:
-    EPoll(/* args */);
+    EPoll();
     ~EPoll() = default;
 
     EPoll(const EPoll& other)              = delete;
     EPoll& operator = (const EPoll& other) = delete;
 
-    EPoll(EPoll&& other);
-    EPoll& operator = (EPoll&& other);
+    EPoll(EPoll&& other) = default;
+    EPoll& operator = (EPoll&& other) = default;
 
     void mod(const tcp::Descriptor& fd);
     void add(const tcp::Descriptor& fd);
@@ -23,7 +30,9 @@ class EPoll {
     std::vector<::epoll_event> wait();
 
     void set_max_events(size_t max_events);
+    void set_option(OPTION other);
  private:
+    OPTION _opt = OPTION::READ;
     std::vector<::epoll_event> event_queue;
     tcp::Descriptor epoll_fd_;
 };

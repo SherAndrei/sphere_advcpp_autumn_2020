@@ -6,7 +6,7 @@
 namespace net {
 
 struct Buffer {
-    std::string buff;
+    std::string data;
 };
 
 class BufferedConnection {
@@ -25,12 +25,16 @@ class BufferedConnection {
  public:
     // TODO: subscribe(read and or write);
     // TODO: unsubscribe(read and or write);
-    // TODO: get_read_buf();
-    // TODO: get_wtire_buf();
+    void write_from_buf();
+    void read_to_buf();
+
+    Buffer read_buf();
+    Buffer write_buf();
     void close();
 
  public:
     tcp::Descriptor& fd();
+    tcp::Connection& connection();
 
  private:
     Buffer read_;
