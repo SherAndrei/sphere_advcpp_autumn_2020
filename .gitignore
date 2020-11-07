@@ -12,6 +12,7 @@ compile_commands.json
 CTestTestfile.cmake
 _deps
 *.txt
+*.a
 !CMakeLists.txt
 
 *.o
