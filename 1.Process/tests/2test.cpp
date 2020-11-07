@@ -2,23 +2,21 @@
 #include <iostream>
 #include <string>
 
-int main()
-{
-	std::ofstream file("./tests/somename.txt");
-	
-	if(!file.good()) { //пишем состояние файла
-	 	std::cout << "Failure" << std::endl;
-		return -1;
-	} else {
-		std::cout << "Success" << std::endl;
-	}
+int main() {
+    std::ofstream file("./tests/somename.txt");
 
-	std::string data;
+    if (!file.good()) {
+         std::cout << "Failure" << std::endl;
+        return -1;
+    } else {
+        std::cout << "Success" << std::endl;
+    }
 
-	while(std::getline(std::cin, data)) 		// считываем по слову
-		file << data << '\n';	
+    std::string data;
 
-	// ожидается что программа выдаст последнее слово
-	std::cout << data << std::endl; 
-	file.close();
+    while (std::getline(std::cin, data))
+        file << data << '\n';
+
+    std::cout << data << std::endl;
+    file.close();
 }
