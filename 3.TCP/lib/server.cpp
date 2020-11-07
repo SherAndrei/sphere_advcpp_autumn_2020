@@ -35,8 +35,11 @@ void tcp::Server::listen(const tcp::Address& addr) {
     error = ::inet_aton(addr.address().data(), &sock_addr.sin_addr);
     if (error == 0)
         throw tcp::AddressError("incorrect address", addr);
-    Socket s(AF_INET, SOCK_STREAM, 0);
 
+    Descriptor s(::socket(AF_INET, SOCK_STREAM, 0));
+    if (!s.valid()) {
+        throw SocketError(std::strerror(errno));
+    }
     error = ::bind(s.fd(), reinterpret_cast<sockaddr*>(&sock_addr),
                    sizeof(sock_addr));
     if (error == -1)
@@ -55,7 +58,7 @@ tcp::Connection tcp::Server::accept() {
                                    reinterpret_cast<sockaddr*>(&peer_addr),
                                    &s));
 
-    return Connection{ Socket{client},
+    return Connection{ Descriptor{client},
                        Address{ ::inet_ntoa(peer_addr.sin_addr),
                                 peer_addr.sin_port } };
 }
@@ -84,6 +87,6 @@ tcp::Server& tcp::Server::operator= (tcp::Server&& other) {
     return *this;
 }
 
-int tcp::Server::fd() const {
-    return s_sock.fd();
+tcp::Descriptor& tcp::Server::fd() {
+    return s_sock;
 }
