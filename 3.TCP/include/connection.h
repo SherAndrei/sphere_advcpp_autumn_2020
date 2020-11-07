@@ -1,6 +1,6 @@
 #ifndef TCP_CONNECTION_H
 #define TCP_CONNECTION_H
-#include "socket.h"
+#include "descriptor.h"
 #include "address.h"
 
 namespace tcp {
@@ -8,7 +8,7 @@ namespace tcp {
 class Connection {
  private:
     friend class Server;
-    Connection(Socket && fd, const Address& addr);
+    Connection(Descriptor && fd, const Address& addr);
 
  public:
     Connection()  = default;
@@ -35,11 +35,11 @@ class Connection {
     void set_nonblock() const;
 
  public:
-    int fd() const;
+    Descriptor& fd();
 
  private:
-    Address c_addr;
-    Socket  c_sock;
+    Address    c_addr;
+    Descriptor c_sock;
 };
 
 }  // namespace tcp

@@ -1,6 +1,6 @@
 #ifndef TCP_SERVER_H
 #define TCP_SERVER_H
-#include "socket.h"
+#include "descriptor.h"
 #include "connection.h"
 #include "address.h"
 
@@ -28,11 +28,11 @@ class Server {
     void set_nonblock() const;
 
  public:
-    int fd() const;
+    Descriptor& fd();
 
  private:
-    Address s_addr;
-    Socket  s_sock;
+    Address    s_addr;
+    Descriptor s_sock;
 };
 
 }  // namespace tcp

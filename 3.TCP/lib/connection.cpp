@@ -21,7 +21,7 @@ tcp::Connection::Connection(const Address& addr)
     : c_addr(addr) {
     connect(addr);
 }
-tcp::Connection::Connection(Socket && fd, const Address& addr)
+tcp::Connection::Connection(Descriptor && fd, const Address& addr)
     : c_addr(addr)
     , c_sock(std::move(fd))
 {}
@@ -41,7 +41,10 @@ void tcp::Connection::connect(const Address& addr) {
     if (error == 0)
         throw AddressError("incorrect address", addr);
 
-    Socket s(AF_INET, SOCK_STREAM, 0);
+    Descriptor s(::socket(AF_INET, SOCK_STREAM, 0));
+    if (!s.valid()) {
+        throw SocketError(std::strerror(errno));
+    }
     error = ::connect(s.fd(), reinterpret_cast<sockaddr*>(&sock_addr),
                       sizeof(sock_addr));
     if (error == -1)
@@ -96,11 +99,11 @@ void tcp::Connection::set_nonblock() const {
 }
 
 tcp::Connection& tcp::Connection::operator= (tcp::Connection && other) {
-    this->c_addr = std::move(other.c_addr);
-    this->c_sock = std::move(other.c_sock);
+    c_addr = std::move(other.c_addr);
+    c_sock = std::move(other.c_sock);
     return *this;
 }
 
-int tcp::Connection::fd() const {
-    return c_sock.fd();
+tcp::Descriptor& tcp::Connection::fd() {
+    return c_sock;
 }
