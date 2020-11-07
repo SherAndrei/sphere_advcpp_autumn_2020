@@ -1,23 +1,20 @@
 cmake_minimum_required(VERSION 3.10)
-project(Process)
+project(PRC)
 
 set(CMAKE_CXX_STANDARD 17)
 
-set(HDR hdr)
-set(SRC src)
+set(LIB lib)
 set(TESTDIR tests)
 
-include_directories( ${HDR} )
-FILE(GLOB SRCS ${SRC}/*.cpp)
-
+set(LIB_NAME prc)
 add_compile_options(-mfpmath=sse -fstack-protector-all -W -Wall -Wextra -Wunused -Wcast-align 
 -Werror -pedantic -pedantic-errors -Wfloat-equal -Wpointer-arith -Wformat-security 
 -Wmissing-format-attribute -Wformat=1 -Wwrite-strings -Wcast-align -Wno-long-long  
--Wcast-qual -Wno-suggest-attribute=format-Werror -Wpedantic)
+-Wcast-qual -Wno-suggest-attribute=format)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/tests)
-add_executable(main ${TESTDIR}/main.cpp ${SRCS})
+add_library(${LIB_NAME} STATIC ${LIB}/descriptor.cpp
+                               ${LIB}/prcerr.cpp
+                               ${LIB}/process.cpp)
+target_include_directories(${LIB_NAME} PUBLIC include)
 
-foreach(test_name 1test 2test 3test)
-	add_executable(${test_name} ${TESTDIR}/${test_name}.cpp)
-endforeach(test_name)
+add_subdirectory(${TESTDIR})

@@ -4,22 +4,22 @@
 class Descripter
 {
 public:
-	bool isValid() const;
+    bool isValid() const;
 
 public:
-	Descripter() = default;
-	explicit Descripter(int id);
-	Descripter(const Descripter& other) = delete;
-	~Descripter();
+    Descripter() = default;
+    explicit Descripter(int id);
+    Descripter(const Descripter& other) = delete;
+    ~Descripter();
 public:
-	void close();
+    void close();
 
 public:
-	int  fd() const;
-	void set_fd(int id);
+    int  fd() const;
+    void set_fd(int id);
 
 private:
-	int _id = -1;
+    int _id = -1;
 };
 
 #endif //DESCRIPTER_H

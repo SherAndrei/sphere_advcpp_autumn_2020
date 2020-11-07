@@ -1,14 +1,16 @@
-#ifndef PROCESS_H
-#define PROCESS_H
-#include "descripter.h"
+#ifndef PRC_PROCESS_H
+#define PRC_PROCESS_H
 #include <string>
 #include <vector>
+#include "descriptor.h"
 
-class Process
-{
-public:
-    explicit Process(const std::string& path, const std::vector<std::string>& params = {});    
-	~Process();
+namespace prc {
+
+class Process {
+ public:
+    explicit Process(const std::string& path,
+                     const std::vector<std::string>& params = {});
+    ~Process();
 
     size_t write(const void* data, size_t len);
     void   writeExact(const void* data, size_t len);
@@ -19,12 +21,14 @@ public:
     void closeStdin();
     void close();
 
-	bool isRunning() const;
+    bool isRunning() const;
 
-private:
-    int _cpid = -1;	   /* child pid       */
-    Descripter _write_to_child;  /* write to child  */
-    Descripter _read_from_child; /* read from child */
+ private:
+    int _cpid = -1;
+    Descriptor _write_to_child;
+    Descriptor _read_from_child;
 };
 
-#endif //PROCESS_H
+}  // namespace prc
+
+#endif  // PRC_PROCESS_H
