@@ -11,5 +11,13 @@ tcp::SocketError::SocketError(const std::string& what)
 tcp::TimeOutError::TimeOutError(const std::string& what)
     : Error{what} {}
 
+tcp::SocketOptionError::SocketOptionError(const std::string& what,
+                                          const std::string& option_name)
+    : Error{what}, _opt(option_name) {}
+
+std::string tcp::SocketOptionError::option() const {
+    return _opt;
+}
+
 tcp::DescriptorError::DescriptorError(const std::string& what)
     : Error{what} {}

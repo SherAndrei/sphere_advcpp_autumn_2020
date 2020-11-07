@@ -26,6 +26,7 @@ class Server {
     void close();
     void set_timeout(ssize_t sec, ssize_t usec = 0l) const;
     void set_nonblock() const;
+    void set_reuseaddr() const;
 
  public:
     Descriptor& fd();

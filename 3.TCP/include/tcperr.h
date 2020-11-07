@@ -34,6 +34,15 @@ class AddressError : public Error {
     Address address() const;
 };
 
+class SocketOptionError : public Error {
+ private:
+    std::string _opt;
+ public:
+    SocketOptionError(const std::string& what, const std::string& option_name);
+
+    std::string option() const;
+};
+
 }  // namespace tcp
 
 #endif  // TCP_ERROR_H
