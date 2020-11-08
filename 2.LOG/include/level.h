@@ -4,7 +4,7 @@
 namespace log {
 
 enum class LEVEL {
-    UNKNOWN = -1,
+    BASE = -1,
     DEBUG,
     INFO,
     WARN,

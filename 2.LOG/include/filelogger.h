@@ -8,7 +8,7 @@ namespace log {
 
 class FileLogger : public BaseLogger {
  public:
-    FileLogger(const std::string& path, LEVEL l);
+    explicit FileLogger(const std::string& path, LEVEL l = LEVEL::BASE);
     ~FileLogger() = default;
  private:
     std::ofstream file;

@@ -6,7 +6,7 @@ namespace log {
 
 class StdoutLogger : public BaseLogger {
  public:
-    explicit StdoutLogger(LEVEL l);
+    explicit StdoutLogger(LEVEL l = LEVEL::BASE);
     ~StdoutLogger();
 };
 

@@ -17,7 +17,6 @@ class Logger {
     static void        set_global_logger(std::unique_ptr<BaseLogger>);
  private:
     static std::unique_ptr<BaseLogger> global_loger_;
-    static std::unique_ptr<Logger>     instance_;
 };
 
 }  // namespace log
