@@ -11,11 +11,11 @@ class Server {
     Server() = default;
     explicit Server(const Address& addr);
 
-    Server(const Server&  other) = delete;
+    Server(const Server&  other)             = delete;
     Server& operator= (const Server&  other) = delete;
 
-    Server(Server&& other);
-    Server& operator= (Server&& other);
+    Server(Server&& other)             = default;
+    Server& operator= (Server&& other) = default;
 
     ~Server() = default;
 
@@ -30,6 +30,7 @@ class Server {
 
  public:
     Descriptor& fd();
+    Address address() const;
 
  private:
     Address    s_addr;
