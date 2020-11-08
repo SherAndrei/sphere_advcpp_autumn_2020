@@ -14,11 +14,11 @@ class Connection {
     Connection()  = default;
     explicit Connection(const Address& addr);
 
+    Connection(const Connection& other)               = delete;
     Connection& operator= (const Connection &  other) = delete;
-    Connection(const Connection& other) = delete;
 
-    Connection(Connection && other);
-    Connection& operator= (Connection && other);
+    Connection(Connection && other)             = default;
+    Connection& operator= (Connection && other) = default;
 
     ~Connection() = default;
 
@@ -36,6 +36,7 @@ class Connection {
 
  public:
     Descriptor& fd();
+    Address address() const;
 
  private:
     Address    c_addr;

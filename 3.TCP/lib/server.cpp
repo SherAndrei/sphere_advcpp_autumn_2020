@@ -22,10 +22,6 @@ tcp::Server::Server(const tcp::Address& addr)
     listen(addr);
 }
 
-tcp::Server::Server(tcp::Server&& other)
-    : s_addr(std::move(other.s_addr))
-    , s_sock(std::move(other.s_sock)) {}
-
 void tcp::Server::listen(const tcp::Address& addr) {
     int error;
 
@@ -96,12 +92,10 @@ void tcp::Server::set_reuseaddr() const {
     }
 }
 
-tcp::Server& tcp::Server::operator= (tcp::Server&& other) {
-    this->s_addr = std::move(other.s_addr);
-    this->s_sock = std::move(other.s_sock);
-    return *this;
-}
-
 tcp::Descriptor& tcp::Server::fd() {
     return s_sock;
+}
+
+tcp::Address tcp::Server::address() const {
+    return s_addr;
 }

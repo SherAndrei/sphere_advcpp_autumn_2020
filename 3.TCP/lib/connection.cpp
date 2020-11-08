@@ -26,11 +26,6 @@ tcp::Connection::Connection(Descriptor && fd, const Address& addr)
     , c_sock(std::move(fd))
 {}
 
-tcp::Connection::Connection(Connection && other)
-    : c_addr(std::move(other.c_addr))
-    , c_sock(std::move(other.c_sock))
-{}
-
 void tcp::Connection::connect(const Address& addr) {
     int error;
 
@@ -83,27 +78,35 @@ void tcp::Connection::readExact(void* data, size_t len) {
     }
 }
 
-void tcp::Connection::close() { c_sock.close(); }
+void tcp::Connection::close() {
+    c_sock.close();
+}
 void tcp::Connection::set_timeout(ssize_t sec, ssize_t usec) const {
     timeval timeout = { sec, usec };
-    handle_error(setsockopt(c_sock.fd(), SOL_SOCKET, SO_SNDTIMEO,
-                            &timeout, sizeof(timeout)));
-    handle_error(setsockopt(c_sock.fd(), SOL_SOCKET, SO_RCVTIMEO,
-                            &timeout, sizeof(timeout)));
+    if (setsockopt(c_sock.fd(), SOL_SOCKET, SO_SNDTIMEO,
+                   &timeout, sizeof(timeout)) == -1) {
+        throw SocketOptionError(std::strerror(errno), "SO_SNDTIMEO");
+    }
+    if (setsockopt(c_sock.fd(), SOL_SOCKET, SO_RCVTIMEO,
+                   &timeout, sizeof(timeout) == -1)) {
+        throw SocketOptionError(std::strerror(errno), "SO_RCVTIMEO");
+    }
 }
 
 void tcp::Connection::set_nonblock() const {
     int flags;
-    handle_error(flags = fcntl(c_sock.fd(), F_GETFL));
-    handle_error(fcntl(c_sock.fd(), F_SETFL, flags | O_NONBLOCK));
-}
-
-tcp::Connection& tcp::Connection::operator= (tcp::Connection && other) {
-    c_addr = std::move(other.c_addr);
-    c_sock = std::move(other.c_sock);
-    return *this;
+    if ((flags = fcntl(c_sock.fd(), F_GETFL)) == -1) {
+        throw SocketOptionError(std::strerror(errno), "O_NONBLOCK");
+    }
+    if ((fcntl(c_sock.fd(), F_SETFL, flags | O_NONBLOCK)) == -1) {
+        throw SocketOptionError(std::strerror(errno), "O_NONBLOCK");
+    }
 }
 
 tcp::Descriptor& tcp::Connection::fd() {
     return c_sock;
+}
+
+tcp::Address tcp::Connection::address() const {
+    return c_addr;
 }
