@@ -8,7 +8,8 @@ namespace log {
 
 class BaseLogger {
  public:
-    BaseLogger(std::ostream& another, LEVEL l);
+    BaseLogger() = delete;
+    BaseLogger(const BaseLogger&) = delete;
     virtual ~BaseLogger() = default;
 
     void debug(const std::string& message);
@@ -20,7 +21,9 @@ class BaseLogger {
     LEVEL level() const;
 
     void flush();
+
  protected:
+    BaseLogger(std::ostream& another, LEVEL l);
     void log(const std::string& m, LEVEL l);
 
  protected:

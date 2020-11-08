@@ -19,7 +19,8 @@ add_library(${LIB_NAME} STATIC ${LIB}/baselogger.cpp
                                ${LIB}/stdoutlogger.cpp
                                ${LIB}/stderrlogger.cpp
                                ${LIB}/globallogger.cpp
-                               ${LIB}/logger.cpp)
+                               ${LIB}/logger.cpp
+                               ${LIB}/logerr.cpp)
 target_include_directories(${LIB_NAME} PUBLIC ${HDR})
 
 add_subdirectory(${TESTS})
