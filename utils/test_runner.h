@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+void Assert(bool b, const std::string& hint = {});
+
 template <class T>
 std::ostream& operator << (std::ostream& os, const std::vector<T>& s) {
     os << "{";
@@ -61,12 +63,12 @@ void AssertEqual(const T& t, const U& u, const std::string& hint = {}) {
     }
 }
 
-void Assert(bool b, const std::string& hint = {}) {
+void Assert(bool b, const std::string& hint) {
     AssertEqual(b, true, hint);
 }
 
 class TestRunner {
-public:
+ public:
     template <class TestFunc>
     void RunTest(TestFunc func, const std::string& test_name) {
         try {
@@ -90,7 +92,7 @@ public:
         }
     }
 
-private:
+ private:
     int fail_count = 0;
 };
 

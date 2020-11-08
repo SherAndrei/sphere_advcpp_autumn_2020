@@ -4,6 +4,9 @@
 #include "address.h"
 #include "tcperr.h"
 
+void TestConnect();
+void TestClient();
+
 void TestConnect() {
     try {
         tcp::Connection c;
