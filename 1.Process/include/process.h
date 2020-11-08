@@ -17,7 +17,8 @@ class Process {
     size_t read(void* data, size_t len);
     void   readExact(void* data, size_t len);
 
-    void open(const std::string& path, const std::vector<std::string>& params = {});
+    void open(const std::string& path,
+              const std::vector<std::string>& params = {});
     void closeStdin();
     void close();
 

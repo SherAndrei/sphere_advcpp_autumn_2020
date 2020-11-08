@@ -6,20 +6,21 @@
 #include <vector>
 #include <iostream>
 #include <algorithm>
-#include <exception>
-#include "prcerr.h"
 #include "process.h"
+#include "prcerr.h"
 
 static void handle_error(int errnum) {
     if (errnum == -1)
         throw prc::Error(std::strerror(errno));
 }
 
-prc::Process::Process(const std::string& path, const std::vector<std::string>& params) {
+prc::Process::Process(const std::string& path,
+                      const std::vector<std::string>& params) {
     open(path, params);
 }
 
-static std::vector<char *> argv(std::string* path, std::vector<std::string>* params) {
+static std::vector<char *> argv(std::string* path,
+                                std::vector<std::string>* params) {
     std::vector<char*> result;
     result.reserve(params->size() + 2);
 
@@ -32,18 +33,19 @@ static std::vector<char *> argv(std::string* path, std::vector<std::string>* par
     return result;
 }
 
-void prc::Process::open(const std::string& path, const std::vector<std::string>& params) {
+void prc::Process::open(const std::string& path,
+                        const std::vector<std::string>& params) {
     if (isRunning()) {
-        throw prc::CreationError("Nested processes are forbidden");
+        throw CreationError("Nested processes are forbidden");
     }
     int pipe_in[2], pipe_out[2];
     if (pipe2(pipe_out, O_CLOEXEC) == -1)
-        throw prc::CreationError(std::strerror(errno));
+        throw CreationError(std::strerror(errno));
 
     if (pipe(pipe_in) == -1) {
         ::close(pipe_out[0]);
         ::close(pipe_out[1]);
-        throw prc::CreationError(std::strerror(errno));
+        throw CreationError(std::strerror(errno));
     }
 
     Descriptor write_to_parent(pipe_out[1]);
@@ -53,7 +55,7 @@ void prc::Process::open(const std::string& path, const std::vector<std::string>&
     _write_to_child.set_fd(pipe_in[1]);
 
     if ((_cpid = fork()) == -1)
-        throw prc::CreationError(std::strerror(errno));
+        throw CreationError(std::strerror(errno));
 
     if (_cpid == 0) {
         if (::dup2(read_from_parent.fd(), STDIN_FILENO) == -1) {
@@ -75,7 +77,6 @@ void prc::Process::open(const std::string& path, const std::vector<std::string>&
         std::string path_copy = path;
         std::vector<std::string> params_copy = params;
 
-        // executing program
         if (execv(path.c_str(), argv(&path_copy, &params_copy).data()) == -1) {
             std::cerr << std::strerror(errno) << std::endl;
             exit(EXIT_FAILURE);
@@ -92,7 +93,7 @@ prc::Process::~Process() {
 size_t prc::Process::write(const void* data, size_t len) {
     ssize_t size = ::write(_write_to_child.fd(), data, len);
     if (size == -1)
-        prc::DescriptorError(std::strerror(errno), _write_to_child.fd());
+        throw DescriptorError(std::strerror(errno), _write_to_child.fd());
 
     return static_cast<size_t> (size);
 }
@@ -107,7 +108,7 @@ void prc::Process::writeExact(const void* data, size_t len) {
 size_t prc::Process::read(void* data, size_t len) {
     ssize_t size = ::read(_read_from_child.fd(), data, len);
     if (size == -1)
-        throw prc::DescriptorError(std::strerror(errno), _read_from_child.fd());
+        throw DescriptorError(std::strerror(errno), _read_from_child.fd());
 
     return static_cast<size_t> (size);
 }
@@ -119,7 +120,7 @@ void prc::Process::readExact(void* data, size_t len) {
     while (counter < len) {
         current  = read(ch_data + counter, len - counter);
         if (current == 0)
-            throw prc::DescriptorError("Desctiptor closed", _read_from_child.fd());
+            throw DescriptorError("Desctiptor closed", _read_from_child.fd());
         counter += current;
     }
 }
