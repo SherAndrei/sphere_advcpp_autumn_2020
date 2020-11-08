@@ -49,18 +49,19 @@ void net::Service::run() {
                 listener_->onClose(&client);
                 closeConnection(&client);
                 connections_.erase(it_client);
-            } else if (it->events & EPOLLIN) {
-                auto it_client = find_client_it(&connections_, it->data.fd);
-                auto& client = *it_client;
-                listener_->onReadAvailable(&(client));
-            } else if (it->events & EPOLLOUT) {
-                auto it_client = find_client_it(&connections_, it->data.fd);
-                auto& client = *it_client;
-                listener_->onWriteDone(&(client));
             } else if (it->events & EPOLLERR) {
                 auto it_client = find_client_it(&connections_, it->data.fd);
                 auto& client = *it_client;
                 listener_->onError(&client);
+            } else if (it->events & EPOLLIN) {
+                auto it_client = find_client_it(&connections_, it->data.fd);
+                auto& client = *it_client;
+                if (client.read_buf().empty())
+                    listener_->onReadAvailable(&client);
+            } else if (it->events & EPOLLOUT) {
+                auto it_client = find_client_it(&connections_, it->data.fd);
+                auto& client = *it_client;
+                listener_->onWriteDone(&client);
             }
         }
     }

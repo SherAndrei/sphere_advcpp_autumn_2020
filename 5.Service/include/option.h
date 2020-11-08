@@ -5,10 +5,10 @@
 namespace net {
 
 enum class OPTION {
-    UNKNOW = -1,
-    READ   = EPOLLIN  | EPOLLRDHUP,
-    WRITE  = EPOLLOUT | EPOLLRDHUP,
-    READ_AND_WRITE = EPOLLIN | EPOLLOUT | EPOLLRDHUP
+    UNKNOW = 0,
+    READ   = EPOLLIN,
+    WRITE  = EPOLLOUT,
+    READ_AND_WRITE = EPOLLIN | EPOLLOUT
 };
 
 }  // namespace net

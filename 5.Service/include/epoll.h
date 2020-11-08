@@ -15,7 +15,7 @@ class EPoll {
     EPoll(const EPoll& other)              = delete;
     EPoll& operator = (const EPoll& other) = delete;
 
-    EPoll(EPoll&& other) = default;
+    EPoll(EPoll&& other)              = default;
     EPoll& operator = (EPoll&& other) = default;
 
     void mod(const tcp::Descriptor& fd);

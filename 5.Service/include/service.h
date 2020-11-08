@@ -18,8 +18,6 @@ class Service {
     void run();
     void close();
     void closeConnection(BufferedConnection* bc);
-    // void subscribeTo(const BufferedConnection& bc  /*, read and or write*/);
-    // void unsubsribeFrom(const BufferedConnection& bc  /*, read and or write*/);
  private:
     IServiceListener* listener_;
     std::list<net::BufferedConnection> connections_;
