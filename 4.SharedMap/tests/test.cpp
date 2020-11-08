@@ -1,21 +1,19 @@
-#include "shmap.h"
-#include "test_runner.h"
 #include <unistd.h>
 #include <sys/wait.h>
 #include <iostream>
+#include "shmap.h"
+#include "test_runner.h"
 
-void TestBadAlloc()
-{
-    using namespace shmem;
+void TestBadAlloc() {
     try {
-        SharedMap<int, double> map(BlockSize{0}, BlockCount{0});
+        shmem::SharedMap<int, double> map(shmem::BlockSize{0}, shmem::BlockCount{0});
         ASSERT(true);
     } catch (std::bad_alloc& ex) {
         ASSERT(false);
     }
 
     try {
-        SharedMap<int, double> map(BlockSize{0}, BlockCount{0});
+        shmem::SharedMap<int, double> map(shmem::BlockSize{0}, shmem::BlockCount{0});
         map.insert(1, 2.);
         ASSERT(false);
     } catch (std::bad_alloc& ex) {
@@ -23,7 +21,7 @@ void TestBadAlloc()
     }
     try {
         // 48 - размер одной ноды в std::map<int, double>
-        SharedMap<int, double> map(BlockSize{48}, BlockCount{1});
+        shmem::SharedMap<int, double> map(shmem::BlockSize{48}, shmem::BlockCount{1});
         map.insert(1, 2.);
         ASSERT(true);
         map.insert(2, 3.);
@@ -32,14 +30,12 @@ void TestBadAlloc()
         ASSERT(true);
     }
 }
-void TestFork()
-{
-    using namespace shmem;
+void TestFork() {
     {
-        SharedMap<int, int> map(BlockSize{64}, BlockCount{4});
+        shmem::SharedMap<int, int> map(shmem::BlockSize{64}, shmem::BlockCount{4});
 
         int child = ::fork();
-        if(child > 0) {
+        if (child > 0) {
             map.insert(1, 2);
             map[2] = 1;
             ASSERT(map.size() == 2);
@@ -54,14 +50,14 @@ void TestFork()
         ASSERT(map.size() == 1);
     }
     {
-        SharedMap<int, int> map(BlockSize{64}, BlockCount{4});
+        shmem::SharedMap<int, int> map(shmem::BlockSize{64}, shmem::BlockCount{4});
 
         int child = ::fork();
-        if(child == 0) {
+        if (child == 0) {
             map[2] = 1;
             map.insert(1, 2);
             ASSERT(map.size() == 2);
-            sleep(1);
+            sleep(2);
             ASSERT(map.size() == 1);
             std::cout << "Child ";
             return;
@@ -71,33 +67,38 @@ void TestFork()
         }
         waitpid(child, nullptr, 0);
     }
-    
 }
 
-void TestString()
-{
-    using namespace shmem;
+void TestString() {
     {
-        SharedMap<std::string, int> map(BlockSize{128}, BlockCount{4});
-        map["one"] = 1;
-        map["two"] = 2;
-        map["one million two hundred twelve thousand and three"] = 1'212'003;
-        ASSERT(map.at("two") == 2);
-        ASSERT(map.at("one million two hundred twelve thousand and three") == 1'212'003);        
+        shmem::SharedMap<shmem::ShString, int> map(shmem::BlockSize{256}, shmem::BlockCount{10});
+        shmem::CharAlloc aloc{map.CharAlloc()};
+        map[{"one", aloc}] = 1;
+        map[{"two", aloc}] = 2;
+        map[{"one million two hundred twelve thousand and three", aloc}] = 1'212'003;
+        map[{"one million one hundred twelve thousand and three", aloc}] = 1'112'003;
+        map[{"one million two hundred twelve thousand and six", aloc}] = 1'212'006;
+        ASSERT(map.at({"two", aloc}) == 2);
+        ASSERT(map.at({"one million two hundred twelve thousand and three", aloc}) == 1'212'003);
+        ASSERT(map.at({"one million one hundred twelve thousand and three", aloc}) == 1'112'003);
+        ASSERT(map.at({"one million two hundred twelve thousand and six", aloc}) == 1'212'006);
     }
     {
-        SharedMap<int, std::string> map(BlockSize{128}, BlockCount{4});
-        map[1] = "one";
-        map[2] = "two";
-        map[1'212'003] = "one million two hundred twelve thousand and three";
-        ASSERT(map.at(2) == "two");
-        ASSERT(map.at(1'212'003) == "one million two hundred twelve thousand and three");        
+        using shmem::ShString;
+        shmem::SharedMap<int, ShString> map(shmem::BlockSize{256}, shmem::BlockCount{10});
+        shmem::CharAlloc aloc{map.CharAlloc()};
+        map.insert(2, {"two", aloc});
+        map.insert(1'212'003, {"one million two hundred twelve thousand and three", aloc});
+        map.insert(1'112'003, {"one million one hundred twelve thousand and three", aloc});
+        map.insert(1'212'006, {"one million two hundred twelve thousand and six", aloc});
+        ASSERT(map.at(2) == ShString("two", aloc));
+        ASSERT(map.at(1'212'003) == ShString("one million two hundred twelve thousand and three", aloc));
+        ASSERT(map.at(1'112'003) == ShString("one million one hundred twelve thousand and three", aloc));
+        ASSERT(map.at(1'212'006) == ShString("one million two hundred twelve thousand and six", aloc));
     }
 }
 
-int main()
-{
-
+int main() {
     TestRunner tr;
     RUN_TEST(tr, TestBadAlloc);
     RUN_TEST(tr, TestString);

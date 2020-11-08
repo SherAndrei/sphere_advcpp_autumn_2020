@@ -35,16 +35,20 @@ template<typename T>
 class ShAlloc {
  public:
   typedef T value_type;
+  typedef T* pointer;
+  typedef const T* const_pointer;
+  typedef T& reference;
+  typedef const T& const_reference;
+  typedef size_t size_type;
 
   explicit ShAlloc(ShMemState* state)
     : state_{state} {}
 
   template<class U>
-  ShAlloc(const ShAlloc<U>& other) noexcept {
-    state_ = other.state_;
-  }
+  ShAlloc(const ShAlloc<U>& other) noexcept
+    : state_(other.state()) {}
 
-  T* allocate(std::size_t n) {
+  pointer allocate(size_type n) {
     if (state_->block_size == 0)
         throw std::bad_alloc{};
     size_t blocks_needed = get_size_in_blocks(sizeof(T) * n, state_->block_size);
@@ -54,23 +58,28 @@ class ShAlloc {
     return reinterpret_cast<T*>(state_->first_block + blocks_pos * state_->block_size);
   }
 
-  void deallocate(T* p, std::size_t n) noexcept {
+  void deallocate(pointer p, size_type n) noexcept {
     size_t offset = (reinterpret_cast<char*>(p) - state_->first_block) / state_->block_size;
     size_t blocks_count = get_size_in_blocks(sizeof(T) * n, state_->block_size);
     ::memset(state_->used_blocks_table + offset, FREE_BLOCK, blocks_count);
   }
 
+  ShMemState* state() const {
+      return state_;
+  }
+
+ private:
   ShMemState* state_;
 };
 
 template <class T, class U>
 bool operator==(const ShAlloc<T>&a, const ShAlloc<U>&b) {
-  return a.state_ == b.state_;
+  return a.state() == b.state();
 }
 
 template <class T, class U>
 bool operator!=(const ShAlloc<T>&a, const ShAlloc<U>&b) {
-  return a.state_ != b.state_;
+  return a.state() != b.state();
 }
 
 }  // namespace shmem
