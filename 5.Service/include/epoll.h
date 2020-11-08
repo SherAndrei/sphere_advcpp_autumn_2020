@@ -2,16 +2,10 @@
 #define NET_EPOLL_H
 #include <sys/epoll.h>
 #include <vector>
+#include "option.h"
 #include "descriptor.h"
 
 namespace net {
-
-enum class OPTION {
-    UNKNOW = -1,
-    READ   = EPOLLIN  | EPOLLRDHUP,
-    WRITE  = EPOLLOUT | EPOLLRDHUP,
-    READ_AND_WRITE = EPOLLIN | EPOLLOUT | EPOLLRDHUP
-};
 
 class EPoll {
  public:
@@ -28,6 +22,8 @@ class EPoll {
     void add(const tcp::Descriptor& fd);
     void del(const tcp::Descriptor& fd);
     std::vector<::epoll_event> wait();
+
+    OPTION option() const;
 
     void set_max_events(size_t max_events);
     void set_option(OPTION other);

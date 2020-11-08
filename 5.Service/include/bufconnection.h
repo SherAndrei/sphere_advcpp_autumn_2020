@@ -2,6 +2,7 @@
 #define NET_BUFFERED_CONNECTION_H
 #include <string>
 #include "connection.h"
+#include "epoll.h"
 
 namespace net {
 
@@ -12,7 +13,7 @@ struct Buffer {
 class BufferedConnection {
  public:
     BufferedConnection()  = default;
-    explicit BufferedConnection(tcp::Connection && other);
+    BufferedConnection(tcp::Connection && other, EPoll* p_epoll);
 
     BufferedConnection& operator= (const BufferedConnection&  other) = delete;
     BufferedConnection(const BufferedConnection& other)              = delete;
@@ -23,23 +24,23 @@ class BufferedConnection {
     ~BufferedConnection() = default;
 
  public:
-    // TODO: subscribe(read and or write);
-    // TODO: unsubscribe(read and or write);
-    void write_from_buf();
-    void read_to_buf();
+    void subscribe(OPTION opt);
+    void unsubscribe(OPTION opt);
+    void write(const void* data, size_t len);
+    void read(void* data, size_t len);
 
-    Buffer read_buf();
-    Buffer write_buf();
+    Buffer  read_buf();
+    Buffer& write_buf();
     void close();
 
  public:
     tcp::Descriptor& fd();
-    tcp::Connection& connection();
 
  private:
     Buffer read_;
     Buffer write_;
     tcp::Connection connection_;
+    EPoll* p_epoll_;
 };
 
 }  // namespace net

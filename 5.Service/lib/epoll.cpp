@@ -13,6 +13,10 @@ net::EPoll::EPoll() : event_queue(MAX_EVENTS), epoll_fd_(::epoll_create(1)) {
     handle_error(epoll_fd_.fd());
 }
 
+net::OPTION net::EPoll::option() const {
+    return _opt;
+}
+
 void net::EPoll::set_option(OPTION other) {
     _opt = other;
 }

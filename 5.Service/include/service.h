@@ -17,7 +17,7 @@ class Service {
     void open(const tcp::Address& addr);
     void run();
     void close();
-    void closeConnection(const BufferedConnection& bc);
+    void closeConnection(BufferedConnection* bc);
     // void subscribeTo(const BufferedConnection& bc  /*, read and or write*/);
     // void unsubsribeFrom(const BufferedConnection& bc  /*, read and or write*/);
  private:
