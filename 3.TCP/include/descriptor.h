@@ -7,7 +7,6 @@ namespace tcp {
 class Descriptor {
  public:
     bool valid() const;
-    void invalidate();
 
  public:
     Descriptor() = default;
@@ -27,6 +26,9 @@ class Descriptor {
  public:
     int  fd() const;
     void set_fd(int id);
+
+ private:
+    void invalidate();
 
  private:
     int _id = -1;
