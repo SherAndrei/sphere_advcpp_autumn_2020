@@ -13,12 +13,12 @@ std::string tcp::Address::address() const {
 }
 
 tcp::Address::Address(Address&& other) {
-    this->_address = std::move(other._address);
-    this->_port = std::exchange(other._port, 0u);
+    _address = std::move(other._address);
+    _port = std::exchange(other._port, 0u);
 }
 
 tcp::Address& tcp::Address::operator=(tcp::Address&& other) {
-    this->_address = std::move(other._address);
-    this->_port = std::exchange(other._port, 0u);
+    _address = std::move(other._address);
+    _port = std::exchange(other._port, 0u);
     return *this;
 }

@@ -12,17 +12,17 @@ class Error : public std::runtime_error {
 
 class DescriptorError : public Error {
  public:
-    explicit DescriptorError(const std::string& what);
+    using tcp::Error::Error;
 };
 
 class SocketError : public Error {
  public:
-    explicit SocketError(const std::string& what);
+    using tcp::Error::Error;
 };
 
 class TimeOutError : public Error {
  public:
-    explicit TimeOutError(const std::string& what);
+    using tcp::Error::Error;
 };
 
 class AddressError : public Error {

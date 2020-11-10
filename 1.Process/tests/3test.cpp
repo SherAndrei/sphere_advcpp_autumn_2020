@@ -2,20 +2,19 @@
 #include <iostream>
 #include <string>
 
-int main()
-{
-	std::ifstream file("./tests/somename.txt");
-	
-	if(!file.good()) { //пишем состояние файла
-	 	std::cout << "Failure" << std::endl;
-		return -1;
-	} else {
-		std::cout << "Success" << std::endl;
-	}
+int main() {
+    std::ifstream file("./tests/somename.txt");
 
-	std::string data;
-	while(std::getline(file, data))
-		std::cout << data << '\n'; 
+    if (!file.good()) {
+         std::cout << "Failure" << std::endl;
+        return -1;
+    } else {
+        std::cout << "Success" << std::endl;
+    }
 
-	file.close();
+    std::string data;
+    while (std::getline(file, data))
+        std::cout << data << '\n';
+
+    file.close();
 }
