@@ -17,7 +17,6 @@ class Service {
     void open(const tcp::Address& addr);
     void run();
     void close();
-    void closeConnection(BufferedConnection* bc);
  private:
     IServiceListener* listener_;
     std::list<net::BufferedConnection> connections_;

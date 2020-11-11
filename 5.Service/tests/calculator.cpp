@@ -26,21 +26,14 @@ class Calculator : public net::IServiceListener {
         cn->unsubscribe(net::OPTION::WRITE);
     }
     void onError(net::BufferedConnection* cn)         override {
-        std::cout << "Error happened!" << std::endl;
-        (void) cn;
+        int result = -1;
+        cn->write(&result, sizeof(int));
     }
 };
 
 int main() {
     Calculator el;
     net::Service service(&el);
-    while (1) {
-    try {
-        service.open({"127.0.0.1", 8080});
-        service.run();
-    } catch (tcp::AddressError& ex) {
-        std::cout << ex.what() << std::endl;
-        continue;
-    }
-    }
+    service.open({"127.0.0.1", 8080});
+    service.run();
 }

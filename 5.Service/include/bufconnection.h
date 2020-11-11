@@ -14,11 +14,18 @@ class Buffer {
  public:
     explicit Buffer(size_t size);
 
-    void* data();
+    void*       data();
     const void* data() const;
-    size_t size()     const;
+    size_t      size() const;
+
+    void*  remaining_space();
+    size_t remaining_size() const;
+
     size_t max_size() const;
-    void fill(const void* data, size_t len);
+
+    void load(const void* source, size_t len);
+    void unload(void* destination, size_t len) const;
+
     void clear();
     bool empty() const;
 };
@@ -40,7 +47,7 @@ class BufferedConnection {
     void subscribe(OPTION opt);
     void unsubscribe(OPTION opt);
     void write(const void* data, size_t len);
-    void read(void* data, size_t len);
+    void read(void* data, size_t len) const;
 
     Buffer& read_buf();
     Buffer& write_buf();
@@ -49,6 +56,9 @@ class BufferedConnection {
  public:
     tcp::Descriptor& fd();
     tcp::Address adress() const;
+
+ private:
+    friend class Service;
 
  private:
     Buffer read_  = Buffer{512};
