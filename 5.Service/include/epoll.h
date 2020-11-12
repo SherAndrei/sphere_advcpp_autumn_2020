@@ -18,18 +18,14 @@ class EPoll {
     EPoll(EPoll&& other)              = default;
     EPoll& operator = (EPoll&& other) = default;
 
-    void mod(const tcp::Descriptor& fd);
-    void add(const tcp::Descriptor& fd);
+    void add(const tcp::Descriptor& fd, OPTION opt);
+    void mod(const tcp::Descriptor& fd, OPTION opt);
     void del(const tcp::Descriptor& fd);
     std::vector<::epoll_event> wait();
 
-    OPTION option() const;
-
     void set_max_events(size_t max_events);
-    void set_option(OPTION other);
  private:
-    OPTION _opt = OPTION::READ;
-    std::vector<::epoll_event> event_queue;
+    size_t events_queue_size_;
     tcp::Descriptor epoll_fd_;
 };
 

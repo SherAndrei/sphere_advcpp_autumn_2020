@@ -36,6 +36,7 @@ class Connection {
 
  public:
     Descriptor& fd();
+    const Descriptor& fd() const;
     Address address() const;
 
  private:

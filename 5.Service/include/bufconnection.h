@@ -55,16 +55,18 @@ class BufferedConnection {
 
  public:
     tcp::Descriptor& fd();
+    const tcp::Descriptor& fd() const;
     tcp::Address adress() const;
 
  private:
     friend class Service;
 
  private:
-    Buffer read_  = Buffer{512};
-    Buffer write_ = Buffer{512};
+    Buffer read_{512};
+    Buffer write_{512};
     tcp::Connection connection_;
     EPoll* p_epoll_;
+    OPTION epoll_option_{OPTION::UNKNOW};
 };
 
 }  // namespace net

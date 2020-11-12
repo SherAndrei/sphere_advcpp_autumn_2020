@@ -7,49 +7,48 @@ static void handle_error(int err) {
         throw net::EPollError(std::strerror(errno));
     }
 }
-static const int MAX_EVENTS = 1000;
 
-net::EPoll::EPoll() : event_queue(MAX_EVENTS), epoll_fd_(::epoll_create(1)) {
+static constexpr int MAX_EVENTS = 1000;
+
+namespace net {
+
+EPoll::EPoll()
+    : events_queue_size_(MAX_EVENTS)
+    , epoll_fd_(::epoll_create(1)) {
     handle_error(epoll_fd_.fd());
 }
 
-net::OPTION net::EPoll::option() const {
-    return _opt;
+void EPoll::set_max_events(size_t max_events) {
+    events_queue_size_ = max_events;
 }
 
-void net::EPoll::set_option(OPTION other) {
-    _opt = other;
-}
-
-void net::EPoll::set_max_events(size_t max_events) {
-    event_queue.resize(max_events);
-}
-
-void net::EPoll::mod(const tcp::Descriptor& d) {
+void EPoll::add(const tcp::Descriptor& d, OPTION opt = OPTION::UNKNOW) {
     ::epoll_event event{};
-    event.events  = static_cast<uint32_t>(_opt) | EPOLLRDHUP;
+    event.events  = static_cast<uint32_t>(opt) | EPOLLRDHUP;
     event.data.fd = d.fd();
-    handle_error(epoll_ctl(epoll_fd_.fd(), EPOLL_CTL_MOD,
-                           d.fd(), &event));
-}
-void net::EPoll::add(const tcp::Descriptor& d) {
-    ::epoll_event event{};
-    event.events  = static_cast<uint32_t>(_opt) | EPOLLRDHUP;
-    event.data.fd = d.fd();
-    handle_error(epoll_ctl(epoll_fd_.fd(), EPOLL_CTL_ADD,
-                           d.fd(), &event));
-}
-void net::EPoll::del(const tcp::Descriptor& d) {
-    ::epoll_event event{};
-    event.events  = static_cast<uint32_t>(_opt);
-    event.data.fd = d.fd();
-    handle_error(epoll_ctl(epoll_fd_.fd(), EPOLL_CTL_DEL,
-                 d.fd(), &event));
+    int error = epoll_ctl(epoll_fd_.fd(), EPOLL_CTL_ADD, d.fd(), &event);
+    handle_error(error);
 }
 
-std::vector<::epoll_event> net::EPoll::wait() {
-    int events_count;
-    handle_error(events_count = ::epoll_wait(epoll_fd_.fd(),
-                 event_queue.data(), event_queue.size(), -1));
+void EPoll::mod(const tcp::Descriptor& d, OPTION opt) {
+    ::epoll_event event{};
+    event.events  = static_cast<uint32_t>(opt) | EPOLLRDHUP;
+    event.data.fd = d.fd();
+    int error = epoll_ctl(epoll_fd_.fd(), EPOLL_CTL_MOD, d.fd(), &event);
+    handle_error(error);
+}
+
+void EPoll::del(const tcp::Descriptor& d) {
+    int error = epoll_ctl(epoll_fd_.fd(), EPOLL_CTL_DEL, d.fd(), nullptr);
+    handle_error(error);
+}
+
+std::vector<::epoll_event> EPoll::wait() {
+    std::vector<::epoll_event> event_queue(events_queue_size_);
+    int events_count = ::epoll_wait(epoll_fd_.fd(),
+                 event_queue.data(), event_queue.size(), -1);
+    handle_error(events_count);
     return { event_queue.begin(), event_queue.begin() + events_count };
 }
+
+}  // namespace net

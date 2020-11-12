@@ -13,7 +13,7 @@ class Error : public std::runtime_error {
 
 class EPollError : public Error {
  public:
-    explicit EPollError(const std::string& what);
+    using Error::Error;
 };
 
 }  // namespace net
