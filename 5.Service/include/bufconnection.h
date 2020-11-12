@@ -64,6 +64,7 @@ class BufferedConnection {
  private:
     friend class Service;
     size_t read_to_buffer();
+    size_t write_from_buffer();
 
  private:
     Buffer read_{512};

@@ -100,4 +100,12 @@ size_t BufferedConnection::read_to_buffer() {
     return read_.append(buf.data(), size);
 }
 
+size_t BufferedConnection::write_from_buffer() {
+    size_t size;
+    size = connection_.write(write_.data(), write_.size());
+    write_.remove_prefix(size);
+    return size;
+}
+
+
 }  // namespace net

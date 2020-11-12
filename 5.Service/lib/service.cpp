@@ -55,11 +55,11 @@ void Service::run() {
                         listener_->onReadAvailable(&client);
                     }
                 } else if (event.events & EPOLLOUT) {
-                    Buffer& wbuf = client.write_buf();
                     size_t size;
-                    if (!wbuf.empty()) {
-                        size = client.connection_.write(wbuf.data(), wbuf.size());
-                        wbuf.remove_prefix(size);
+                    if (!client.write_buf().empty()) {
+                        size = client.write_from_buffer();
+                        if (size == 0)
+                            listener_->onError(&client);
                     } else {
                         listener_->onWriteDone(&client);
                     }
