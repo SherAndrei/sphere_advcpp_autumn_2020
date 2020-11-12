@@ -14,17 +14,17 @@ class Buffer {
  public:
     explicit Buffer(size_t size);
 
-    void*       data();
-    const void* data() const;
-    size_t      size() const;
+    std::string str() const;
 
-    void*  remaining_space();
-    size_t remaining_size() const;
+    size_t append(const void* data, size_t len);
+    void remove_prefix(size_t size);
 
+    char* data();
+    const char* data() const;
+
+    size_t size() const;
+    size_t available_size() const;
     size_t max_size() const;
-
-    void load(const void* source, size_t len);
-    void unload(void* destination, size_t len) const;
 
     void clear();
     bool empty() const;
@@ -54,12 +54,16 @@ class BufferedConnection {
     void close();
 
  public:
+    bool is_open() const;
+
+ public:
     tcp::Descriptor& fd();
     const tcp::Descriptor& fd() const;
     tcp::Address adress() const;
 
  private:
     friend class Service;
+    size_t read_to_buffer();
 
  private:
     Buffer read_{512};

@@ -22,7 +22,7 @@ void EPoll::set_max_events(size_t max_events) {
     events_queue_size_ = max_events;
 }
 
-void EPoll::add(const tcp::Descriptor& d, OPTION opt = OPTION::UNKNOW) {
+void EPoll::add(const tcp::Descriptor& d, OPTION opt) {
     ::epoll_event event{};
     event.events  = static_cast<uint32_t>(opt) | EPOLLRDHUP;
     event.data.fd = d.fd();

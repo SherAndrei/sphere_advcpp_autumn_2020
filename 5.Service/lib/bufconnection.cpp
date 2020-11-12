@@ -4,44 +4,41 @@
 namespace net {
 
 Buffer::Buffer(size_t size)
-    : _max(size), buf_() {}
+    : _max(size) {}
 
-void Buffer::load(const void* source, size_t len) {
-    const char* ch_data = static_cast<const char*>(source);
-    buf_.assign(ch_data, ch_data + std::min(_max, len));
+std::string Buffer::str() const {
+    return buf_;
+}
+size_t Buffer::append(const void* data, size_t len) {
+    const char* ch_d = static_cast<const char*>(data);
+    const std::string to_app = {ch_d, ch_d + std::min(available_size(), len)};
+    buf_ += to_app;
+    return std::min(available_size(), len);
 }
 
-void Buffer::unload(void* dest, size_t len) const {
-    char* ch_dest = static_cast<char*>(dest);
-    std::copy(buf_.data(), buf_.data() + len, ch_dest);
+void Buffer::remove_prefix(size_t len) {
+    if (len <= size())
+        buf_.erase(0, len);
 }
 
-void* Buffer::data() {
+char* Buffer::data() {
     return buf_.data();
 }
-
-const void* Buffer::data() const {
+const char* Buffer::data() const {
     return buf_.data();
 }
 size_t Buffer::size() const {
     return buf_.size();
 }
-
-void*  Buffer::remaining_space() {
-    return buf_.data() + buf_.length();
+size_t Buffer::available_size() const {
+    return max_size() - size();
 }
-size_t Buffer::remaining_size() const {
-    return _max - buf_.length();
-}
-
-void Buffer::clear() {
-    buf_.clear();
-}
-
 size_t Buffer::max_size() const {
     return _max;
 }
-
+void Buffer::clear() {
+    buf_.clear();
+}
 bool Buffer::empty() const {
     return buf_.empty();
 }
@@ -50,29 +47,21 @@ BufferedConnection::BufferedConnection(tcp::Connection && other, EPoll* p_epoll)
     : connection_(std::move(other)), p_epoll_(p_epoll) {}
 
 void BufferedConnection::write(const void* data, size_t len) {
-    write_.load(data, len);
+    write_.append(data, len);
 }
 void BufferedConnection::read(void* data, size_t len) const {
-    read_.unload(data, len);
+    char* ch_d = static_cast<char*>(data);
+    std::copy(read_.data(), read_.data() + len, ch_d);
 }
-static OPTION add(OPTION lhs, OPTION rhs) {
-    unsigned i_lhs = static_cast<unsigned>(lhs);
-    unsigned i_rhs = static_cast<unsigned>(rhs);
-    i_lhs |= i_rhs;
-    return static_cast<OPTION>(i_lhs);
-}
-static OPTION remove(OPTION lhs, OPTION rhs) {
-    unsigned i_lhs = static_cast<unsigned>(lhs);
-    unsigned i_rhs = static_cast<unsigned>(rhs);
-    i_lhs &= ~i_rhs;
-    return static_cast<OPTION>(i_lhs);
-}
+
 void BufferedConnection::subscribe(OPTION opt) {
-    p_epoll_->mod(connection_.fd(), add(epoll_option_, opt));
+    epoll_option_ = epoll_option_ + opt;
+    p_epoll_->mod(connection_.fd(), epoll_option_);
 }
 
 void BufferedConnection::unsubscribe(OPTION opt) {
-    p_epoll_->mod(connection_.fd(), remove(epoll_option_, opt));
+    epoll_option_ = epoll_option_ - opt;
+    p_epoll_->mod(connection_.fd(), epoll_option_);
 }
 
 Buffer& BufferedConnection::read_buf() {
@@ -88,6 +77,10 @@ void BufferedConnection::close() {
     connection_.close();
 }
 
+bool BufferedConnection::is_open() const {
+    return connection_.fd().valid();
+}
+
 tcp::Descriptor& BufferedConnection::fd() {
     return connection_.fd();
 }
@@ -98,6 +91,13 @@ const tcp::Descriptor& BufferedConnection::fd() const {
 
 tcp::Address BufferedConnection::adress() const {
     return connection_.address();
+}
+
+size_t BufferedConnection::read_to_buffer() {
+    std::string buf(512, '\0');
+    size_t size;
+    size = connection_.read(buf.data(), buf.size());
+    return read_.append(buf.data(), size);
 }
 
 }  // namespace net
