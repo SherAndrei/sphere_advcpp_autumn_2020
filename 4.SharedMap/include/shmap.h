@@ -4,10 +4,10 @@
 #include <string>
 #include <utility>
 #include <functional>
-#include "shsemlock.h"
+#include "semlock.h"
 #include "shmmap.h"
-#include "shallocator.h"
-#include "shsemaphore.h"
+#include "shalloc.h"
+#include "sem.h"
 
 namespace shmem {
 

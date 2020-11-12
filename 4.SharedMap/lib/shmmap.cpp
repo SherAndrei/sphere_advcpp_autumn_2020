@@ -1,6 +1,6 @@
 #include <sys/mman.h>
 #include <cstring>
-#include "sherr.h"
+#include "shmemerr.h"
 #include "shmmap.h"
 
 shmem::ShMMap::ShMMap(size_t length)

@@ -1,4 +1,4 @@
-#include "shsemlock.h"
+#include "semlock.h"
 
 shmem::SemLock::SemLock(Semaphore& s) : _s(s) {
     _s.wait();

@@ -1,6 +1,6 @@
 #include <cstring>
-#include "shsemaphore.h"
-#include "sherr.h"
+#include "sem.h"
+#include "shmemerr.h"
 
 static void handle_error(int err) {
     if (err == -1)

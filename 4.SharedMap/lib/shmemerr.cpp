@@ -1,4 +1,4 @@
-#include "sherr.h"
+#include "shmemerr.h"
 
 shmem::SemaphoreError::SemaphoreError(const std::string& msg)
     : Error(msg) {}

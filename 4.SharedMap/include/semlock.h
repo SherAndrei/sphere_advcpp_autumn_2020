@@ -1,6 +1,6 @@
 #ifndef SHMEM_SEMLOCK_H
 #define SHMEM_SEMLOCK_H
-#include "shsemaphore.h"
+#include "sem.h"
 
 namespace shmem {
 
