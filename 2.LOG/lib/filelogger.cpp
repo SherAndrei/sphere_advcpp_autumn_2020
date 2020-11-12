@@ -2,8 +2,12 @@
 #include "logerr.h"
 #include "filelogger.h"
 
-log::FileLogger::FileLogger(const std::string& path, LEVEL l)
-    : log::BaseLogger(file, l), file(path) {
+namespace log {
+
+FileLogger::FileLogger(const std::string& path, LEVEL l)
+    : BaseLogger(file, l), file(path) {
     if (!file)
         throw FileLoggerError("Cannot open file", path);
 }
+
+}  // namespace log

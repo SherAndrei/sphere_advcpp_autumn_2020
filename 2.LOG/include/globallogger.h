@@ -4,9 +4,9 @@
 #include "level.h"
 
 namespace log {
-void init_with_stderr_logger(LEVEL l = LEVEL::BASE);
-void init_with_stdout_logger(LEVEL l = LEVEL::BASE);
-void init_with_file_logger(const std::string& path, LEVEL l = LEVEL::BASE);
+void init_with_stderr_logger(LEVEL l = LEVEL::DEBUG);
+void init_with_stdout_logger(LEVEL l = LEVEL::DEBUG);
+void init_with_file_logger(const std::string& path, LEVEL l = LEVEL::DEBUG);
 
 void debug(const std::string& message);
 void info(const std::string& message);

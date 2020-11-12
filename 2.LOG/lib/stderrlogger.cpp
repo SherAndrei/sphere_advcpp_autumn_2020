@@ -1,5 +1,9 @@
 #include <iostream>
 #include "stderrlogger.h"
 
-log::StderrLogger::StderrLogger(LEVEL l)
+namespace log {
+
+StderrLogger::StderrLogger(LEVEL l)
     : BaseLogger(std::cerr, l) {}
+
+}  // namespace log

@@ -12,7 +12,7 @@ class Error : public std::runtime_error {
 
 class InstanceError : public Error {
  public:
-    explicit InstanceError(const std::string& msg);
+    using Error::Error;
 };
 
 class FileLoggerError : public Error {
