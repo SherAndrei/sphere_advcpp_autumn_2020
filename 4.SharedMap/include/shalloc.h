@@ -51,16 +51,16 @@ class ShAlloc {
   pointer allocate(size_type n) {
     if (state_->block_size == 0)
         throw std::bad_alloc{};
-    size_t blocks_needed = get_size_in_blocks(sizeof(T) * n, state_->block_size);
+    size_t blocks_needed = get_size_in_blocks(sizeof(value_type) * n, state_->block_size);
     std::string_view table{state_->used_blocks_table, state_->blocks_count};
     size_t blocks_pos = find_free_blocks(blocks_needed, table);
     ::memset(state_->used_blocks_table + blocks_pos, USED_BLOCK, blocks_needed);
-    return reinterpret_cast<T*>(state_->first_block + blocks_pos * state_->block_size);
+    return reinterpret_cast<pointer>(state_->first_block + blocks_pos * state_->block_size);
   }
 
   void deallocate(pointer p, size_type n) noexcept {
     size_t offset = (reinterpret_cast<char*>(p) - state_->first_block) / state_->block_size;
-    size_t blocks_count = get_size_in_blocks(sizeof(T) * n, state_->block_size);
+    size_t blocks_count = get_size_in_blocks(sizeof(value_type) * n, state_->block_size);
     ::memset(state_->used_blocks_table + offset, FREE_BLOCK, blocks_count);
   }
 

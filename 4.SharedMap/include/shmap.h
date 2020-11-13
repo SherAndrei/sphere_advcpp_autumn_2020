@@ -4,6 +4,8 @@
 #include <string>
 #include <utility>
 #include <functional>
+#include <type_traits>
+#include <memory>
 #include "semlock.h"
 #include "shmmap.h"
 #include "shalloc.h"
@@ -27,16 +29,26 @@ using ShString = std::basic_string<char, std::char_traits<char>, CharAlloc>;
 template<class Key, class T>
 class SharedMap {
  public:
-    using ShPairAlloc = ShAlloc<std::pair<const Key, T>>;
-    using ShMap       = std::map<Key, T, std::less<Key>, ShPairAlloc>;
+    template<typename U>
+    using IsShared    = std::conditional_t<std::is_constructible_v<U, std::allocator<char>>, shmem::ShString, U>;
 
-    using key_type       = Key;
-    using mapped_type    = T;
-    using value_type     = std::pair<const Key, T>;
-    using allocator_type = ShPairAlloc;
+    using key_type       = IsShared<Key>;
+    using mapped_type    = IsShared<T>;
+    using value_type     = std::pair<const key_type, mapped_type>;
+    using allocator_type = ShAlloc<value_type>;
 
-    using iterator       = typename ShMap::iterator;
-    using const_iterator = typename ShMap::const_iterator;
+    using ShMap       = std::map<key_type, mapped_type, std::less<key_type>, allocator_type>;
+
+ private:
+    template<typename U>
+    IsShared<U> convert(const U &obj) const {
+        if constexpr (std::is_constructible_v<U, std::allocator<char>>) {
+            CharAlloc shstr_alloc{sh_state_};
+            return ShString(obj, shstr_alloc);
+        } else {
+            return obj;
+        }
+    }
 
  public:
     SharedMap(BlockSize block_size, BlockCount block_count)
@@ -44,28 +56,23 @@ class SharedMap {
               + block_count.value + sizeof(ShMap)
               + block_size.value * block_count.value)
         , s_(new (mmap_.get()) Semaphore{}) {
-        // sizeof(Semaphore)               sizeof(ShMap<Key, Value>)
-        //        ||    sizeof(ShMemState)            ||
-        //        \/          \/      block_count     \/     block_size * block_count
-        //  | Semaphore | ShMemState | BlockTable |  ShMap  |          Blocks        |
-        //  |___________|____________|____________|_________|________________________|
-        ShMemState* sh_state = new (mmap_.get() + sizeof(Semaphore)) ShMemState{};
-        sh_state->block_size   = block_size.value;
-        sh_state->blocks_count = block_count.value;
-        sh_state->used_blocks_table = mmap_.get()
+        sh_state_ = new (mmap_.get() + sizeof(Semaphore)) ShMemState{};
+        sh_state_->block_size   = block_size.value;
+        sh_state_->blocks_count = block_count.value;
+        sh_state_->used_blocks_table = mmap_.get()
                                     + sizeof(Semaphore)
                                     + sizeof(ShMemState);
-        ::memset(sh_state->used_blocks_table, FREE_BLOCK, sh_state->blocks_count);
+        ::memset(sh_state_->used_blocks_table, FREE_BLOCK, sh_state_->blocks_count);
 
-        ShAlloc<ShMap> alloc{sh_state};
+        ShAlloc<ShMap> alloc{sh_state_};
         p_map_ = new (mmap_.get()
                       + sizeof(Semaphore)
                       + sizeof(ShMemState)
-                      + sh_state->blocks_count) ShMap{alloc};
+                      + sh_state_->blocks_count) ShMap{alloc};
 
-        sh_state->first_block = sh_state->used_blocks_table
-                              + sh_state->blocks_count
-                              + sizeof(ShMap);
+        sh_state_->first_block = sh_state_->used_blocks_table
+                               + sh_state_->blocks_count
+                               + sizeof(ShMap);
     }
     ~SharedMap() {
         p_map_->~map();
@@ -77,32 +84,27 @@ class SharedMap {
         SemLock sl(*s_);
         return p_map_->get_allocator();
     }
-    auto CharAlloc() const {
-        SemLock sl(*s_);
-        shmem::CharAlloc ca{p_map_->get_allocator().state()};
-        return ca;
-    }
 
  public:
     size_t count(const Key& k) const {
         SemLock sl(*s_);
-        return p_map_->count();
+        return p_map_->count(convert(k));
     }
-    void update(const key_type& key, const value_type& val) {
+    void update(const Key& key, const T& val) {
         SemLock sl(*s_);
-        p_map_->at(key) = val;
+        p_map_->at(convert(key)) = convert(val);
     }
-    bool insert(const value_type& v) {
+    bool insert(const std::pair<Key, T>& v) {
         SemLock sl(*s_);
-        return (p_map_->insert(v)).second;
+        return (p_map_->insert({convert(v.first), convert(v.second)})).second;
     }
-    mapped_type at(const key_type& k) const {
+    mapped_type at(const Key& k) const {
         SemLock sl(*s_);
-        return p_map_->at(k);
+        return p_map_->at(convert(k));
     }
-    size_t erase(const key_type& k) {
+    size_t erase(const Key& k) {
         SemLock sl(*s_);
-        return p_map_->erase(k);
+        return p_map_->erase(convert(k));
     }
     size_t size() const {
         SemLock sl(*s_);
@@ -112,6 +114,7 @@ class SharedMap {
  private:
     ShMMap mmap_;
     Semaphore* s_;
+    ShMemState* sh_state_;
     ShMap* p_map_;
 };
 

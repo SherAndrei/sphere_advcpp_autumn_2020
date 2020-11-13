@@ -2,7 +2,7 @@
 #define SHMEM_MMAP_H
 
 namespace shmem {
- 
+
 class ShMMap {
  public:
     explicit ShMMap(size_t length);
