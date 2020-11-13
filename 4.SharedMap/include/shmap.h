@@ -84,53 +84,27 @@ class SharedMap {
     }
 
  public:
-    auto begin() {
+    size_t count(const Key& k) const {
         SemLock sl(*s_);
-        return p_map_->begin();
+        return p_map_->count();
     }
-
-    auto cbegin() const {
+    void update(const key_type& key, const value_type& val) {
         SemLock sl(*s_);
-        return p_map_->cbegin();
+        p_map_->at(key) = val;
     }
-
-    auto end() {
+    bool insert(const value_type& v) {
         SemLock sl(*s_);
-        return p_map_->end();
+        return (p_map_->insert(v)).second;
     }
-
-    auto cend() const {
-        SemLock sl(*s_);
-        return p_map_->cend();
-    }
-
- public:
-    auto& operator[](const Key& k) {
-        SemLock sl(*s_);
-        return p_map_->operator[](k);
-    }
-    auto& operator[](Key&& key) {
-        SemLock sl(*s_);
-        return p_map_->operator[](std::move(key));
-    }
-
-    auto insert(const Key& k, const T& v) {
-        SemLock sl(*s_);
-        return p_map_->insert({k, v});
-    }
-    auto& at(const Key& k) {
+    mapped_type at(const key_type& k) const {
         SemLock sl(*s_);
         return p_map_->at(k);
     }
-    const auto& at(const Key& k) const {
-        SemLock sl(*s_);
-        return p_map_->at(k);
-    }
-    auto erase(const Key& k) {
+    size_t erase(const key_type& k) {
         SemLock sl(*s_);
         return p_map_->erase(k);
     }
-    auto size() const {
+    size_t size() const {
         SemLock sl(*s_);
         return p_map_->size();
     }

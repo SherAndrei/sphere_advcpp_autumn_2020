@@ -12,12 +12,12 @@ class Error : public std::runtime_error {
 
 class SemaphoreError : public Error {
  public:
-    explicit SemaphoreError(const std::string& msg);
+    using Error::Error;
 };
 
 class MMapError : public Error {
  public:
-    explicit MMapError(const std::string& msg);
+    using Error::Error;
 };
 
 }  // namespace shmem

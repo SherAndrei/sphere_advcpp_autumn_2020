@@ -1,6 +1,5 @@
 
-add_library(shmem STATIC shmemerr.cpp
-                         semlock.cpp
+add_library(shmem STATIC semlock.cpp
                          sem.cpp
                          shmmap.cpp)
 
