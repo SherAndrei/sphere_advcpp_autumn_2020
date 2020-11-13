@@ -30,10 +30,10 @@ template<class Key, class T>
 class SharedMap {
  public:
     template<typename U>
-    using IsShared    = std::conditional_t<std::is_constructible_v<U, std::allocator<char>>, shmem::ShString, U>;
+    using IsString    = std::conditional_t<std::is_same_v<U, std::string>, shmem::ShString, U>;
 
-    using key_type       = IsShared<Key>;
-    using mapped_type    = IsShared<T>;
+    using key_type       = IsString<Key>;
+    using mapped_type    = IsString<T>;
     using value_type     = std::pair<const key_type, mapped_type>;
     using allocator_type = ShAlloc<value_type>;
 
@@ -41,13 +41,11 @@ class SharedMap {
 
  private:
     template<typename U>
-    IsShared<U> convert(const U &obj) const {
-        if constexpr (std::is_constructible_v<U, std::allocator<char>>) {
-            CharAlloc shstr_alloc{sh_state_};
-            return ShString(obj, shstr_alloc);
-        } else {
+    IsString<U> convert(const U &obj) const {
+        if constexpr (std::is_same_v<U, std::string>)
+            return ShString(obj, p_map_->get_allocator());
+        else
             return obj;
-        }
     }
 
  public:

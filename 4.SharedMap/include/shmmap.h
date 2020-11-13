@@ -8,6 +8,11 @@ class ShMMap {
     explicit ShMMap(size_t length);
     ~ShMMap();
 
+    ShMMap(const ShMMap&) = delete;
+    ShMMap(ShMMap &&)     = delete;
+    ShMMap& operator=(const ShMMap&) = delete;
+    ShMMap& operator=(ShMMap&&)      = delete;
+
     char* get();
  private:
     void* _addr;

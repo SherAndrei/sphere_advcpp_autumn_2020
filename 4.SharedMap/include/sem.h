@@ -12,6 +12,11 @@ class Semaphore {
     void wait();
     void destroy();
 
+    Semaphore(const Semaphore&) = delete;
+    Semaphore(Semaphore&&)      = delete;
+    Semaphore &operator=(const Semaphore&) = delete;
+    Semaphore &operator=(Semaphore&&)      = delete;
+
  private:
     sem_t _sem;
 };
