@@ -48,7 +48,8 @@ std::vector<::epoll_event> EPoll::wait() {
     int events_count = ::epoll_wait(epoll_fd_.fd(),
                  event_queue.data(), event_queue.size(), -1);
     handle_error(events_count);
-    return { event_queue.begin(), event_queue.begin() + events_count };
+    event_queue.resize(events_count);
+    return event_queue;
 }
 
 }  // namespace net

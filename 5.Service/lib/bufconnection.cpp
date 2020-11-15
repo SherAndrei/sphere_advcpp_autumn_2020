@@ -13,7 +13,7 @@ size_t Buffer::append(const void* data, size_t len) {
     const char* ch_d = static_cast<const char*>(data);
     const std::string to_app = {ch_d, ch_d + std::min(available_size(), len)};
     buf_ += to_app;
-    return std::min(available_size(), len);
+    return to_app.size();
 }
 
 void Buffer::remove_prefix(size_t len) {
@@ -74,17 +74,12 @@ Buffer& BufferedConnection::write_buf() {
 
 void BufferedConnection::close() {
     p_epoll_->del(connection_.fd());
+    epoll_option_ = OPTION::UNKNOW;
     connection_.close();
 }
-
-bool BufferedConnection::is_open() const {
-    return connection_.fd().valid();
-}
-
 tcp::Descriptor& BufferedConnection::fd() {
     return connection_.fd();
 }
-
 const tcp::Descriptor& BufferedConnection::fd() const {
     return connection_.fd();
 }

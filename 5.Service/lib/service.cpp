@@ -19,8 +19,8 @@ void Service::open(const tcp::Address& addr) {
     server_ = std::move(t_serv);
 }
 
-static auto find_client_it(std::list<BufferedConnection>* list, int fd) {
-    auto it_client = std::find_if(list->begin(), list->end(),
+static auto find_client_it(std::list<BufferedConnection>& list, int fd) {
+    auto it_client = std::find_if(list.begin(), list.end(),
                        [fd](BufferedConnection& client) {
                            return client.fd().fd() == fd;
                        });
@@ -34,35 +34,33 @@ void Service::run() {
             if (event.data.fd == server_.fd().fd()) {
                 connections_.emplace_back(server_.accept(), &epoll_);
                 epoll_.add(connections_.back().fd(), OPTION::UNKNOW);
-                listener_->onNewConnection(&(connections_.back()));
-            } else  {
-                auto it_client = find_client_it(&connections_, event.data.fd);
+                listener_->onNewConnection(connections_.back());
+            } else {
+                auto it_client = find_client_it(connections_, event.data.fd);
                 BufferedConnection& client = *it_client;
-                if (event.events & EPOLLRDHUP || !client.is_open()) {
-                    if (client.is_open()) {
-                        listener_->onClose(&client);
-                        client.close();
-                    }
-                    connections_.erase(it_client);
+                if (event.events & EPOLLRDHUP) {
+                    listener_->onClose(client);
+                    client.close();
                 } else if (event.events & EPOLLERR) {
-                    listener_->onError(&client);
+                    listener_->onError(client);
                 } else if (event.events & EPOLLIN) {
                     size_t size;
                     size = client.read_to_buffer();
-                    if (size == 0) {
-                        listener_->onError(&client);
-                    } else {
-                        listener_->onReadAvailable(&client);
-                    }
+                    if (size == 0)
+                        listener_->onError(client);
+                    else
+                        listener_->onReadAvailable(client);
                 } else if (event.events & EPOLLOUT) {
-                    size_t size;
                     if (!client.write_buf().empty()) {
-                        size = client.write_from_buffer();
+                        size_t size = client.write_from_buffer();
                         if (size == 0)
-                            listener_->onError(&client);
+                            listener_->onError(client);
                     } else {
-                        listener_->onWriteDone(&client);
+                        listener_->onWriteDone(client);
                     }
+                }
+                if (client.epoll_option_ == OPTION::UNKNOW) {
+                    connections_.erase(it_client);
                 }
             }
         }

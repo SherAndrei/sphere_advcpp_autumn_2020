@@ -54,9 +54,6 @@ class BufferedConnection {
     void close();
 
  public:
-    bool is_open() const;
-
- public:
     tcp::Descriptor& fd();
     const tcp::Descriptor& fd() const;
     tcp::Address adress() const;
