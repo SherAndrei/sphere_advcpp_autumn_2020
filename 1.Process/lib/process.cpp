@@ -57,7 +57,7 @@ void prc::Process::open(const std::string& path,
     if ((_cpid = fork()) == -1)
         throw CreationError(std::strerror(errno));
 
-    if (_cpid == 0) { /* child process */
+    if (_cpid == 0) {
         if (::dup2(read_from_parent.fd(), STDIN_FILENO) == -1) {
             std::cerr << std::strerror(errno) << std::endl;
             exit(EXIT_FAILURE);
@@ -120,7 +120,7 @@ void prc::Process::readExact(void* data, size_t len) {
     while (counter < len) {
         current  = read(ch_data + counter, len - counter);
         if (current == 0)
-            throw DescriptorError(std::strerror(errno), _read_from_child.fd());
+            throw DescriptorError("Desctiptor closed", _read_from_child.fd());
         counter += current;
     }
 }
