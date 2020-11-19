@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
-project(Sphere)
+project(TechnoSphere)
+
 set(CMAKE_CXX_STANDARD 17)
 
 add_compile_options(-mfpmath=sse -fstack-protector-all -W -Wall -Wextra -Wunused -Wcast-align 
@@ -9,5 +10,7 @@ add_compile_options(-mfpmath=sse -fstack-protector-all -W -Wall -Wextra -Wunused
 
 include_directories(utils)
 
+add_subdirectory(1.Process)
+add_subdirectory(2.LOG)
 add_subdirectory(3.TCP)
 add_subdirectory(5.Service)

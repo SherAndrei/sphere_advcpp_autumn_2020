@@ -7,6 +7,13 @@
 #include "test_runner.h"
 #include "process.h"
 
+void TestWrite();
+void TestWriteExact();
+void TestReadExact();
+void TestParse();
+void TestIsRunning();
+void TestOpenClose();
+
 void TestWrite() {
     size_t size;
     // creates a file "./tests/somename.txt"
