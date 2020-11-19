@@ -45,7 +45,7 @@ void prc::Process::open(const std::string& path,
     if (pipe(pipe_in) == -1) {
         ::close(pipe_out[0]);
         ::close(pipe_out[1]);
-        throw prc::CreationError(std::strerror(errno));
+        throw CreationError(std::strerror(errno));
     }
 
     Descriptor write_to_parent(pipe_out[1]);
@@ -55,7 +55,7 @@ void prc::Process::open(const std::string& path,
     _write_to_child.set_fd(pipe_in[1]);
 
     if ((_cpid = fork()) == -1)
-        throw prc::CreationError(std::strerror(errno));
+        throw CreationError(std::strerror(errno));
 
     if (_cpid == 0) {
         if (::dup2(read_from_parent.fd(), STDIN_FILENO) == -1) {
@@ -108,7 +108,7 @@ void prc::Process::writeExact(const void* data, size_t len) {
 size_t prc::Process::read(void* data, size_t len) {
     ssize_t size = ::read(_read_from_child.fd(), data, len);
     if (size == -1)
-        throw prc::DescriptorError(std::strerror(errno), _read_from_child.fd());
+        throw DescriptorError(std::strerror(errno), _read_from_child.fd());
 
     return static_cast<size_t> (size);
 }
@@ -120,7 +120,7 @@ void prc::Process::readExact(void* data, size_t len) {
     while (counter < len) {
         current  = read(ch_data + counter, len - counter);
         if (current == 0)
-            throw prc::DescriptorError("Desctiptor closed", _read_from_child.fd());
+            throw DescriptorError("Desctiptor closed", _read_from_child.fd());
         counter += current;
     }
 }
