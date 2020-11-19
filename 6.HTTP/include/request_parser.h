@@ -5,7 +5,7 @@
 
 namespace http {
 
-struct request;
+struct Request;
 
 class RequestParser {
  public:
@@ -18,7 +18,7 @@ class RequestParser {
     // bad = данные неверные, indeterminate = обрабатываем дальше.
     // Возвращаемый InputIterator показывает где остановился парсинг
     template <typename InputIterator>
-    std::tuple<result_type, InputIterator> parse(request& req,
+    std::tuple<result_type, InputIterator> parse(Request& req,
                             InputIterator begin, InputIterator end) {
         while (begin != end) {
             result_type result = consume(req, *begin++);
@@ -30,7 +30,7 @@ class RequestParser {
 
  private:
     // Обработать следующий символ
-    result_type consume(request& req, char input);
+    result_type consume(Request& req, char input);
 
     static bool is_char(int c);
     static bool is_ctl(int c);
@@ -64,4 +64,4 @@ class RequestParser {
 
 }  // namespace http
 
-#endif  // HTTP_REQUEST_PARSER_HPP
+#endif  // HTTP_REQUEST_PARSER_H

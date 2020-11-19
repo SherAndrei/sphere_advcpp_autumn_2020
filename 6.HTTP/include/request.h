@@ -1,5 +1,5 @@
-#ifndef HTTP_REQUEST_HPP
-#define HTTP_REQUEST_HPP
+#ifndef HTTP_REQUEST_H
+#define HTTP_REQUEST_H
 
 #include <string>
 #include <vector>
@@ -13,9 +13,9 @@ struct Request {
   std::string uri;
   int http_version_major;
   int http_version_minor;
-  std::vector<header> headers;
+  std::vector<Header> headers;
 };
 
 }  // namespace http
 
-#endif  // HTTP_REQUEST_HPP
+#endif  // HTTP_REQUEST_H

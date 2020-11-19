@@ -12,7 +12,7 @@ class HttpService : public net::Service {
  public:
     explicit HttpService(IHttpListener* listener);
     void setListener(IHttpListener* listener);
-
+    void run() override;
  private:
     IHttpListener* listener_;
 };
