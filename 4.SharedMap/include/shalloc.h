@@ -7,12 +7,12 @@
 constexpr char USED_BLOCK = '1';
 constexpr char FREE_BLOCK = '0';
 
-size_t get_size_in_blocks(size_t bytes, size_t block_size) {
+static size_t get_size_in_blocks(size_t bytes, size_t block_size) {
   float blocks_needed = bytes / static_cast<float>(block_size);
   return std::ceil(blocks_needed);
 }
 
-size_t find_free_blocks(size_t blocks_count,
+static size_t find_free_blocks(size_t blocks_count,
                         const std::string_view& used_table) {
   std::string pattern(blocks_count, FREE_BLOCK);
   size_t pos = used_table.find(pattern);

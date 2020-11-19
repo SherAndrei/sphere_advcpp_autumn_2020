@@ -4,6 +4,10 @@
 #include "shmap.h"
 #include "test_runner.h"
 
+void TestBadAlloc();
+void TestString();
+void TestFork();
+
 void TestBadAlloc() {
     try {
         shmem::SharedMap<int, double> map(shmem::BlockSize{0}, shmem::BlockCount{0});
