@@ -14,11 +14,13 @@ class Service {
  public:
     explicit Service(IServiceListener* listener);
     void setListener(IServiceListener* listener);
-    void open(const tcp::Address& addr);
-    void run();
-    void close();
+    virtual ~Service() = default;
+    virtual void open(const tcp::Address& addr);
+    virtual void run();
+    virtual void close();
  private:
     IServiceListener* listener_;
+ protected:
     std::list<net::BufferedConnection> connections_;
     tcp::Server server_;
     net::EPoll epoll_;
