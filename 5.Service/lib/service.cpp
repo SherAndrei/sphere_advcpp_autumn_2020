@@ -38,10 +38,7 @@ void Service::run() {
             } else {
                 auto it_client = find_client_it(connections_, event.data.fd);
                 BufferedConnection& client = *it_client;
-                if (event.events & EPOLLRDHUP) {
-                    listener_->onClose(client);
-                    client.close();
-                } else if (event.events & EPOLLERR) {
+                if (event.events & EPOLLERR) {
                     listener_->onError(client);
                 } else if (event.events & EPOLLIN) {
                     size_t size;
@@ -59,7 +56,10 @@ void Service::run() {
                         listener_->onWriteDone(client);
                     }
                 }
-                if (client.epoll_option_ == OPTION::UNKNOW) {
+                if (client.epoll_option_ == OPTION::UNKNOW ||
+                    event.events & EPOLLRDHUP) {
+                    listener_->onClose(client);
+                    client.close();
                     connections_.erase(it_client);
                 }
             }

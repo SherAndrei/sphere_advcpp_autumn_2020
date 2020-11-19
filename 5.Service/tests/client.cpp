@@ -21,11 +21,12 @@ int main() {
     arr[0] = number(gen);
     arr[1] = number(gen);
     int c = 0;
-    std::cout << "a: " << arr[0] << std::endl;
-    std::cout << "b: " << arr[1] << std::endl;
+    // std::cout << "a: " << arr[0] << std::endl;
+    // std::cout << "b: " << arr[1] << std::endl;
 
     cn.write(arr, 2 * sizeof(int));
     cn.read(&c, sizeof(int));
 
-    std::cout << "a + b: " << c << std::endl;
+    // std::cout << "a + b: " << c << std::endl;
+    std::cout << std::boolalpha << ((arr[0] + arr[1]) == c) << std::endl;
 }

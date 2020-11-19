@@ -8,31 +8,9 @@ namespace net {
 
 class Service;
 
-class Buffer {
-    size_t _max;
-    std::string buf_;
- public:
-    explicit Buffer(size_t size);
-
-    std::string str() const;
-
-    size_t append(const void* data, size_t len);
-    void remove_prefix(size_t size);
-
-    char* data();
-    const char* data() const;
-
-    size_t size() const;
-    size_t available_size() const;
-    size_t max_size() const;
-
-    void clear();
-    bool empty() const;
-};
-
 class BufferedConnection {
  public:
-    BufferedConnection()  = default;
+    BufferedConnection() = default;
     BufferedConnection(tcp::Connection && other, EPoll* p_epoll);
 
     BufferedConnection& operator= (const BufferedConnection&  other) = delete;
@@ -46,11 +24,11 @@ class BufferedConnection {
  public:
     void subscribe(OPTION opt);
     void unsubscribe(OPTION opt);
-    void write(const void* data, size_t len);
-    void read(void* data, size_t len) const;
+    void write(const std::string& data);
+    void read(std::string& data);
 
-    Buffer& read_buf();
-    Buffer& write_buf();
+    std::string& read_buf();
+    std::string& write_buf();
     void close();
 
  public:
@@ -64,8 +42,8 @@ class BufferedConnection {
     size_t write_from_buffer();
 
  private:
-    Buffer read_{512};
-    Buffer write_{512};
+    std::string read_;
+    std::string write_;
     tcp::Connection connection_;
     EPoll* p_epoll_;
     OPTION epoll_option_{OPTION::UNKNOW};
