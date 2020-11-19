@@ -2,6 +2,8 @@
 #include "connection.h"
 #include "server.h"
 
+void TestServer();
+
 void TestServer() {
     try {
         tcp::Server ser;
