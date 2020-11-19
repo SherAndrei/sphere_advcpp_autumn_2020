@@ -1,11 +1,9 @@
 #ifndef NET_SERVICE_H
 #define NET_SERVICE_H
-#include <list>
-#include <memory>
 #include "address.h"
 #include "epoll.h"
 #include "server.h"
-#include "bufconnection.h"
+#include "connection_manager.h"
 #include "listener.h"
 
 namespace net {
@@ -20,10 +18,9 @@ class Service {
     virtual void close();
  private:
     IServiceListener* listener_;
- protected:
-    std::list<net::BufferedConnection> connections_;
     tcp::Server server_;
-    net::EPoll epoll_;
+    ConnectionManager manager_;
+    EPoll epoll_;
 };
 
 }  // namespace net

@@ -1,5 +1,6 @@
 
 add_library(net STATIC bufconnection.cpp
+                       connection_manager.cpp
                        epoll.cpp
                        option.cpp
                        service.cpp)

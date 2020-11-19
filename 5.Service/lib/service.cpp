@@ -1,5 +1,3 @@
-#include <algorithm>
-#include <iostream>
 #include "service.h"
 
 namespace net {
@@ -19,24 +17,16 @@ void Service::open(const tcp::Address& addr) {
     server_ = std::move(t_serv);
 }
 
-static auto find_client_it(std::list<BufferedConnection>& list, int fd) {
-    auto it_client = std::find_if(list.begin(), list.end(),
-                       [fd](BufferedConnection& client) {
-                           return client.fd().fd() == fd;
-                       });
-    return it_client;
-}
-
 void Service::run() {
     while (true) {
         std::vector<::epoll_event> epoll_events = epoll_.wait();
         for (::epoll_event& event : epoll_events) {
             if (event.data.fd == server_.fd().fd()) {
-                connections_.emplace_back(server_.accept(), &epoll_);
-                epoll_.add(connections_.back().fd(), OPTION::UNKNOW);
-                listener_->onNewConnection(connections_.back());
+                manager_.emplace(server_.accept(), &epoll_);
+                epoll_.add(manager_.last().fd(), OPTION::UNKNOW);
+                listener_->onNewConnection(manager_.last());
             } else {
-                auto it_client = find_client_it(connections_, event.data.fd);
+                auto it_client = manager_.find(event.data.fd);
                 BufferedConnection& client = *it_client;
                 if (event.events & EPOLLERR) {
                     listener_->onError(client);
@@ -60,7 +50,7 @@ void Service::run() {
                     event.events & EPOLLRDHUP) {
                     listener_->onClose(client);
                     client.close();
-                    connections_.erase(it_client);
+                    manager_.erase(it_client);
                 }
             }
         }
