@@ -3,6 +3,7 @@
 #include <semaphore.h>
 
 namespace shmem {
+namespace sem   {
 
 class Semaphore {
  public:
@@ -21,6 +22,7 @@ class Semaphore {
     sem_t _sem;
 };
 
+}  // namespace sem
 }  // namespace shmem
 
 #endif  // SHMEM_SEMAPHORE_H

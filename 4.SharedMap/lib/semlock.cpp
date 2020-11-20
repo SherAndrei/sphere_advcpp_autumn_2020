@@ -1,9 +1,16 @@
 #include "semlock.h"
 
-shmem::SemLock::SemLock(Semaphore& s) : _s(s) {
+namespace shmem {
+namespace sem   {
+
+SemLock::SemLock(Semaphore& s) : _s(s) {
     _s.wait();
 }
-shmem::SemLock::~SemLock() {
+
+SemLock::~SemLock() {
      try { _s.post(); }
      catch (...) {}
 }
+
+}  // namespace sem
+}  // namespace shmem

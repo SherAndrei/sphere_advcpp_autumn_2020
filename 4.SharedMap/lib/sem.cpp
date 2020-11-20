@@ -7,19 +7,25 @@ static void handle_error(int err) {
         throw shmem::SemaphoreError(std::strerror(errno));
 }
 
-shmem::Semaphore::Semaphore() {
+namespace shmem {
+namespace sem   {
+
+Semaphore::Semaphore() {
     handle_error(::sem_init(&(_sem), 1, 1));
 }
-shmem::Semaphore::~Semaphore() {
+Semaphore::~Semaphore() {
     try { destroy(); }
     catch (...) {}
 }
-void shmem::Semaphore::post() {
+void Semaphore::post() {
     handle_error(::sem_post(&(_sem)));
 }
-void shmem::Semaphore::wait() {
+void Semaphore::wait() {
     handle_error(::sem_wait(&(_sem)));
 }
-void shmem::Semaphore::destroy() {
+void Semaphore::destroy() {
     handle_error(::sem_destroy(&(_sem)));
 }
+
+}  // namespace sem
+}  // namespace shmem

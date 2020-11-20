@@ -3,6 +3,7 @@
 #include "sem.h"
 
 namespace shmem {
+namespace sem   {
 
 class SemLock {
  public:
@@ -18,6 +19,7 @@ class SemLock {
     Semaphore& _s;
 };
 
+}  // namespace sem
 }  // namespace shmem
 
 #endif  // SHMEM_SEMLOCK_H

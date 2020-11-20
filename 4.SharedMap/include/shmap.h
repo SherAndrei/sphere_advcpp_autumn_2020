@@ -23,17 +23,17 @@ struct BlockCount {
     explicit BlockCount(size_t num) : value(num) {}
 };
 
-using CharAlloc = ShAlloc<char>;
-using ShString = std::basic_string<char, std::char_traits<char>, CharAlloc>;
-
 template<class Key, class T>
 class SharedMap {
  public:
-    template<typename U>
-    using IsString    = std::conditional_t<std::is_same_v<U, std::string>, shmem::ShString, U>;
+    using CharAlloc = ShAlloc<char>;
+    using ShString = std::basic_string<char, std::char_traits<char>, CharAlloc>;
 
-    using key_type       = IsString<Key>;
-    using mapped_type    = IsString<T>;
+    template<typename U>
+    using CondString    = std::conditional_t<std::is_same_v<U, std::string>, shmem::ShString, U>;
+
+    using key_type       = CondString<Key>;
+    using mapped_type    = CondString<T>;
     using value_type     = std::pair<const key_type, mapped_type>;
     using allocator_type = ShAlloc<value_type>;
 
@@ -41,7 +41,7 @@ class SharedMap {
 
  private:
     template<typename U>
-    IsString<U> convert(const U &obj) const {
+    CondString<U> convert(const U &obj) const {
         if constexpr (std::is_same_v<U, std::string>)
             return ShString(obj, p_map_->get_allocator());
         else

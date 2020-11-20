@@ -3,8 +3,9 @@
 #include "shmemerr.h"
 #include "shmmap.h"
 
-shmem::ShMMap::ShMMap(size_t length)
-    : _length(length) {
+namespace shmem {
+
+ShMMap::ShMMap(size_t length) : _length(length) {
     _addr = ::mmap(0, _length, PROT_READ | PROT_WRITE,
                                MAP_ANONYMOUS | MAP_SHARED,
                                -1, 0);
@@ -12,10 +13,13 @@ shmem::ShMMap::ShMMap(size_t length)
         throw MMapError(std::strerror(errno));
 }
 
-shmem::ShMMap::~ShMMap() {
+ShMMap::~ShMMap() {
     ::munmap(_addr, _length);
 }
 
-char* shmem::ShMMap::get() {
+char* ShMMap::get() {
     return static_cast<char*>(_addr);
 }
+
+}  // namespace shmem
+
