@@ -72,10 +72,12 @@ class SharedMap {
                                + sh_state_->blocks_count
                                + sizeof(ShMap);
     }
-    ~SharedMap() {
+
+    void destroy() {
         p_map_->~map();
         s_->~Semaphore();
     }
+    ~SharedMap() = default;
 
  public:
     auto get_allocator() const {

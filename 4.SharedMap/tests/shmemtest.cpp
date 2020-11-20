@@ -12,6 +12,7 @@ void TestBadAlloc() {
     try {
         shmem::SharedMap<int, double> map(shmem::BlockSize{0}, shmem::BlockCount{0});
         ASSERT(true);
+        map.destroy();
     } catch (std::bad_alloc& ex) {
         ASSERT(false);
     }
@@ -20,6 +21,7 @@ void TestBadAlloc() {
         shmem::SharedMap<int, double> map(shmem::BlockSize{0}, shmem::BlockCount{0});
         map.insert({1, 2.});
         ASSERT(false);
+        map.destroy();
     } catch (std::bad_alloc& ex) {
         ASSERT(true);
     }
@@ -30,6 +32,7 @@ void TestBadAlloc() {
         ASSERT(true);
         map.insert({2, 3.});
         ASSERT(false);
+        map.destroy();
     } catch (std::bad_alloc& ex) {
         ASSERT(true);
     }
@@ -52,6 +55,7 @@ void TestFork() {
         }
         waitpid(child, nullptr, 0);
         ASSERT(map.size() == 1);
+        map.destroy();
     }
     {
         shmem::SharedMap<int, int> map(shmem::BlockSize{64}, shmem::BlockCount{4});
@@ -70,6 +74,7 @@ void TestFork() {
             map.erase(2);
         }
         waitpid(child, nullptr, 0);
+        map.destroy();
     }
 }
 
@@ -85,6 +90,7 @@ void TestString() {
         ASSERT(map.at("one million two hundred twelve thousand and three") == 1'212'003);
         ASSERT(map.at("one million one hundred twelve thousand and three") == 1'112'003);
         ASSERT(map.at("one million two hundred twelve thousand and six") == 1'212'006);
+        map.destroy();
     }
     {
         shmem::SharedMap<int, std::string> map(shmem::BlockSize{256}, shmem::BlockCount{10});
@@ -96,6 +102,7 @@ void TestString() {
         ASSERT(map.at(1'212'003) == "one million two hundred twelve thousand and three");
         ASSERT(map.at(1'112'003) == "one million one hundred twelve thousand and three");
         ASSERT(map.at(1'212'006) == "one million two hundred twelve thousand and six");
+        map.destroy();
     }
 }
 
