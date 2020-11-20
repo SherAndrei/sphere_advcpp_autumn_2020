@@ -72,12 +72,12 @@ class SharedMap {
                                + sh_state_->blocks_count
                                + sizeof(ShMap);
     }
+    ~SharedMap() = default;
 
     void destroy() {
         p_map_->~map();
         s_->~Semaphore();
     }
-    ~SharedMap() = default;
 
  public:
     auto get_allocator() const {
@@ -90,22 +90,27 @@ class SharedMap {
         SemLock sl(*s_);
         return p_map_->count(convert(k));
     }
+
     void update(const Key& key, const T& val) {
         SemLock sl(*s_);
         p_map_->at(convert(key)) = convert(val);
     }
+
     bool insert(const std::pair<Key, T>& v) {
         SemLock sl(*s_);
         return (p_map_->insert({convert(v.first), convert(v.second)})).second;
     }
+
     mapped_type at(const Key& k) const {
         SemLock sl(*s_);
         return p_map_->at(convert(k));
     }
+
     size_t erase(const Key& k) {
         SemLock sl(*s_);
         return p_map_->erase(convert(k));
     }
+
     size_t size() const {
         SemLock sl(*s_);
         return p_map_->size();
