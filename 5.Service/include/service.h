@@ -16,7 +16,7 @@ class Service {
     void run();
     void close();
  private:
-    IServiceListener* listener_;
+    IServiceListener* listener_{nullptr};
     tcp::Server server_;
     ConnectionManager manager_;
     EPoll epoll_;
