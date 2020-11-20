@@ -130,7 +130,7 @@ RequestParser::result_type RequestParser::consume(Request& req, char input) {
         } else if (!is_char(input) || is_ctl(input) || is_tspecial(input)) {
             return bad;
         } else {
-            req.headers.push_back(header());
+            req.headers.push_back(Header());
             req.headers.back().name.push_back(input);
             state_ = header_name;
             return indeterminate;

@@ -10,6 +10,7 @@ namespace net {
 
 class Service {
  public:
+    Service() = default;
     explicit Service(IServiceListener* listener);
     void setListener(IServiceListener* listener);
     virtual ~Service() = default;

@@ -2,7 +2,7 @@
 #define HTTP_SERVICE_H
 #include <vector>
 #include "address.h"
-#include "worker.h"
+// #include "worker.h"
 #include "service.h"
 #include "epoll.h"
 #include "httplistener.h"

@@ -5,8 +5,6 @@ namespace http {
 
 class Worker {
  public:
-    Worker() = default;
-    ~Worker();
  private:
 };
 
