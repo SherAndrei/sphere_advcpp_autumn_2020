@@ -16,6 +16,11 @@ class EPollError : public Error {
     using Error::Error;
 };
 
+class ListenerError : public Error {
+ public:
+    using Error::Error;
+};
+
 }  // namespace net
 
 #endif  // NET_ERROR_H

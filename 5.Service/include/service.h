@@ -17,7 +17,7 @@ class Service {
     virtual void run();
     virtual void close();
  private:
-    IServiceListener* listener_;
+    IServiceListener* listener_{nullptr};
  protected:
     tcp::Server server_;
     ConnectionManager manager_;

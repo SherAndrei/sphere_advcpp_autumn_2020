@@ -1,4 +1,5 @@
 #include "service.h"
+#include "neterr.h"
 
 namespace net {
 
@@ -18,6 +19,8 @@ void Service::open(const tcp::Address& addr) {
 }
 
 void Service::run() {
+    if (listener_ == nullptr)
+        throw ListenerError("Listener was not set");
     while (true) {
         std::vector<::epoll_event> epoll_events = epoll_.wait();
         for (::epoll_event& event : epoll_events) {
