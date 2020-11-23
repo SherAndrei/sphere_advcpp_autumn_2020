@@ -1,5 +1,6 @@
 #ifndef TCP_ADDRESS_H
 #define TCP_ADDRESS_H
+#include <ostream>
 #include <string>
 
 namespace tcp {
@@ -27,5 +28,7 @@ class Address {
 };
 
 }  // namespace tcp
+
+std::ostream& operator<<(std::ostream&, const tcp::Address&);
 
 #endif  // TCP_ADDRESS_H

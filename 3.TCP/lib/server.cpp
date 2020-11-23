@@ -96,6 +96,10 @@ tcp::Descriptor& tcp::Server::fd() {
     return s_sock;
 }
 
+const tcp::Descriptor& tcp::Server::fd() const {
+    return s_sock;
+}
+
 tcp::Address tcp::Server::address() const {
     return s_addr;
 }

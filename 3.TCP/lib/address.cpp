@@ -22,3 +22,7 @@ tcp::Address& tcp::Address::operator=(tcp::Address&& other) {
     _port = std::exchange(other._port, 0u);
     return *this;
 }
+
+std::ostream& operator<<(std::ostream& os, const tcp::Address& addr) {
+    return os << addr.address() << ':' << addr.port();
+}
