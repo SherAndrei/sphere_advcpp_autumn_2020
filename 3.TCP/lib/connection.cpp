@@ -107,6 +107,10 @@ tcp::Descriptor& tcp::Connection::fd() {
     return c_sock;
 }
 
+const tcp::Descriptor& tcp::Connection::fd() const {
+    return c_sock;
+}
+
 tcp::Address tcp::Connection::address() const {
     return c_addr;
 }
