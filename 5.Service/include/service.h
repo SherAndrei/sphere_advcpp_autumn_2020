@@ -10,16 +10,13 @@ namespace net {
 
 class Service {
  public:
-    Service() = default;
     explicit Service(IServiceListener* listener);
     void setListener(IServiceListener* listener);
-    virtual ~Service() = default;
-    virtual void open(const tcp::Address& addr);
-    virtual void run();
-    virtual void close();
+    void open(const tcp::Address& addr);
+    void run();
+    void close();
  private:
     IServiceListener* listener_{nullptr};
- protected:
     tcp::Server server_;
     ConnectionManager manager_;
     EPoll epoll_;

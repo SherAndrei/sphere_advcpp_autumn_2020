@@ -1,7 +1,7 @@
 
-add_library(http STATIC request_parser.cpp
+add_library(http STATIC message.cpp)
                         # worker.cpp
-                        httpservice.cpp)
+                        # httpservice.cpp)
 target_include_directories(http PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_include_directories(http PUBLIC ${CMAKE_SOURCE_DIR}/3.TCP/include)
 target_include_directories(http PUBLIC ${CMAKE_SOURCE_DIR}/5.TCP/include)

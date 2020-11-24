@@ -1,2 +1,7 @@
-add_executable(httptest httptest.cpp)
-target_link_libraries(httptest http)
+#httptest
+foreach(test parsertest)
+    add_executable(${test} ${test}.cpp )
+    target_link_libraries(${test} http)    
+endforeach(test)
+
+

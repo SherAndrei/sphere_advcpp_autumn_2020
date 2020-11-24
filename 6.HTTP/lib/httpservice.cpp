@@ -2,7 +2,6 @@
 #include "option.h"
 #include "neterr.h"
 #include "httperr.h"
-#include <iostream>
 
 namespace http {
 
