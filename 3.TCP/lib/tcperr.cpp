@@ -1,14 +1,20 @@
 #include "tcperr.h"
 
-tcp::AddressError::AddressError(const std::string& what, const Address&  addr)
+namespace tcp {
+
+AddressError::AddressError(const std::string& what, const Address&  addr)
     : Error{what}, _addr(addr) {}
 
-tcp::Address tcp::AddressError::address() const { return _addr; }
+Address AddressError::address() const {
+    return _addr;
+}
 
-tcp::SocketOptionError::SocketOptionError(const std::string& what,
+SocketOptionError::SocketOptionError(const std::string& what,
                                           const std::string& option_name)
     : Error{what}, _opt(option_name) {}
 
-std::string tcp::SocketOptionError::option() const {
+std::string SocketOptionError::option() const {
     return _opt;
 }
+
+}  // namespace tcp

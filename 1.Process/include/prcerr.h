@@ -12,7 +12,7 @@ class Error : public std::runtime_error {
 
 class CreationError : public Error {
  public:
-    explicit CreationError(const std::string& what);
+    using Error::Error;
 };
 
 class DescriptorError : public Error {

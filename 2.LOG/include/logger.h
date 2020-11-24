@@ -4,7 +4,7 @@
 #include "baselogger.h"
 
 namespace log  {
-// singleton
+
 class Logger {
  private:
     Logger() = default;
@@ -13,10 +13,10 @@ class Logger {
  public:
     ~Logger() = default;
     static Logger&     get_instance();
-    static BaseLogger& get_global_logger();
-    static void        set_global_logger(std::unique_ptr<BaseLogger>);
+    static base::BaseLogger& get_global_logger();
+    static void        set_global_logger(std::unique_ptr<base::BaseLogger>);
  private:
-    static std::unique_ptr<BaseLogger> global_loger_;
+    static std::unique_ptr<base::BaseLogger> global_loger_;
 };
 
 }  // namespace log
