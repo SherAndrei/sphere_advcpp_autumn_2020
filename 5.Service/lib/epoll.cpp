@@ -2,13 +2,18 @@
 #include "epoll.h"
 #include "neterr.h"
 
-static void handle_error(int err) {
+namespace {
+
+void handle_error(int err) {
     if (err < 0) {
         throw net::EPollError(std::strerror(errno));
     }
 }
 
-static constexpr int MAX_EVENTS = 1000;
+constexpr int MAX_EVENTS = 1000;
+
+}  // namespace
+
 
 namespace net {
 

@@ -9,17 +9,14 @@
 #include "process.h"
 #include "prcerr.h"
 
-static void handle_error(int errnum) {
+namespace {
+
+void handle_error(int errnum) {
     if (errnum == -1)
         throw prc::Error(std::strerror(errno));
 }
 
-prc::Process::Process(const std::string& path,
-                      const std::vector<std::string>& params) {
-    open(path, params);
-}
-
-static std::vector<char *> argv(std::string* path,
+std::vector<char *> argv(std::string* path,
                                 std::vector<std::string>* params) {
     std::vector<char*> result;
     result.reserve(params->size() + 2);
@@ -33,7 +30,16 @@ static std::vector<char *> argv(std::string* path,
     return result;
 }
 
-void prc::Process::open(const std::string& path,
+}  // namespace
+
+namespace prc {
+
+Process::Process(const std::string& path,
+                      const std::vector<std::string>& params) {
+    open(path, params);
+}
+
+void Process::open(const std::string& path,
                         const std::vector<std::string>& params) {
     if (isRunning()) {
         throw CreationError("Nested processes are forbidden");
@@ -84,13 +90,13 @@ void prc::Process::open(const std::string& path,
     }
 }
 
-prc::Process::~Process() {
+Process::~Process() {
     try {
         close();
     } catch (const std::runtime_error& re) {}
 }
 
-size_t prc::Process::write(const void* data, size_t len) {
+size_t Process::write(const void* data, size_t len) {
     ssize_t size = ::write(_write_to_child.fd(), data, len);
     if (size == -1)
         throw DescriptorError(std::strerror(errno), _write_to_child.fd());
@@ -98,14 +104,14 @@ size_t prc::Process::write(const void* data, size_t len) {
     return static_cast<size_t> (size);
 }
 
-void prc::Process::writeExact(const void* data, size_t len) {
+void Process::writeExact(const void* data, size_t len) {
     size_t counter = 0u;
     const char* ch_data = static_cast<const char*> (data);
     while (counter < len)
         counter += write(ch_data + counter, len - counter);
 }
 
-size_t prc::Process::read(void* data, size_t len) {
+size_t Process::read(void* data, size_t len) {
     ssize_t size = ::read(_read_from_child.fd(), data, len);
     if (size == -1)
         throw DescriptorError(std::strerror(errno), _read_from_child.fd());
@@ -113,7 +119,7 @@ size_t prc::Process::read(void* data, size_t len) {
     return static_cast<size_t> (size);
 }
 
-void prc::Process::readExact(void* data, size_t len) {
+void Process::readExact(void* data, size_t len) {
     size_t counter = 0u;
     size_t current = 0u;
     char* ch_data = static_cast<char*> (data);
@@ -125,11 +131,11 @@ void prc::Process::readExact(void* data, size_t len) {
     }
 }
 
-void prc::Process::closeStdin() {
+void Process::closeStdin() {
     _write_to_child.close();
 }
 
-void prc::Process::close() {
+void Process::close() {
     _write_to_child.close();
     _read_from_child.close();
 
@@ -137,6 +143,8 @@ void prc::Process::close() {
     handle_error(waitpid(_cpid, nullptr, 0));
 }
 
-bool prc::Process::isRunning() const {
+bool Process::isRunning() const {
     return !waitpid(_cpid, nullptr, WNOHANG);
 }
+
+}  // namespace prc

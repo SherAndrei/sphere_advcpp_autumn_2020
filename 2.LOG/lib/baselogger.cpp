@@ -4,6 +4,7 @@
 #include "baselogger.h"
 
 namespace log {
+namespace base {
 
 BaseLogger::BaseLogger(std::ostream& another, LEVEL l)
     : _out(&another), _level(l) {}
@@ -34,4 +35,5 @@ void BaseLogger::log(const std::string& m, LEVEL l) {
         (*_out) << m << std::endl;
 }
 
+}  // namespace base
 }  // namespace log

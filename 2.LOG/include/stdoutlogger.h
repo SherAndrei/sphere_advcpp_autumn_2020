@@ -4,7 +4,7 @@
 
 namespace log {
 
-class StdoutLogger : public BaseLogger {
+class StdoutLogger : public base::BaseLogger {
  public:
     explicit StdoutLogger(LEVEL l = LEVEL::DEBUG);
     ~StdoutLogger();

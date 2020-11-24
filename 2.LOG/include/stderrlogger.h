@@ -4,7 +4,7 @@
 
 namespace log {
 
-class StderrLogger : public BaseLogger {
+class StderrLogger : public base::BaseLogger {
  public:
     explicit StderrLogger(LEVEL l = LEVEL::DEBUG);
     ~StderrLogger() = default;

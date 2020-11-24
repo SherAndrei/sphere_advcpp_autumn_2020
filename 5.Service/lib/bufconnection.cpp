@@ -4,7 +4,8 @@
 namespace net {
 
 BufferedConnection::BufferedConnection(tcp::Connection && other, EPoll* p_epoll)
-    : connection_(std::move(other)), p_epoll_(p_epoll) {}
+    : connection_(std::move(other))
+    , p_epoll_(p_epoll) {}
 
 void BufferedConnection::write(const std::string& data) {
     write_.append(data);
