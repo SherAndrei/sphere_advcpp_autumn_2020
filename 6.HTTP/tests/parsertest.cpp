@@ -5,10 +5,60 @@
 #include "test_runner.h"
 #include "message.h"
 
+void TestProtocolParser();
 void TestRequestStartLine();
-void TestRequestHeaders();
-void TestResponce();
+void TestResponceStartLine();
+void TestHeaders();
 void TestBody();
+
+void TestProtocolParser() {
+    try {
+        http::Responce r("HTT");
+        ASSERT(false);
+    } catch (http::ExpectingData& ex) {
+        std::string e(ex.what());
+        ASSERT_EQUAL(e, "HTTP/");
+    }
+
+    try {
+        http::Request r("GET / HTTP");
+        ASSERT(false);
+    } catch (http::ExpectingData& ex) {
+        std::string e(ex.what());
+        ASSERT_EQUAL(e, "HTTP/");
+    }
+
+    try {
+        http::Responce r("HTTP/");
+        ASSERT(false);
+    } catch (http::ExpectingData& ex) {
+        std::string e(ex.what());
+        ASSERT_EQUAL(e, "Request protocol version");
+    }
+    try {
+        http::Responce r("");
+        ASSERT(false);
+    } catch (http::IncorrectData& ex) {
+        std::string e(ex.what());
+        ASSERT_EQUAL(e, "Invalid request protocol");
+    }
+
+    try {
+        http::Responce r("HTTP/1.3");
+        ASSERT(false);
+    } catch (http::IncorrectData& ex) {
+        std::string e(ex.what());
+        ASSERT_EQUAL(e, "Request version");
+    }
+
+    try {
+        http::Request r("GET / HTTP/1.1asc\r\n");
+        ASSERT(false);
+    } catch (http::IncorrectData& ex) {
+        std::string e(ex.what());
+        ASSERT_EQUAL(e, "Request version");
+    }
+}
 
 void TestRequestStartLine() {
     try {
@@ -33,54 +83,6 @@ void TestRequestStartLine() {
     } catch (http::IncorrectData& ex) {
         std::string e(ex.what());
         ASSERT_EQUAL(e, "GETqwe");
-    }
-
-    try {
-        http::Request r("GET /");
-        ASSERT(false);
-    } catch (http::IncorrectData& ex) {
-        std::string e(ex.what());
-        ASSERT_EQUAL(e, "Invalid request protocol");
-    }
-
-    try {
-        http::Request r("GET /asads HTT");
-        ASSERT(false);
-    } catch (http::ExpectingData& ex) {
-        std::string e(ex.what());
-        ASSERT_EQUAL(e, "HTTP/");
-    }
-
-    try {
-        http::Request r("GET / HTTP");
-        ASSERT(false);
-    } catch (http::ExpectingData& ex) {
-        std::string e(ex.what());
-        ASSERT_EQUAL(e, "HTTP/");
-    }
-
-    try {
-        http::Request r("GET / HTTP/");
-        ASSERT(false);
-    } catch (http::ExpectingData& ex) {
-        std::string e(ex.what());
-        ASSERT_EQUAL(e, "Request protocol version");
-    }
-
-    try {
-        http::Request r("GET / HTTP/1.3");
-        ASSERT(false);
-    } catch (http::IncorrectData& ex) {
-        std::string e(ex.what());
-        ASSERT_EQUAL(e, "Request version");
-    }
-
-    try {
-        http::Request r("GET / HTTP/1.1asc\r\n");
-        ASSERT(false);
-    } catch (http::IncorrectData& ex) {
-        std::string e(ex.what());
-        ASSERT_EQUAL(e, "Request version");
     }
 
     try {
@@ -109,7 +111,56 @@ void TestRequestStartLine() {
     }
 }
 
-void TestRequestHeaders() {
+void TestResponceStartLine() {
+    try {
+        http::Responce r("HTTP/1.1 a");
+        ASSERT(false);
+    } catch (http::IncorrectData& ex) {
+        std::string e(ex.what());
+        ASSERT_EQUAL(e, "Cannot convert error code");
+    }
+
+    try {
+        http::Responce r("HTTP/1.1 20");
+        ASSERT(false);
+    } catch (http::ExpectingData& ex) {
+        std::string e(ex.what());
+        ASSERT_EQUAL(e, "Status code");
+    }
+
+    try {
+        http::Responce r("HTTP/1.1 1000");
+        ASSERT(false);
+    } catch (http::IncorrectData& ex) {
+        std::string e(ex.what());
+        ASSERT_EQUAL(e, "Status code");
+    }
+
+    try {
+        http::Responce r("HTTP/1.1 404");
+        ASSERT(false);
+    } catch (http::ExpectingData& ex) {
+        std::string e(ex.what());
+        ASSERT_EQUAL(e, "Start line");
+    }
+    try {
+        http::Responce r("HTTP/1.1 404\r\n");
+        ASSERT(false);
+    } catch (http::IncorrectData& ex) {
+        std::string e(ex.what());
+        ASSERT_EQUAL(e, "Expecting \\r\\n\\r\\n before body");
+    }
+
+    try {
+        http::Responce r("HTTP/1.1 404 " + http::to_string(http::StatusCode::NotFound) + "\r\n\r\n");
+        ASSERT(r.code() == http::StatusCode::NotFound);
+        ASSERT_EQUAL(r.text(), http::to_string(http::StatusCode::NotFound));
+    } catch (http::IncorrectData& ex) {
+        ASSERT(false);
+    }
+}
+
+void TestHeaders() {
     try {
         http::Request r("GET / HTTP/1.1\r\n\r\n");
         ASSERT_EQUAL(r.headers().size(), 0u);
@@ -173,7 +224,7 @@ void TestRequestHeaders() {
 
     try {
         http::Request r("GET / HTTP/1.1\r\nHost: localhost:8080\r\nFrom:\r\n");
-    } catch (http::ParsingError& ex) {
+    } catch (http::IncorrectData& ex) {
         std::string e(ex.what());
         ASSERT_EQUAL(e, "Expecting \\r\\n\\r\\n before body");
     }
@@ -274,13 +325,13 @@ void TestBody() {
     }
 }
 
-void TestResponce() {
-}
+
 
 int main() {
     TestRunner tr;
+    RUN_TEST(tr, TestProtocolParser);
     RUN_TEST(tr, TestRequestStartLine);
-    RUN_TEST(tr, TestRequestHeaders);
+    RUN_TEST(tr, TestResponceStartLine);
+    RUN_TEST(tr, TestHeaders);
     RUN_TEST(tr, TestBody);
-    RUN_TEST(tr, TestResponce);
 }

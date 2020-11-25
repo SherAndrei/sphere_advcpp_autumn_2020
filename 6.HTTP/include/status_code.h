@@ -1,5 +1,6 @@
 #ifndef HTTP_STATUS_CODE_H
 #define HTTP_STATUS_CODE_H
+#include <string>
 #include <cstdint>
 
 namespace http {
@@ -85,6 +86,8 @@ enum class StatusCode : uint16_t {
     SSLHadnshakeFailed,
     NetworkConnectTimeoutError = 599
 };
+
+std::string to_string(StatusCode code);
 
 }  // namespace http
 

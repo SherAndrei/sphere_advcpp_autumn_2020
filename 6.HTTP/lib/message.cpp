@@ -82,6 +82,25 @@ void expecting_to_find_in_range(InputIt first, InputIt last,
     }
 }
 
+std::string parse_protocol(std::string_view& mes_sv) {
+        std::string_view token = ReadToken(mes_sv);
+        size_t cur;
+        cur   = expecting("HTTP/", token, mes_sv);
+        if (cur == 0) {
+            throw http::IncorrectData("Invalid request protocol");
+        }
+        token.remove_prefix(cur);
+        if (token.empty()) {
+            throw http::ExpectingData("Request protocol version");
+        }
+        if (token.size() > 3u) {
+            throw http::IncorrectData("Request version");
+        }
+        expecting_to_find_in_range(VERSIONS.begin(), VERSIONS.end(),
+                                token, mes_sv, "Request version");
+        return std::string(token);
+}
+
 std::vector<http::Header> parse_headers(std::string_view& mes_sv) {
     size_t cur = 0u;
     std::vector<http::Header> headers;
@@ -127,7 +146,7 @@ std::string parse_body(const std::vector<http::Header>& headers, std::string_vie
             size_t size;
             try {
                 size = std::stoul(it->value);
-            } catch (const std::invalid_argument& ex) {
+            } catch (const std::logic_error& ex) {
                 throw http::ParsingError("Cannot convert content length");
             }
             if (mes_sv.length() != size) {
@@ -177,34 +196,15 @@ void Request::parse(const std::string& req) {
     std::string_view req_sv(req);
     size_t cur;
     std::string_view token;
-    if (method_.empty()) {
-        token = ReadToken(req_sv);
-        expecting_to_find_in_range(METHODS.begin(), METHODS.end(), token, req_sv);
-        method_ = std::string(token);
-    }
 
-    if (target_.empty()) {
-        token = ReadToken(req_sv);
-        target_ = std::string(token);
-    }
+    token = ReadToken(req_sv);
+    expecting_to_find_in_range(METHODS.begin(), METHODS.end(), token, req_sv);
+    method_ = std::string(token);
 
-    if (version_.empty()) {
-        token = ReadToken(req_sv);
-        cur   = expecting("HTTP/", token, req_sv);
-        if (cur == 0) {
-            throw IncorrectData("Invalid request protocol");
-        }
-        token.remove_prefix(cur);
-        if (token.empty()) {
-            throw ExpectingData("Request protocol version");
-        }
-        if (token.size() > 3u) {
-            throw IncorrectData("Request version");
-        }
-        expecting_to_find_in_range(VERSIONS.begin(), VERSIONS.end(),
-                                token, req_sv, "Request version");
-        version_ = std::string(token);
-    }
+    token = ReadToken(req_sv);
+    target_ = std::string(token);
+
+    version_ = parse_protocol(req_sv);
 
     LeftStrip(req_sv);
     token = req_sv.substr(0, 2);
@@ -218,9 +218,13 @@ void Request::parse(const std::string& req) {
     if (!req_sv.empty()) {
         req_sv.remove_prefix(2);
     } else {
-        throw ParsingError("Expecting \\r\\n\\r\\n before body");
+        throw IncorrectData("Expecting \\r\\n\\r\\n before body");
     }
     body_    = parse_body(headers_, req_sv);
+}
+
+Responce::Responce(const std::string& res) {
+    parse(res);
 }
 
 std::string Request::method() const {
@@ -231,10 +235,59 @@ std::string Request::target() const {
 }
 
 std::string Responce::to_string() const {
-    return {};
+    std::string result = "HTTP/" + version_ + ' '
+                       + std::to_string(static_cast<uint16_t>(code_)) + ' '
+                       + status_text_ + "\r\n";
+    for (const Header& header : headers_) {
+        result += http::to_string(header);
+    }
+    result += "\r\n";
+    result += body_;
+    return result;
 }
 void Responce::parse(const std::string& responce) {
-    (void) responce;
+    std::string_view res_sv(responce);
+    std::string_view token;
+    size_t cur;
+
+    version_ = parse_protocol(res_sv);
+
+    token = ReadToken(res_sv);
+    try {
+        code_ = static_cast<StatusCode>(std::stoul(std::string(token)));
+    } catch (const std::logic_error& ex) {
+        throw IncorrectData("Cannot convert error code");
+    }
+    if (code_ < StatusCode::Continue && res_sv.empty()) {
+        throw ExpectingData("Status code");
+    }
+    if (code_ > StatusCode::NetworkConnectTimeoutError) {
+        throw IncorrectData("Status code");
+    }
+
+    LeftStrip(res_sv);
+    cur = res_sv.find("\r\n");
+    if (cur == res_sv.npos) {
+        throw ExpectingData("Start line");
+    }
+    status_text_ = std::string(res_sv.begin(), res_sv.begin() + cur);
+    res_sv.remove_prefix(cur + 2);
+
+    headers_ = parse_headers(res_sv);
+    if (!res_sv.empty()) {
+        res_sv.remove_prefix(2);
+    } else {
+        throw IncorrectData("Expecting \\r\\n\\r\\n before body");
+    }
+    body_    = parse_body(headers_, res_sv);
 }
+
+StatusCode Responce::code() const {
+    return code_;
+}
+std::string Responce::text() const {
+    return status_text_;
+}
+
 
 }  // namespace http

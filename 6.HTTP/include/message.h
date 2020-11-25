@@ -36,6 +36,7 @@ class Request : public Message {
  public:
     explicit Request(const std::string& req);
     ~Request() = default;
+
  public:
     std::string to_string() const override;
     void parse(const std::string& request) override;
@@ -45,20 +46,26 @@ class Request : public Message {
     std::string target() const;
 
  private:
-  std::string method_;
-  std::string target_;
+    std::string method_;
+    std::string target_;
 };
 
 class Responce : public Message {
+ public:
+    explicit Responce(const std::string& req);
+    ~Responce() = default;
+
  public:
     std::string to_string() const override;
     void parse(const std::string& responce) override;
 
  public:
     StatusCode code() const;
+    std::string text() const;
 
  private:
-  StatusCode code_;
+    StatusCode code_{StatusCode::UNKNOWN};
+    std::string status_text_;
 };
 
 }  // namespace http
