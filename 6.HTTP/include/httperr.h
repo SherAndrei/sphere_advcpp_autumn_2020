@@ -16,6 +16,16 @@ class ParsingError : public Error {
     using Error::Error;
 };
 
+class ExpectingData : public ParsingError {
+ public:
+    using ParsingError::ParsingError;
+};
+
+class IncorrectData : public ParsingError {
+ public:
+    using ParsingError::ParsingError;
+};
+
 class WorkerError : public Error {
  public:
     using Error::Error;

@@ -3,9 +3,15 @@
 #include <string>
 #include <vector>
 #include "status_code.h"
-#include "header.h"
 
 namespace http {
+
+struct Header {
+    std::string name;
+    std::string value;
+};
+
+std::string to_string(const Header& header);
 
 class Message {
  public:

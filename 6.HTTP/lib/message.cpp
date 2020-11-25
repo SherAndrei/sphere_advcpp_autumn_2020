@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <iostream>
 #include <array>
 #include <string_view>
 #include "httperr.h"
@@ -19,44 +20,132 @@ void LeftStrip(std::string_view& sv) {
 std::string_view ReadToken(std::string_view& sv) {
     LeftStrip(sv);
 
-    auto pos = sv.find(' ');
+    auto pos = sv.find_first_of(" \r");
     auto result = sv.substr(0, pos);
     sv.remove_prefix(pos != sv.npos ? pos : sv.size());
     return result;
 }
 
 const std::array<const std::string_view, 10>
-METHODS = { "OPTIONS", "GET", "HEAD", "POST",
-            "PUT", "PATCH", "DELETE", "TRACE", "CONNECT" };
+METHODS = { "CONNECT", "DELETE", "GET",
+            "HEAD", "OPTIONS", "PATCH",
+            "POST", "PUT", "TRACE" };
 
 const std::array<const std::string_view, 3>
 VERSIONS = { "0.9", "1.0", "1.1" };
 
-}  // namespace
+const std::array<const std::string_view, 44>
+HEADER_NAMES =  { "A-IM", "Accept-Charset", "Accept-Control-Request-Headers",
+                "Accept-Control-Request-Method", "Accept-DateTime", "Accept-Encoding",
+                "Accept-Language", "Authorization", "Cache-Control", "Connection",
+                "Content-Encoding", "Content-Length", "Content-MD5", "Content-Type",
+                "Cookie", "DNT", "Date", "Expect", "Forwarded", "From", "Front-End-Https",
+                "HTTP2-Settings", "Host", "If-Match", "If-Modified-Since", "If-None-Match",
+                "If-Unmodified-Since", "IfRange", "Max-Forward", "Origin", "Pragma",
+                "Proxy-Authorization", "Proxy-Connection", "Range", "Referer",
+                "Save-Data", "TE", "Trailer", "Transfer-Encoding", "Upgrade",
+                "Upgrade-Insecure-Requests", "User-Agent", "Via", "Warning"};
+
+template<class InputIt1, class InputIt2>
+size_t mismatch(InputIt1 first1, InputIt1 last1, InputIt2 first2, InputIt2 last2) {
+    auto first = first1;
+    while (first1 != last1 && first2 != last2 && *first1 == *first2) {
+        ++first1, ++first2;
+    }
+    return first1 - first;
+}
+
+size_t expecting(const std::string_view& expectation,
+               const std::string_view& reality,
+               const std::string_view& full_message,
+               const std::string& hint = {}) {
+    size_t cur = 0u;
+    cur = mismatch(reality.begin(), reality.end(), expectation.begin(), expectation.end());
+    if (cur > 0u &&
+        cur == reality.length() &&
+        cur < expectation.length() &&
+        full_message.empty()) {
+        throw http::ExpectingData((hint.empty()) ? std::string(expectation) : hint);
+    }
+    return cur;
+}
+
+template<class InputIt>
+void expecting_to_find_in_range(InputIt first, InputIt last,
+                                const std::string_view& reality,
+                                const std::string_view& full_message,
+                                const std::string& hint = {}) {
+    if (std::find_if(first, last, [&](const std::string_view& sv) {
+        return expecting(sv, reality, full_message, hint) == reality.length();
+    }) == last) {
+        throw http::IncorrectData((hint.empty()) ? std::string(reality) : hint);
+    }
+}
 
 std::vector<http::Header> parse_headers(std::string_view& mes_sv) {
     size_t cur = 0u;
     std::vector<http::Header> headers;
     std::string_view token;
 
-    while (mes_sv.find("\r\n") != mes_sv.npos) {
+    while ((cur = mes_sv.find("\r\n")) != mes_sv.npos) {
+        if (cur == 0) {
+            break;
+        }
         token = ReadToken(mes_sv);
-        if (token.find(':') != token.back()) {
-            throw http::ParsingError("Invalid header name");
+        if (token.empty() || (token.find(':') != (token.length() - 1))) {
+            throw http::IncorrectData("Header name");
         }
         token.remove_suffix(1);
+        if (token.find("X-") != 0) {
+            if (std::binary_search(HEADER_NAMES.begin(), HEADER_NAMES.end(), token) == false) {
+                throw http::IncorrectData("Header name");
+            }
+            if (std::find_if(headers.begin(), headers.end(), [token](const http::Header& h) {
+                    return h.name == token;
+                }) != headers.end()) {
+                throw http::IncorrectData("Cannot use same headers multiple times");
+            }
+        }
         LeftStrip(mes_sv);
         cur = mes_sv.find("\r\n");
-        headers.emplace_back(std::string(token),
-                              std::string(mes_sv.begin(), mes_sv.begin() + cur));
+        headers.emplace_back(http::Header{ std::string(token),
+                              std::string(mes_sv.begin(), mes_sv.begin() + cur) });
         mes_sv.remove_prefix(cur + 2);
     }
 
-
+    return headers;
 }
 
+std::string parse_body(const std::vector<http::Header>& headers, std::string_view& mes_sv) {
+    if (!mes_sv.empty()) {
+        auto it = std::find_if(headers.begin(), headers.end(), [] (const http::Header& h) {
+                                    return h.name == "Content-Length";
+                                    });
+        if (it == headers.end()) {
+            throw http::ParsingError("Body exists, but no content length found");
+        } else {
+            size_t size;
+            try {
+                size = std::stoul(it->value);
+            } catch (const std::invalid_argument& ex) {
+                throw http::ParsingError("Cannot convert content length");
+            }
+            if (mes_sv.length() != size) {
+                throw http::ParsingError("Invalid length of body");
+            }
+            return std::string(mes_sv);
+        }
+    }
+    return {};
+}
+
+}  // namespace
 
 namespace http {
+
+std::string to_string(const Header& header) {
+    return header.name + ": " + header.value + "\r\n";
+}
 
 std::string Message::version() const {
     return version_;
@@ -77,7 +166,7 @@ std::string Request::to_string() const {
                        + target_ + ' '
                        + "HTTP/" + version_ + "\r\n";
     for (const Header& header : headers_) {
-        result += header.name + ": " + header.value + "\r\n";
+        result += http::to_string(header);
     }
     result += "\r\n";
     result += body_;
@@ -86,57 +175,52 @@ std::string Request::to_string() const {
 
 void Request::parse(const std::string& req) {
     std::string_view req_sv(req);
-
-    //  START LINE
-
-    std::string_view token = ReadToken(req_sv);
-    if (std::find(METHODS.begin(), METHODS.end(), token) == METHODS.end()) {
-        throw ParsingError("Invalid request method");
+    size_t cur;
+    std::string_view token;
+    if (method_.empty()) {
+        token = ReadToken(req_sv);
+        expecting_to_find_in_range(METHODS.begin(), METHODS.end(), token, req_sv);
+        method_ = std::string(token);
     }
-    method_ = std::string(token);
 
-    token = ReadToken(req_sv);
-    target_ = std::string(token);
-
-    token = ReadToken(req_sv);
-    size_t cur = token.find("HTTP/");
-    if (cur != 0) {
-      throw ParsingError("Invalid request protocol");
+    if (target_.empty()) {
+        token = ReadToken(req_sv);
+        target_ = std::string(token);
     }
-    token.remove_prefix(cur + 5);
-    if (std::find(VERSIONS.begin(), VERSIONS.end(), token.substr(0, 3)) == VERSIONS.end()) {
-      throw ParsingError("Invalid request version");
-    }
-    version_ = std::string(token.substr(0, 3));
-    token.remove_prefix(3);
 
-    cur = token.find("\r\n");
-    if (cur != 0) {
-        LeftStrip(req_sv);
-        if (req_sv.find("\r\n") != 0) {
-            throw ParsingError("Invalid start line");
+    if (version_.empty()) {
+        token = ReadToken(req_sv);
+        cur   = expecting("HTTP/", token, req_sv);
+        if (cur == 0) {
+            throw IncorrectData("Invalid request protocol");
         }
-        req_sv.remove_prefix(2);
+        token.remove_prefix(cur);
+        if (token.empty()) {
+            throw ExpectingData("Request protocol version");
+        }
+        if (token.size() > 3u) {
+            throw IncorrectData("Request version");
+        }
+        expecting_to_find_in_range(VERSIONS.begin(), VERSIONS.end(),
+                                token, req_sv, "Request version");
+        version_ = std::string(token);
     }
 
     LeftStrip(req_sv);
+    token = req_sv.substr(0, 2);
+    cur = expecting("\r\n", token, req_sv);
+    if (cur == 0) {
+        throw IncorrectData("Start line");
+    }
+    req_sv.remove_prefix(2);
 
     headers_ = parse_headers(req_sv);
-
     if (!req_sv.empty()) {
-        auto it = std::find_if(headers_.begin(), headers_.end(), [] (const http::Header& h) {
-                                    return h.name == "Content-Length";
-                                    });
-        if (it != headers_.end()) {
-            size_t size = std::stoul(it->value);
-            if (req_sv.length() != size) {
-                throw http::ParsingError("Invalid length of body");
-            }
-            body_ = std::string(req_sv);
-        } else {
-            throw ParsingError("Invalid headers: Body exists, no contnent length found");
-        }
+        req_sv.remove_prefix(2);
+    } else {
+        throw ParsingError("Expecting \\r\\n\\r\\n before body");
     }
+    body_    = parse_body(headers_, req_sv);
 }
 
 std::string Request::method() const {
