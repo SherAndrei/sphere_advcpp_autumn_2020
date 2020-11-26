@@ -3,18 +3,19 @@
 
 namespace net {
 
-void ConnectionManager::emplace(tcp::Connection&& c, EPoll* p_epoll) {
-    connections_.emplace_back(std::move(c), p_epoll);
+void ConnectionManager::emplace(std::shared_ptr<BufferedConnection>&& other) {
+    connections_.emplace_back(std::move(other));
 }
 
 ConnectionManager::iterator ConnectionManager::find(int fd) {
     return std::find_if(connections_.begin(), connections_.end(),
-                       [fd](BufferedConnection& client) {
-                           return client.fd().fd() == fd;
-                       });
+                [fd](std::shared_ptr<BufferedConnection>& client) {
+                    return client->fd().fd() == fd;
+                });
 }
+
 BufferedConnection& ConnectionManager::last() {
-    return connections_.back();
+    return *(connections_.back());
 }
 
 void ConnectionManager::erase(iterator iter) {

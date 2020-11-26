@@ -25,12 +25,12 @@ void Service::run() {
         std::vector<::epoll_event> epoll_events = epoll_.wait();
         for (::epoll_event& event : epoll_events) {
             if (event.data.fd == server_.fd().fd()) {
-                manager_.emplace(server_.accept(), &epoll_);
+                manager_.emplace(std::make_shared<BufferedConnection>(server_.accept(), &epoll_));
                 epoll_.add(manager_.last().fd(), OPTION::UNKNOW);
                 listener_->onNewConnection(manager_.last());
             } else {
                 auto it_client = manager_.find(event.data.fd);
-                BufferedConnection& client = *it_client;
+                BufferedConnection& client = *(*it_client);
                 if (event.events & EPOLLERR) {
                     listener_->onError(client);
                 } else if (event.events & EPOLLIN) {

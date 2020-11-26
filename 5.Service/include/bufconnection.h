@@ -19,7 +19,7 @@ class BufferedConnection {
     BufferedConnection(BufferedConnection && other)             = default;
     BufferedConnection& operator= (BufferedConnection && other) = default;
 
-    ~BufferedConnection() = default;
+    virtual ~BufferedConnection() = default;
 
  public:
     void subscribe(OPTION opt);
@@ -38,10 +38,12 @@ class BufferedConnection {
 
  private:
     friend class Service;
+
+ protected:
     size_t read_to_buffer();
     size_t write_from_buffer();
 
- private:
+ protected:
     std::string read_;
     std::string write_;
     tcp::Connection connection_;
