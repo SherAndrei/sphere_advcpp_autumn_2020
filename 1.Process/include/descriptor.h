@@ -7,13 +7,15 @@ namespace prc {
 class Descriptor {
  public:
     bool valid() const;
+
+ private:
     void invalidate();
 
  public:
     Descriptor() = default;
     explicit Descriptor(int id);
 
-    Descriptor(const Descriptor& other) = delete;
+    Descriptor(const Descriptor& other)               = delete;
     Descriptor& operator= (const Descriptor &  other) = delete;
 
     Descriptor(Descriptor && other);

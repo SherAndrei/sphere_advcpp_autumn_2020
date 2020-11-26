@@ -6,7 +6,7 @@
 
 namespace log {
 
-class FileLogger : public BaseLogger {
+class FileLogger : public base::BaseLogger {
  public:
     explicit FileLogger(const std::string& path, LEVEL l = LEVEL::DEBUG);
     ~FileLogger() = default;

@@ -5,11 +5,15 @@
 #include "level.h"
 
 namespace log {
+namespace base {
 
 class BaseLogger {
- public:
-    BaseLogger() = delete;
+ protected:
+    BaseLogger()                  = delete;
     BaseLogger(const BaseLogger&) = delete;
+    BaseLogger& operator=(const BaseLogger&) = delete;
+
+ public:
     virtual ~BaseLogger() = default;
 
     void debug(const std::string& message);
@@ -31,6 +35,7 @@ class BaseLogger {
     LEVEL _level;
 };
 
+}  // namespace base
 }  // namespace log
 
 #endif  // LOG_BASELOGGER_H

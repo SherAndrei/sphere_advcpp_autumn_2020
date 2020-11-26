@@ -1,30 +1,34 @@
 #include "descriptor.h"
 
-bool tcp::Descriptor::valid() const { return _id > -1; }
-void tcp::Descriptor::invalidate()  { _id = -1; }
+namespace tcp {
 
-tcp::Descriptor::Descriptor(int id)              : _id(id)        {}
-tcp::Descriptor::Descriptor(Descriptor && other) : _id(other._id) {
+bool Descriptor::valid() const { return _id > -1; }
+void Descriptor::invalidate()  { _id = -1; }
+
+Descriptor::Descriptor(int id)              : _id(id)        {}
+Descriptor::Descriptor(Descriptor && other) : _id(other._id) {
     other.invalidate();
 }
-tcp::Descriptor::~Descriptor() { close(); }
+Descriptor::~Descriptor() { close(); }
 
-void tcp::Descriptor::close() {
+void Descriptor::close() {
     if (valid()) {
         ::close(_id);
         invalidate();
     }
 }
 
-int  tcp::Descriptor::fd() const     { return _id; }
-void tcp::Descriptor::set_fd(int id) {
+int  Descriptor::fd() const     { return _id; }
+void Descriptor::set_fd(int id) {
     close();
     _id = id;
 }
 
-tcp::Descriptor& tcp::Descriptor::operator= (Descriptor && other) {
+Descriptor& Descriptor::operator= (Descriptor && other) {
     close();
     _id = other._id;
     other.invalidate();
     return *this;
 }
+
+}  // namespace tcp
