@@ -206,7 +206,7 @@ Request::Request(const std::string& req) {
     parse(req);
 }
 
-std::string Request::to_string() const {
+std::string Request::str() const {
     std::string result = method_ + ' '
                        + target_ + ' '
                        + "HTTP/" + version_ + "\r\n";
@@ -256,7 +256,7 @@ std::string Request::target() const {
     return target_;
 }
 
-std::string Responce::to_string() const {
+std::string Responce::str() const {
     std::string result = "HTTP/" + version_ + ' '
                        + std::to_string(static_cast<uint16_t>(code_)) + ' '
                        + status_text_ + "\r\n";

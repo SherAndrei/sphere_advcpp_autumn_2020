@@ -2,22 +2,24 @@
 #define HTTP_SERVICE_H
 #include <vector>
 #include "server.h"
-#include "address.h"
+#include "httplistener.h"
 #include "worker.h"
 #include "connection_manager.h"
 #include "epoll.h"
-#include "httplistener.h"
-#include "httpconnection.h"
 
 namespace http {
 
 class HttpService {
  public:
-    explicit HttpService(IHttpListener* listener);
+    explicit HttpService(IHttpListener* listener, size_t workersSize);
     void setListener(IHttpListener* listener);
     void setWorkersSize(size_t size);
     void open(const tcp::Address& addr);
     void run();
+    void close();
+
+ private:
+    friend class Worker;
 
  private:
     IHttpListener* listener_{nullptr};

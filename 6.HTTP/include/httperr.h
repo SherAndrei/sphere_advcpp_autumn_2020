@@ -11,6 +11,11 @@ class Error : public std::runtime_error {
     using std::runtime_error::runtime_error;
 };
 
+class WriteError : public Error {
+ public:
+    using Error::Error;
+};
+
 class ParsingError : public Error {
  public:
     using Error::Error;

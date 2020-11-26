@@ -16,8 +16,9 @@ std::string to_string(const Header& header);
 class Message {
  public:
     virtual ~Message() = default;
+
  public:
-    virtual std::string to_string() const = 0;
+    virtual std::string str() const = 0;
     virtual void parse(const std::string& message) = 0;
 
  public:
@@ -35,10 +36,13 @@ class Message {
 class Request : public Message {
  public:
     explicit Request(const std::string& req);
-    ~Request() = default;
+
+ private:
+    friend class HttpConnection;
+    Request() = default;
 
  public:
-    std::string to_string() const override;
+    std::string str() const override;
     void parse(const std::string& request) override;
 
  public:
@@ -53,10 +57,13 @@ class Request : public Message {
 class Responce : public Message {
  public:
     explicit Responce(const std::string& req);
-    ~Responce() = default;
+
+ private:
+    friend class HttpConnection;
+    Responce() = default;
 
  public:
-    std::string to_string() const override;
+    std::string str() const override;
     void parse(const std::string& responce) override;
 
  public:
