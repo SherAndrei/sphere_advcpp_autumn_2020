@@ -40,7 +40,7 @@ void TestProtocolParser() {
         ASSERT(false);
     } catch (http::IncorrectData& ex) {
         std::string e(ex.what());
-        ASSERT_EQUAL(e, "Invalid request protocol");
+        ASSERT_EQUAL(e, "Request protocol");
     }
 
     try {
@@ -143,13 +143,6 @@ void TestResponceStartLine() {
         std::string e(ex.what());
         ASSERT_EQUAL(e, "Start line");
     }
-    try {
-        http::Responce r("HTTP/1.1 404\r\n");
-        ASSERT(false);
-    } catch (http::IncorrectData& ex) {
-        std::string e(ex.what());
-        ASSERT_EQUAL(e, "Expecting \\r\\n\\r\\n before body");
-    }
 
     try {
         http::Responce r("HTTP/1.1 404 " + http::to_string(http::StatusCode::NotFound) + "\r\n\r\n");
@@ -161,11 +154,26 @@ void TestResponceStartLine() {
 }
 
 void TestHeaders() {
+
+    try {
+        http::Responce r("HTTP/1.1 404\r\n");
+        ASSERT(false);
+    } catch (http::ExpectingData& ex) {
+        std::string e(ex.what());
+        ASSERT_EQUAL(e, "Header");
+    }
     try {
         http::Request r("GET / HTTP/1.1\r\n\r\n");
         ASSERT_EQUAL(r.headers().size(), 0u);
     } catch (http::ParsingError& ex) {
         ASSERT(false);
+    }
+
+    try {
+        http::Request r("GET / HTTP/1.1\r\nHo");
+    } catch (http::ExpectingData& ex) {
+        std::string e(ex.what());
+        ASSERT_EQUAL(e, "Header");
     }
 
     try {
@@ -224,9 +232,9 @@ void TestHeaders() {
 
     try {
         http::Request r("GET / HTTP/1.1\r\nHost: localhost:8080\r\nFrom:\r\n");
-    } catch (http::IncorrectData& ex) {
+    } catch (http::ExpectingData& ex) {
         std::string e(ex.what());
-        ASSERT_EQUAL(e, "Expecting \\r\\n\\r\\n before body");
+        ASSERT_EQUAL(e, "Header");
     }
 
     try {
@@ -275,44 +283,44 @@ void TestBody() {
     try {
         http::Request r("GET / HTTP/1.1\r\n\r\n\r\n");
         ASSERT(false);
-    } catch (http::ParsingError& ex) {
+    } catch (http::IncorrectData& ex) {
         std::string e(ex.what());
         ASSERT_EQUAL(e, "Body exists, but no content length found");
     }
     try {
         http::Request r("GET / HTTP/1.1\r\n Host: localhost:8080\r\n\r\nasdasd");
         ASSERT(false);
-    } catch (http::ParsingError& ex) {
+    } catch (http::IncorrectData& ex) {
         std::string e(ex.what());
         ASSERT_EQUAL(e, "Body exists, but no content length found");
     }
     try {
         http::Request r("GET / HTTP/1.1\r\n Host: localhost:8080\r\nContent-Length: \r\n\r\nasdasd");
         ASSERT(false);
-    } catch (http::ParsingError& ex) {
+    } catch (http::IncorrectData& ex) {
         std::string e(ex.what());
-        ASSERT_EQUAL(e, "Cannot convert content length");
+        ASSERT_EQUAL(e, "Content length");
     }
     try {
         http::Request r("GET / HTTP/1.1\r\n Host: localhost:8080\r\nContent-Length: asd\r\n\r\nasdasd");
         ASSERT(false);
-    } catch (http::ParsingError& ex) {
+    } catch (http::IncorrectData& ex) {
         std::string e(ex.what());
-        ASSERT_EQUAL(e, "Cannot convert content length");
+        ASSERT_EQUAL(e, "Content length");
     }
     try {
         http::Request r("GET / HTTP/1.1\r\n Host: localhost:8080\r\nContent-Length: 2\r\n\r\nasdasd");
         ASSERT(false);
-    } catch (http::ParsingError& ex) {
+    } catch (http::IncorrectData& ex) {
         std::string e(ex.what());
-        ASSERT_EQUAL(e, "Invalid length of body");
+        ASSERT_EQUAL(e, "Size of body");
     }
     try {
-        http::Request r("GET / HTTP/1.1\r\n Host: localhost:8080\r\nContent-Length: 6\r\n\r\n2");
+        http::Request r("GET / HTTP/1.1\r\n Host: localhost:8080\r\nContent-Length: 6\r\n\r\nas");
         ASSERT(false);
-    } catch (http::ParsingError& ex) {
+    } catch (http::ExpectingData& ex) {
         std::string e(ex.what());
-        ASSERT_EQUAL(e, "Invalid length of body");
+        ASSERT_EQUAL(e, "Body");
     }
     try {
         http::Request r("GET / HTTP/1.1\r\nHost: localhost:8080\r\nContent-Length: 13\r\n\r\nTechnosphere!");

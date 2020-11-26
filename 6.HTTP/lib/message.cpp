@@ -34,17 +34,39 @@ METHODS = { "CONNECT", "DELETE", "GET",
 const std::array<const std::string_view, 3>
 VERSIONS = { "0.9", "1.0", "1.1" };
 
-const std::array<const std::string_view, 44>
-HEADER_NAMES =  { "A-IM", "Accept-Charset", "Accept-Control-Request-Headers",
-                "Accept-Control-Request-Method", "Accept-DateTime", "Accept-Encoding",
-                "Accept-Language", "Authorization", "Cache-Control", "Connection",
-                "Content-Encoding", "Content-Length", "Content-MD5", "Content-Type",
-                "Cookie", "DNT", "Date", "Expect", "Forwarded", "From", "Front-End-Https",
-                "HTTP2-Settings", "Host", "If-Match", "If-Modified-Since", "If-None-Match",
-                "If-Unmodified-Since", "IfRange", "Max-Forward", "Origin", "Pragma",
-                "Proxy-Authorization", "Proxy-Connection", "Range", "Referer",
-                "Save-Data", "TE", "Trailer", "Transfer-Encoding", "Upgrade",
-                "Upgrade-Insecure-Requests", "User-Agent", "Via", "Warning"};
+const std::array<const std::string_view, 55>
+REQUEST_HEADER_NAMES =  { "A-IM", "Accept-Charset", "Accept-Control-Request-Headers",
+                          "Accept-Control-Request-Method", "Accept-DateTime", "Accept-Encoding",
+                          "Accept-Language", "Authorization", "Cache-Control", "Connection",
+                          "Content-Encoding", "Content-Length", "Content-MD5", "Content-Type",
+                          "Cookie", "DNT", "Date", "Expect", "Forwarded", "From", "Front-End-Https",
+                          "HTTP2-Settings", "Host", "If-Match", "If-Modified-Since", "If-None-Match",
+                          "If-Unmodified-Since", "IfRange", "Max-Forward", "Origin", "Pragma",
+                          "Proxy-Authorization", "Proxy-Connection", "Range", "Referer", "Save-Data",
+                          "TE", "Trailer", "Transfer-Encoding", "Upgrade", "Upgrade-Insecure-Requests",
+                          "User-Agent", "Via", "Warning", "X-ATT-Deviced", "X-Correlation-ID",
+                          "X-Csrf-Token", "X-Forwarded-For", "X-Forwarded-Host", "X-Forwarded-Proto",
+                          "X-Http-Method-Override", "X-Request-ID", "X-Requested-With", "X-UIDH",
+                          "X-Wap-Profile"
+};
+
+const std::array<const std::string_view, 59>
+RESPONCE_HEADER_NAMES =  { "Accept-Patch", "Accept-Ranges", "Access-Control-Allow-Headers",
+                           "Access-Control-Allow-Methods", "Access-Control-Allow-Origin",
+                           "Access-Control-AllowCredentials", "Access-Control-Expose-Headers",
+                           "Access-Control-Max-Age", "Age", "Allow", "Alt-Svc", "Cache-Control",
+                           "Connection", "Content-Disposition", "Content-Encoding",
+                           "Content-Language", "Content-Length", "Content-Locationg",
+                           "Content-MD5", "Content-Range", "Content-Security-Policy",
+                           "Content-Type", "Date", "Delta-Base", "ETag", "Expires", "IM",
+                           "Last-Modified", "Link", "Location", "P3P", "Pragma",
+                           "Proxy-Authenticate", "Public-Key-Pins", "Refresh", "Retry-After",
+                           "Server", "Set-Cookie", "Status", "Strict-Transport-Security",
+                           "Timing-Allow-Origin", "Tk", "Trailer", "Transfer-Encoding", "Upgrade",
+                           "Vary", "Via", "WWW-Authenticate", "Warning", "X-Content-Duration",
+                           "X-Content-Security-Policy", "X-Content-Type-Options", "X-Correlation-ID",
+                           "X-Frame-Options", "X-Powered-By", "X-Request-ID", "X-UA-Compatible",
+                           "X-WebKit-CSP", "X-XSS-Protection" };
 
 template<class InputIt1, class InputIt2>
 size_t mismatch(InputIt1 first1, InputIt1 last1, InputIt2 first2, InputIt2 last2) {
@@ -87,7 +109,7 @@ std::string parse_protocol(std::string_view& mes_sv) {
         size_t cur;
         cur   = expecting("HTTP/", token, mes_sv);
         if (cur == 0) {
-            throw http::IncorrectData("Invalid request protocol");
+            throw http::IncorrectData("Request protocol");
         }
         token.remove_prefix(cur);
         if (token.empty()) {
@@ -101,7 +123,8 @@ std::string parse_protocol(std::string_view& mes_sv) {
         return std::string(token);
 }
 
-std::vector<http::Header> parse_headers(std::string_view& mes_sv) {
+template<class InputIt>
+std::vector<http::Header> parse_headers(InputIt begin, InputIt end, std::string_view& mes_sv) {
     size_t cur = 0u;
     std::vector<http::Header> headers;
     std::string_view token;
@@ -115,15 +138,13 @@ std::vector<http::Header> parse_headers(std::string_view& mes_sv) {
             throw http::IncorrectData("Header name");
         }
         token.remove_suffix(1);
-        if (token.find("X-") != 0) {
-            if (std::binary_search(HEADER_NAMES.begin(), HEADER_NAMES.end(), token) == false) {
-                throw http::IncorrectData("Header name");
-            }
-            if (std::find_if(headers.begin(), headers.end(), [token](const http::Header& h) {
-                    return h.name == token;
-                }) != headers.end()) {
-                throw http::IncorrectData("Cannot use same headers multiple times");
-            }
+        if (std::binary_search(begin, end, token) == false) {
+            throw http::IncorrectData("Header name");
+        }
+        if (std::find_if(headers.begin(), headers.end(), [token](const http::Header& h) {
+                return h.name == token;
+            }) != headers.end()) {
+            throw http::IncorrectData("Multiple header use");
         }
         LeftStrip(mes_sv);
         cur = mes_sv.find("\r\n");
@@ -132,29 +153,34 @@ std::vector<http::Header> parse_headers(std::string_view& mes_sv) {
         mes_sv.remove_prefix(cur + 2);
     }
 
+    if (cur == mes_sv.npos && mes_sv.empty()) {
+        throw http::ExpectingData("Header");
+    }
+
     return headers;
 }
 
 std::string parse_body(const std::vector<http::Header>& headers, std::string_view& mes_sv) {
-    if (!mes_sv.empty()) {
-        auto it = std::find_if(headers.begin(), headers.end(), [] (const http::Header& h) {
-                                    return h.name == "Content-Length";
-                                    });
-        if (it == headers.end()) {
-            throw http::ParsingError("Body exists, but no content length found");
-        } else {
-            size_t size;
-            try {
-                size = std::stoul(it->value);
-            } catch (const std::logic_error& ex) {
-                throw http::ParsingError("Cannot convert content length");
-            }
-            if (mes_sv.length() != size) {
-                throw http::ParsingError("Invalid length of body");
-            }
-            return std::string(mes_sv);
+    auto it = std::find_if(headers.begin(), headers.end(), [] (const http::Header& h) {
+                                return h.name == "Content-Length";
+                                });
+    if (it != headers.end()) {
+        size_t size;
+        try {
+            size = std::stoul(it->value);
+        } catch (const std::logic_error& ex) {
+            throw http::IncorrectData("Content length");
         }
+        if (mes_sv.length() < size) {
+            throw http::ExpectingData("Body");
+        } else if (mes_sv.length() > size) {
+            throw http::IncorrectData("Size of body");
+        }
+        return std::string(mes_sv);
+    } else if (!mes_sv.empty()) {
+        throw http::IncorrectData("Body exists, but no content length found");
     }
+
     return {};
 }
 
@@ -213,13 +239,9 @@ void Request::parse(const std::string& req) {
         throw IncorrectData("Start line");
     }
     req_sv.remove_prefix(2);
-
-    headers_ = parse_headers(req_sv);
-    if (!req_sv.empty()) {
-        req_sv.remove_prefix(2);
-    } else {
-        throw IncorrectData("Expecting \\r\\n\\r\\n before body");
-    }
+    headers_ = parse_headers(REQUEST_HEADER_NAMES.begin(),
+                             REQUEST_HEADER_NAMES.end(), req_sv);
+    req_sv.remove_prefix(2);
     body_    = parse_body(headers_, req_sv);
 }
 
@@ -272,13 +294,9 @@ void Responce::parse(const std::string& responce) {
     }
     status_text_ = std::string(res_sv.begin(), res_sv.begin() + cur);
     res_sv.remove_prefix(cur + 2);
-
-    headers_ = parse_headers(res_sv);
-    if (!res_sv.empty()) {
-        res_sv.remove_prefix(2);
-    } else {
-        throw IncorrectData("Expecting \\r\\n\\r\\n before body");
-    }
+    headers_ = parse_headers(RESPONCE_HEADER_NAMES.begin(),
+                             RESPONCE_HEADER_NAMES.end(), res_sv);
+    res_sv.remove_prefix(2);
     body_    = parse_body(headers_, res_sv);
 }
 
@@ -288,6 +306,5 @@ StatusCode Responce::code() const {
 std::string Responce::text() const {
     return status_text_;
 }
-
 
 }  // namespace http
