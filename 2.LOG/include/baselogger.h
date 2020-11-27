@@ -2,6 +2,7 @@
 #define LOG_BASELOGGER_H
 #include <ostream>
 #include <string>
+#include <mutex>
 #include "level.h"
 
 namespace log {
@@ -31,6 +32,7 @@ class BaseLogger {
     void log(const std::string& m, LEVEL l);
 
  protected:
+    std::mutex mutex_;
     std::ostream* _out;
     LEVEL _level;
 };
