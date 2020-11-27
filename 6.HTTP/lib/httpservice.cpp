@@ -52,10 +52,16 @@ void HttpService::run() {
         log::debug("Server waits");
         tcp::Connection new_c = server_.accept();
         log::debug("Server accepts: " + new_c.address().str());
+        new_c.set_nonblock();
         manager_.emplace(std::move(new_c), &connection_epoll_);
         connection_epoll_.add(&(manager_.back()), net::OPTION::READ
                                              + net::OPTION::EDGETRIGGERED
                                              + net::OPTION::ONESHOT);
+        // TODO: LOCK
+        while (!manager_.front().fd().valid()) {
+            manager_.pop();
+        }
+        log::info("Active connections: " + std::to_string(manager_.size()));
     }
 
     for (auto& worker : workers_) {

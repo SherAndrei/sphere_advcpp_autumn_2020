@@ -17,10 +17,10 @@ void BufferedConnection::read(std::string& data) {
 static constexpr size_t BUF_SIZE = 128;
 
 size_t BufferedConnection::read_to_buffer() {
-    size_t size = read_.size();
-    read_.resize(size + BUF_SIZE);
-    size = Connection::read(read_.data() + size, BUF_SIZE);
-    read_.resize(read_.size() - (BUF_SIZE - size));
+    std::string buf(BUF_SIZE, '\0');
+    size_t size = Connection::read(buf.data(), BUF_SIZE);
+    buf.resize(size);
+    read_ += buf;
     return size;
 }
 
