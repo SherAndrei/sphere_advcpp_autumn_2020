@@ -4,12 +4,12 @@
 
 class EchoListner : public net::IServiceListener {
     void onNewConnection(net::BufferedConnection& cn) override {
-        std::cout << "New client: " << cn.adress() << std::endl;
+        std::cout << "New client: " << cn.address() << std::endl;
         cn.subscribe(net::OPTION::READ);
         (void) cn;
     }
     void onClose(net::BufferedConnection& cn) override {
-        std::cout << "Client " << cn.adress() << " disconnected!" << std::endl;
+        std::cout << "Client " << cn.address() << " disconnected!" << std::endl;
         (void) cn;
     }
     void onWriteDone(net::BufferedConnection& cn) override {

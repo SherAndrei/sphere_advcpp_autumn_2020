@@ -20,11 +20,11 @@ class Connection {
     Connection(Connection && other)             = default;
     Connection& operator= (Connection && other) = default;
 
-    ~Connection() = default;
+    virtual ~Connection() = default;
 
  public:
     void connect(const Address&);
-    void close();
+    virtual void close();
 
     size_t write(const void* data, size_t len);
     void   writeExact(const void* data, size_t len);
@@ -39,7 +39,7 @@ class Connection {
     const Descriptor& fd() const;
     Address address() const;
 
- private:
+ protected:
     Address    c_addr;
     Descriptor c_sock;
 };

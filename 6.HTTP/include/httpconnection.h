@@ -15,7 +15,7 @@ class HttpConnection : public net::BufferedConnection {
 
  public:
     void write(const Responce& resp);
-    Request  request()  const;
+    Request request()  const;
 
  private:
     friend class Worker;

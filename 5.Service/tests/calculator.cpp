@@ -6,11 +6,11 @@ class Calculator : public net::IServiceListener {
     int numbers[2];
 
     void onNewConnection(net::BufferedConnection& cn) override {
-        std::cout << "New client " << cn.adress().port() << std::endl;
+        std::cout << "New client " << cn.address().port() << std::endl;
         cn.subscribe(net::OPTION::READ);
     }
     void onClose(net::BufferedConnection& cn)         override {
-        std::cout << "Client " << cn.adress().port() << " disconnected!" << std::endl;
+        std::cout << "Client " << cn.address().port() << " disconnected!" << std::endl;
         (void) cn;
     }
     void onReadAvailable(net::BufferedConnection& cn) override {

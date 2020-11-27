@@ -92,7 +92,7 @@ void Server::set_nonblock() const {
 }
 
 void Server::set_reuseaddr() const {
-    int opt;
+    int opt = 1;
     if (setsockopt(s_sock.fd(), SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int)) == -1) {
         throw SocketOptionError(std::strerror(errno), "SO_REUSEADDR");
     }

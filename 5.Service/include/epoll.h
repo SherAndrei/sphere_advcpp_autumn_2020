@@ -4,6 +4,7 @@
 #include <vector>
 #include "option.h"
 #include "descriptor.h"
+#include "connection.h"
 
 namespace net {
 
@@ -18,13 +19,20 @@ class EPoll {
     EPoll(EPoll&& other)              = default;
     EPoll& operator = (EPoll&& other) = default;
 
-    void add(const tcp::Descriptor& fd, OPTION opt);
-    void mod(const tcp::Descriptor& fd, OPTION opt);
-    void del(const tcp::Descriptor& fd);
-    std::vector<::epoll_event> wait();
+ public:
+    void add(const tcp::Descriptor& fd, OPTION opt) const;
+    void add(tcp::Connection* cn, OPTION opt) const;
+
+    void mod(const tcp::Descriptor& fd,  OPTION opt) const;
+    void mod(tcp::Connection* cn,  OPTION opt) const;
+
+    void del(const tcp::Descriptor& fd) const;
+
+    std::vector<::epoll_event> wait() const;
 
     void set_max_events(size_t max_events);
- private:
+
+ protected:
     size_t events_queue_size_;
     tcp::Descriptor epoll_fd_;
 };

@@ -8,7 +8,7 @@ namespace net {
 
 class Service;
 
-class BufferedConnection {
+class BufferedConnection : public tcp::Connection {
  public:
     BufferedConnection() = default;
     BufferedConnection(tcp::Connection && other, EPoll* p_epoll);
@@ -31,11 +31,6 @@ class BufferedConnection {
     std::string& write_buf();
     void close();
 
- public:
-    tcp::Descriptor& fd();
-    const tcp::Descriptor& fd() const;
-    tcp::Address adress() const;
-
  private:
     friend class Service;
 
@@ -46,7 +41,6 @@ class BufferedConnection {
  protected:
     std::string read_;
     std::string write_;
-    tcp::Connection connection_;
     EPoll* p_epoll_;
     OPTION epoll_option_{OPTION::UNKNOW};
 };

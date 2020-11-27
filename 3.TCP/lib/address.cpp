@@ -14,6 +14,10 @@ std::string Address::address() const {
     return _address;
 }
 
+std::string Address::str() const {
+    return _address + ':' + std::to_string(_port);
+}
+
 Address::Address(Address&& other) {
     _address = std::move(other._address);
     _port = std::exchange(other._port, 0u);
@@ -28,5 +32,5 @@ Address& Address::operator=(Address&& other) {
 }  // namespace tcp
 
 std::ostream& operator<<(std::ostream& os, const tcp::Address& addr) {
-    return os << addr.address() << ':' << addr.port();
+    return os << addr.str();
 }
