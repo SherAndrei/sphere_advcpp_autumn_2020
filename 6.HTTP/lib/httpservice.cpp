@@ -1,7 +1,9 @@
+#include "globallogger.h"
 #include "httpservice.h"
 #include "option.h"
 #include "neterr.h"
 #include "httperr.h"
+#include "connection.h"
 
 namespace http {
 
@@ -15,18 +17,24 @@ void HttpService::setListener(IHttpListener* listener) {
 }
 
 void HttpService::setWorkersSize(size_t size) {
-    size_t nthreads = static_cast<size_t>(std::thread::hardware_concurrency());
-    for (size_t i = 0; i < std::min(size, nthreads); i++) {
-        workers_.emplace_back(this);
+    size_t nthreads = std::min(static_cast<size_t>(std::thread::hardware_concurrency()),
+                               size);
+    for (size_t i = 0; i < nthreads; i++) {
+        workers_.emplace_back(this, i + 1, nthreads);
     }
 }
 
 void HttpService::open(const tcp::Address& addr) {
     tcp::Server t_serv(addr);
-    t_serv.set_nonblock();
     t_serv.set_reuseaddr();
-    epoll_.add(t_serv.fd(), net::OPTION::READ + net::OPTION::ONESHOT);
+    // При  наступлении события, ядро отключает события для дескриптора
+    // (Читаем в буфер?)Поток должен получить EAGAIN и подписаться снова
+    // Управление получает только один поток
+    // epoll_.add(t_serv.fd(), net::OPTION::READ
+    //                       + net::OPTION::EDGETRIGGERED
+    //                       + net::OPTION::ONESHOT);
     server_ = std::move(t_serv);
+    log::info("Server " + server_.address().str() +  " succesfully opened");
 }
 
 void HttpService::run() {
@@ -37,17 +45,25 @@ void HttpService::run() {
 
     for (auto& worker : workers_) {
         worker.set_thread(std::thread(&Worker::work, std::ref(worker)));
+        log::debug("Thread " + worker.info() + " up and running");
     }
 
     while (true) {
-        std::vector<::epoll_event> epoll_events = epoll_.wait();
-        for (::epoll_event& event : epoll_events) {
-            if (event.data.fd == server_.fd().fd()) {
-                manager_.emplace(std::make_shared<HttpConnection>(server_.accept(), &epoll_));
-                epoll_.add(manager_.last().fd(), net::OPTION::READ);
-            }
-        }
+        log::debug("Server waits");
+        tcp::Connection new_c = server_.accept();
+        log::debug("Server accepts: " + new_c.address().str());
+        manager_.emplace(std::move(new_c), &connection_epoll_);
+        connection_epoll_.add(&(manager_.back()), net::OPTION::READ
+                                             + net::OPTION::EDGETRIGGERED
+                                             + net::OPTION::ONESHOT);
     }
+
+    for (auto& worker : workers_) {
+        worker.join();
+        log::debug("Thread " + worker.info() + " finished");
+    }
+
+    log::info("Server finished");
 }
 
 
