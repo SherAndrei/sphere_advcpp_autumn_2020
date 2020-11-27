@@ -6,6 +6,7 @@
 namespace http {
 
 class IHttpListener {
+ public:
     virtual void OnRequest(HttpConnection&) = 0;
 };
 

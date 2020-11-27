@@ -4,7 +4,8 @@
 #include "server.h"
 #include "httplistener.h"
 #include "worker.h"
-#include "connection_manager.h"
+#include "httpmanager.h"
+#include "httpservice.h"
 #include "epoll.h"
 
 namespace http {
@@ -25,8 +26,8 @@ class HttpService {
     IHttpListener* listener_{nullptr};
     std::vector<Worker> workers_;
     tcp::Server server_;
-    net::ConnectionManager manager_;
-    net::EPoll epoll_;
+    HttpManager manager_;
+    net::EPoll connection_epoll_;
 };
 
 }  // namespace http
