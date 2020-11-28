@@ -29,13 +29,14 @@ class Server {
     void set_reuseaddr() const;
 
  public:
-    Descriptor& fd();
-    const Descriptor& fd() const;
     Address address() const;
 
+    Descriptor& socket();
+    const Descriptor& socket() const;
+
  private:
-    Address    s_addr;
-    Descriptor s_sock;
+    Address    address_;
+    Descriptor socket_;
 };
 
 }  // namespace tcp

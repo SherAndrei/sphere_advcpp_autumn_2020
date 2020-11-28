@@ -21,10 +21,10 @@ class EPoll {
 
  public:
     void add(const tcp::Descriptor& fd, OPTION opt) const;
-    void add(tcp::Connection* cn, OPTION opt) const;
+    void mod(const tcp::Descriptor& fd, OPTION opt) const;
 
-    void mod(const tcp::Descriptor& fd,  OPTION opt) const;
-    void mod(tcp::Connection* cn,  OPTION opt) const;
+    void add(tcp::Connection* cn, OPTION opt) const;
+    void mod(tcp::Connection* cn, OPTION opt) const;
 
     void del(const tcp::Descriptor& fd) const;
 

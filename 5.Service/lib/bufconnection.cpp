@@ -1,11 +1,10 @@
-#include "bufconnection.h"
 #include <algorithm>
+#include "bufconnection.h"
 
 namespace net {
 
-BufferedConnection::BufferedConnection(tcp::Connection && other, EPoll* p_epoll)
-    : Connection(std::move(other))
-    , p_epoll_(p_epoll) {}
+BufferedConnection::BufferedConnection(tcp::Connection && other)
+    : Connection(std::move(other)) {}
 
 void BufferedConnection::write(const std::string& data) {
     write_.append(data);
@@ -33,12 +32,10 @@ size_t BufferedConnection::write_from_buffer() {
 
 void BufferedConnection::subscribe(OPTION opt) {
     epoll_option_ = epoll_option_ + opt;
-    p_epoll_->mod(c_sock, epoll_option_);
 }
 
 void BufferedConnection::unsubscribe(OPTION opt) {
     epoll_option_ = epoll_option_ - opt;
-    p_epoll_->mod(c_sock, epoll_option_);
 }
 
 std::string& BufferedConnection::read_buf() {

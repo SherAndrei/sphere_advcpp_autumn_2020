@@ -39,13 +39,6 @@ void EPoll::add(const tcp::Descriptor& d, OPTION opt) const {
     try_set_epoll(epoll_fd_.fd(), EPOLL_CTL_ADD, d.fd(), event);
 }
 
-void EPoll::add(tcp::Connection* cn, OPTION opt) const {
-    ::epoll_event event{};
-    event.events  = static_cast<uint32_t>(opt) | EPOLLRDHUP;
-    event.data.ptr = cn;
-    try_set_epoll(epoll_fd_.fd(), EPOLL_CTL_ADD, cn->fd().fd(), event);
-}
-
 void EPoll::mod(const tcp::Descriptor& d, OPTION opt) const {
     ::epoll_event event{};
     event.events  = static_cast<uint32_t>(opt) | EPOLLRDHUP;
@@ -53,11 +46,18 @@ void EPoll::mod(const tcp::Descriptor& d, OPTION opt) const {
     try_set_epoll(epoll_fd_.fd(), EPOLL_CTL_MOD, d.fd(), event);
 }
 
+void EPoll::add(tcp::Connection* cn, OPTION opt) const {
+    ::epoll_event event{};
+    event.events  = static_cast<uint32_t>(opt) | EPOLLRDHUP;
+    event.data.ptr = cn;
+    try_set_epoll(epoll_fd_.fd(), EPOLL_CTL_ADD, cn->socket().fd(), event);
+}
+
 void EPoll::mod(tcp::Connection* cn, OPTION opt) const {
     ::epoll_event event{};
     event.events  = static_cast<uint32_t>(opt) | EPOLLRDHUP;
     event.data.ptr = cn;
-    try_set_epoll(epoll_fd_.fd(), EPOLL_CTL_MOD, cn->fd().fd(), event);
+    try_set_epoll(epoll_fd_.fd(), EPOLL_CTL_MOD, cn->socket().fd(), event);
 }
 
 void EPoll::del(const tcp::Descriptor& d) const {

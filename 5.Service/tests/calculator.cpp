@@ -1,4 +1,5 @@
 #include <iostream>
+#include "globallogger.h"
 #include "service.h"
 #include "tcperr.h"
 
@@ -6,11 +7,9 @@ class Calculator : public net::IServiceListener {
     int numbers[2];
 
     void onNewConnection(net::BufferedConnection& cn) override {
-        std::cout << "New client " << cn.address().port() << std::endl;
         cn.subscribe(net::OPTION::READ);
     }
     void onClose(net::BufferedConnection& cn)         override {
-        std::cout << "Client " << cn.address().port() << " disconnected!" << std::endl;
         (void) cn;
     }
     void onReadAvailable(net::BufferedConnection& cn) override {
@@ -30,13 +29,13 @@ class Calculator : public net::IServiceListener {
         cn.unsubscribe(net::OPTION::WRITE);
     }
     void onError(net::BufferedConnection& cn)         override {
-        std::cout << "Error occured!" << std::endl;
         int result = -1;
         cn.write({reinterpret_cast<char*>(&result), 4});
     }
 };
 
 int main() {
+    log::init_with_stderr_logger();
     Calculator el;
     net::Service service(&el);
     bool addr_reus = true;

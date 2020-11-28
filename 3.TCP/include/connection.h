@@ -35,13 +35,14 @@ class Connection {
     void set_nonblock() const;
 
  public:
-    Descriptor& fd();
-    const Descriptor& fd() const;
     Address address() const;
 
+    Descriptor& socket();
+    const Descriptor& socket() const;
+
  protected:
-    Address    c_addr;
-    Descriptor c_sock;
+    Address    address_;
+    Descriptor socket_;
 };
 
 }  // namespace tcp

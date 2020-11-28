@@ -24,12 +24,12 @@ void handle_error(int errnum) {
 namespace tcp {
 
 Connection::Connection(const Address& addr)
-    : c_addr(addr) {
+    : address_(addr) {
     connect(addr);
 }
 Connection::Connection(Descriptor && fd, const Address& addr)
-    : c_addr(addr)
-    , c_sock(std::move(fd))
+    : address_(addr)
+    , socket_(std::move(fd))
 {}
 
 void Connection::connect(const Address& addr) {
@@ -51,12 +51,12 @@ void Connection::connect(const Address& addr) {
     if (error == -1)
         throw AddressError(std::strerror(errno), addr);
 
-    c_sock = std::move(s);
+    socket_ = std::move(s);
 }
 
 size_t Connection::write(const void* data, size_t len) {
     ssize_t size;
-    handle_error(size = ::write(c_sock.fd(), data, len));
+    handle_error(size = ::write(socket_.fd(), data, len));
 
     return static_cast<size_t> (size);
 }
@@ -68,7 +68,7 @@ void Connection::writeExact(const void* data, size_t len) {
 }
 size_t Connection::read(void* data, size_t len) {
     ssize_t size;
-    handle_error(size = ::read(c_sock.fd(), data, len));
+    handle_error(size = ::read(socket_.fd(), data, len));
 
     return static_cast<size_t> (size);
 }
@@ -85,15 +85,15 @@ void Connection::readExact(void* data, size_t len) {
 }
 
 void Connection::close() {
-    c_sock.close();
+    socket_.close();
 }
 void Connection::set_timeout(ssize_t sec, ssize_t usec) const {
     timeval timeout = { sec, usec };
-    if (setsockopt(c_sock.fd(), SOL_SOCKET, SO_SNDTIMEO,
+    if (setsockopt(socket_.fd(), SOL_SOCKET, SO_SNDTIMEO,
                    &timeout, sizeof(timeout)) == -1) {
         throw SocketOptionError(std::strerror(errno), "SO_SNDTIMEO");
     }
-    if (setsockopt(c_sock.fd(), SOL_SOCKET, SO_RCVTIMEO,
+    if (setsockopt(socket_.fd(), SOL_SOCKET, SO_RCVTIMEO,
                    &timeout, sizeof(timeout) == -1)) {
         throw SocketOptionError(std::strerror(errno), "SO_RCVTIMEO");
     }
@@ -101,24 +101,24 @@ void Connection::set_timeout(ssize_t sec, ssize_t usec) const {
 
 void Connection::set_nonblock() const {
     int flags;
-    if ((flags = fcntl(c_sock.fd(), F_GETFL)) == -1) {
+    if ((flags = fcntl(socket_.fd(), F_GETFL)) == -1) {
         throw SocketOptionError(std::strerror(errno), "O_NONBLOCK");
     }
-    if ((fcntl(c_sock.fd(), F_SETFL, flags | O_NONBLOCK)) == -1) {
+    if ((fcntl(socket_.fd(), F_SETFL, flags | O_NONBLOCK)) == -1) {
         throw SocketOptionError(std::strerror(errno), "O_NONBLOCK");
     }
 }
 
-Descriptor& Connection::fd() {
-    return c_sock;
+Descriptor& Connection::socket() {
+    return socket_;
 }
 
-const Descriptor& Connection::fd() const {
-    return c_sock;
+const Descriptor& Connection::socket() const {
+    return socket_;
 }
 
 Address Connection::address() const {
-    return c_addr;
+    return address_;
 }
 
 }  // namespace tcp

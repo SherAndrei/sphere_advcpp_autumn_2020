@@ -11,7 +11,7 @@ class Service;
 class BufferedConnection : public tcp::Connection {
  public:
     BufferedConnection() = default;
-    BufferedConnection(tcp::Connection && other, EPoll* p_epoll);
+    explicit BufferedConnection(tcp::Connection && other);
 
     BufferedConnection& operator= (const BufferedConnection&  other) = delete;
     BufferedConnection(const BufferedConnection& other)              = delete;
@@ -22,14 +22,14 @@ class BufferedConnection : public tcp::Connection {
     virtual ~BufferedConnection() = default;
 
  public:
-    void subscribe(OPTION opt);
-    void unsubscribe(OPTION opt);
-    void write(const std::string& data);
-    void read(std::string& data);
+    virtual void subscribe(OPTION opt);
+    virtual void unsubscribe(OPTION opt);
+    virtual void write(const std::string& data);
+    virtual void read(std::string& data);
+    virtual void close();
 
     std::string& read_buf();
     std::string& write_buf();
-    void close();
 
  private:
     friend class Service;
@@ -41,7 +41,6 @@ class BufferedConnection : public tcp::Connection {
  protected:
     std::string read_;
     std::string write_;
-    EPoll* p_epoll_;
     OPTION epoll_option_{OPTION::UNKNOW};
 };
 
