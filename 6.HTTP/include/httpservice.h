@@ -1,6 +1,8 @@
 #ifndef HTTP_SERVICE_H
 #define HTTP_SERVICE_H
 #include <vector>
+#include <queue>
+#include <list>
 #include "server.h"
 #include "httplistener.h"
 #include "worker.h"
@@ -28,6 +30,8 @@ class HttpService {
     std::vector<Worker> workers_;
     tcp::Server server_;
     HttpManager manager_;
+    std::queue<HttpConnection*, std::list<HttpConnection*>> closed_;
+    net::EPoll server_epoll_;
     net::EPoll connection_epoll_;
 };
 

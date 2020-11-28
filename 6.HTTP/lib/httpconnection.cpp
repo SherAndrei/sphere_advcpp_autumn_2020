@@ -12,6 +12,14 @@ Request  HttpConnection::request()  const {
     return req_;
 }
 
+void HttpConnection::subscribe(net::OPTION opt) {
+    epoll_option_ = epoll_option_ + opt + net::OPTION::ET_ONESHOT;
+}
+
+void HttpConnection::unsubscribe(net::OPTION opt) {
+    epoll_option_ = epoll_option_ - opt + net::OPTION::ET_ONESHOT;
+}
+
 bool HttpConnection::is_keep_alive() const {
     auto it = std::find_if(req_.headers_.begin(), req_.headers_.end(),
                           [](const Header& h) {

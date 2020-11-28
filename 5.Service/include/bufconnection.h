@@ -22,8 +22,8 @@ class BufferedConnection {
     virtual ~BufferedConnection() = default;
 
  public:
-    void subscribe(OPTION opt);
-    void unsubscribe(OPTION opt);
+    virtual void subscribe(OPTION opt);
+    virtual void unsubscribe(OPTION opt);
     void write(const std::string& data);
     void read(std::string& data);
     virtual void close();

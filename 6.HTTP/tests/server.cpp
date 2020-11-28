@@ -5,8 +5,8 @@
 
 class TestListener : public http::IHttpListener {
     void OnRequest(http::HttpConnection& cn) override {
-        std::cout << cn.request().str() << std::endl;
-        cn.write(http::Responce("HTTP/1.1 200 Success\r\n\r\n"));
+        std::cout << "New request\n";
+        cn.write(http::Responce("HTTP/1.1 200 " + http::to_string(http::StatusCode::OK) + "\r\n\r\n"));
     }
 };
 
