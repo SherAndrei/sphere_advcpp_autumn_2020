@@ -5,11 +5,12 @@
 namespace net {
 
 enum class OPTION : size_t {
-    UNKNOW = 0,
+    UNKNOWN = 0,
     READ   = EPOLLIN,
     WRITE  = EPOLLOUT,
-    EXCLUSIVE = EPOLLEXCLUSIVE,
-    ONESHOT   = EPOLLONESHOT,
+    CLOSE  = EPOLLRDHUP,
+    EXCLUSIVE     = EPOLLEXCLUSIVE,
+    ONESHOT       = EPOLLONESHOT,
     EDGETRIGGERED = EPOLLET
 };
 

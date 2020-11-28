@@ -1,8 +1,9 @@
 #ifndef NET_I_SERVICE_LISTENER_H
 #define NET_I_SERVICE_LISTENER_H
-#include "bufconnection.h"
 
 namespace net {
+
+class BufferedConnection;
 
 class IServiceListener {
  public:

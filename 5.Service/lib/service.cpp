@@ -33,7 +33,8 @@ void Service::run() {
                 manager_.emplace_back(server_.accept());
                 BufferedConnection& client = manager_.back();
                 log::info("Server accepted " + client.address().str());
-                epoll_.add(client.socket(), OPTION::UNKNOW);
+                epoll_.add(client.socket(), OPTION::CLOSE);
+
                 listener_->onNewConnection(client);
                 if (client.socket().valid()) {
                     epoll_.mod(client.socket(), client.epoll_option_);
@@ -65,7 +66,7 @@ void Service::run() {
                         listener_->onWriteDone(client);
                     }
                 }
-                if (client.epoll_option_ == OPTION::UNKNOW ||
+                if (client.epoll_option_ == OPTION::UNKNOWN ||
                     event.events & EPOLLRDHUP) {
                     listener_->onClose(client);
                     client.close();

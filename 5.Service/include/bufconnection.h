@@ -2,13 +2,13 @@
 #define NET_BUFFERED_CONNECTION_H
 #include <string>
 #include "connection.h"
-#include "epoll.h"
+#include "option.h"
 
 namespace net {
 
 class Service;
 
-class BufferedConnection : public tcp::Connection {
+class BufferedConnection {
  public:
     BufferedConnection() = default;
     explicit BufferedConnection(tcp::Connection && other);
@@ -28,8 +28,14 @@ class BufferedConnection : public tcp::Connection {
     void read(std::string& data);
     virtual void close();
 
+ public:
     std::string& read_buf();
     std::string& write_buf();
+
+    tcp::Address address() const;
+
+    tcp::Descriptor& socket();
+    const tcp::Descriptor& socket() const;
 
  private:
     friend class Service;
@@ -41,7 +47,8 @@ class BufferedConnection : public tcp::Connection {
  protected:
     std::string read_;
     std::string write_;
-    OPTION epoll_option_{OPTION::UNKNOW};
+    tcp::Connection connection_;
+    OPTION epoll_option_{OPTION::UNKNOWN};
 };
 
 }  // namespace net

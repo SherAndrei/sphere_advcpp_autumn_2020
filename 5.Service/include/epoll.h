@@ -4,7 +4,7 @@
 #include <vector>
 #include "option.h"
 #include "descriptor.h"
-#include "connection.h"
+#include "bufconnection.h"
 
 namespace net {
 
@@ -23,8 +23,8 @@ class EPoll {
     void add(const tcp::Descriptor& fd, OPTION opt) const;
     void mod(const tcp::Descriptor& fd, OPTION opt) const;
 
-    void add(tcp::Connection* cn, OPTION opt) const;
-    void mod(tcp::Connection* cn, OPTION opt) const;
+    void add(BufferedConnection* cn, OPTION opt) const;
+    void mod(BufferedConnection* cn, OPTION opt) const;
 
     void del(const tcp::Descriptor& fd) const;
 

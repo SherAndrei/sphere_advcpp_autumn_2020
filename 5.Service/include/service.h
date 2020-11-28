@@ -1,10 +1,10 @@
 #ifndef NET_SERVICE_H
 #define NET_SERVICE_H
 #include "address.h"
-#include "epoll.h"
+#include "listener.h"
 #include "server.h"
 #include "connection_manager.h"
-#include "listener.h"
+#include "epoll.h"
 
 namespace net {
 

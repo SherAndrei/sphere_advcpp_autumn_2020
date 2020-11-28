@@ -4,7 +4,7 @@
 namespace net {
 
 BufferedConnection::BufferedConnection(tcp::Connection && other)
-    : Connection(std::move(other)) {}
+    : connection_(std::move(other)) {}
 
 void BufferedConnection::write(const std::string& data) {
     write_.append(data);
@@ -17,7 +17,7 @@ static constexpr size_t BUF_SIZE = 128;
 
 size_t BufferedConnection::read_to_buffer() {
     std::string buf(BUF_SIZE, '\0');
-    size_t size = Connection::read(buf.data(), BUF_SIZE);
+    size_t size = connection_.read(buf.data(), BUF_SIZE);
     buf.resize(size);
     read_ += buf;
     return size;
@@ -25,17 +25,22 @@ size_t BufferedConnection::read_to_buffer() {
 
 size_t BufferedConnection::write_from_buffer() {
     size_t size;
-    size = Connection::write(write_.data(), write_.size());
+    size = connection_.write(write_.data(), write_.size());
     write_.erase(0, size);
     return size;
 }
 
 void BufferedConnection::subscribe(OPTION opt) {
-    epoll_option_ = epoll_option_ + opt;
+    epoll_option_ = epoll_option_ + opt + net::OPTION::CLOSE;
 }
 
 void BufferedConnection::unsubscribe(OPTION opt) {
-    epoll_option_ = epoll_option_ - opt;
+    epoll_option_ = epoll_option_ - opt  + net::OPTION::CLOSE;
+}
+
+void BufferedConnection::close() {
+    epoll_option_ = OPTION::UNKNOWN;
+    connection_.close();
 }
 
 std::string& BufferedConnection::read_buf() {
@@ -46,9 +51,16 @@ std::string& BufferedConnection::write_buf() {
     return write_;
 }
 
-void BufferedConnection::close() {
-    epoll_option_ = OPTION::UNKNOW;
-    Connection::close();
+tcp::Descriptor& BufferedConnection::socket() {
+    return connection_.socket();
+}
+
+const tcp::Descriptor& BufferedConnection::socket() const {
+    return connection_.socket();
+}
+
+tcp::Address BufferedConnection::address() const {
+    return connection_.address();
 }
 
 }  // namespace net
