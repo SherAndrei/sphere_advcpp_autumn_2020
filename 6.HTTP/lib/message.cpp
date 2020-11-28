@@ -34,7 +34,7 @@ METHODS = { "CONNECT", "DELETE", "GET",
 const std::array<const std::string_view, 3>
 VERSIONS = { "0.9", "1.0", "1.1" };
 
-const std::array<const std::string_view, 55>
+const std::array<const std::string_view, 45>
 REQUEST_HEADER_NAMES =  { "A-IM", "Accept-Charset", "Accept-Control-Request-Headers",
                           "Accept-Control-Request-Method", "Accept-DateTime", "Accept-Encoding",
                           "Accept-Language", "Authorization", "Cache-Control", "Connection",
@@ -44,13 +44,9 @@ REQUEST_HEADER_NAMES =  { "A-IM", "Accept-Charset", "Accept-Control-Request-Head
                           "If-Unmodified-Since", "IfRange", "Max-Forward", "Origin", "Pragma",
                           "Proxy-Authorization", "Proxy-Connection", "Range", "Referer", "Save-Data",
                           "TE", "Trailer", "Transfer-Encoding", "Upgrade", "Upgrade-Insecure-Requests",
-                          "User-Agent", "Via", "Warning", "X-ATT-Deviced", "X-Correlation-ID",
-                          "X-Csrf-Token", "X-Forwarded-For", "X-Forwarded-Host", "X-Forwarded-Proto",
-                          "X-Http-Method-Override", "X-Request-ID", "X-Requested-With", "X-UIDH",
-                          "X-Wap-Profile"
-};
+                          "User-Agent", "Via", "Warning" };
 
-const std::array<const std::string_view, 59>
+const std::array<const std::string_view, 49>
 RESPONCE_HEADER_NAMES =  { "Accept-Patch", "Accept-Ranges", "Access-Control-Allow-Headers",
                            "Access-Control-Allow-Methods", "Access-Control-Allow-Origin",
                            "Access-Control-AllowCredentials", "Access-Control-Expose-Headers",
@@ -63,18 +59,15 @@ RESPONCE_HEADER_NAMES =  { "Accept-Patch", "Accept-Ranges", "Access-Control-Allo
                            "Proxy-Authenticate", "Public-Key-Pins", "Refresh", "Retry-After",
                            "Server", "Set-Cookie", "Status", "Strict-Transport-Security",
                            "Timing-Allow-Origin", "Tk", "Trailer", "Transfer-Encoding", "Upgrade",
-                           "Vary", "Via", "WWW-Authenticate", "Warning", "X-Content-Duration",
-                           "X-Content-Security-Policy", "X-Content-Type-Options", "X-Correlation-ID",
-                           "X-Frame-Options", "X-Powered-By", "X-Request-ID", "X-UA-Compatible",
-                           "X-WebKit-CSP", "X-XSS-Protection" };
+                           "Vary", "Via", "WWW-Authenticate", "Warning" };
 
-template<class InputIt1, class InputIt2>
-size_t mismatch(InputIt1 first1, InputIt1 last1, InputIt2 first2, InputIt2 last2) {
-    auto first = first1;
-    while (first1 != last1 && first2 != last2 && *first1 == *first2) {
+size_t mismatch(const std::string_view& lhs, const std::string_view& rhs) {
+    auto first1 = lhs.begin();
+    auto first2 = rhs.begin();
+    while (first1 != lhs.end() && first2 != rhs.end() && *first1 == *first2) {
         ++first1, ++first2;
     }
-    return first1 - first;
+    return first1 - lhs.begin();
 }
 
 size_t expecting(const std::string_view& expectation,
@@ -82,7 +75,7 @@ size_t expecting(const std::string_view& expectation,
                const std::string_view& full_message,
                const std::string& hint = {}) {
     size_t cur = 0u;
-    cur = mismatch(reality.begin(), reality.end(), expectation.begin(), expectation.end());
+    cur = mismatch(expectation, reality);
     if (cur > 0u &&
         cur == reality.length() &&
         cur < expectation.length() &&
@@ -138,7 +131,7 @@ std::vector<http::Header> parse_headers(InputIt begin, InputIt end, std::string_
             throw http::IncorrectData("Header name");
         }
         token.remove_suffix(1);
-        if (std::binary_search(begin, end, token) == false) {
+        if (std::binary_search(begin, end, token) == false && token.find("X-") != 0) {
             throw http::IncorrectData("Header name");
         }
         if (std::find_if(headers.begin(), headers.end(), [token](const http::Header& h) {
@@ -280,7 +273,8 @@ void Responce::parse(const std::string& responce) {
     } catch (const std::logic_error& ex) {
         throw IncorrectData("Cannot convert error code");
     }
-    if (code_ < StatusCode::Continue && res_sv.empty()) {
+    // Так как кодов ошибки > 6** нет
+    if (static_cast<size_t>(code_) < 60u && res_sv.empty()) {
         throw ExpectingData("Status code");
     }
     if (code_ > StatusCode::NetworkConnectTimeoutError) {

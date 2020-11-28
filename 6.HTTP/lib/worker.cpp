@@ -6,7 +6,7 @@
 #include "worker.h"
 
 #define TRY_UNTIL_EAGAIN(x)            \
-while(true) {                          \
+for(;;) {                              \
     try {                              \
         if (x() == 0)                  \
             break;                     \
@@ -17,9 +17,9 @@ while(true) {                          \
 
 namespace http {
 
-Worker::Worker(HttpService* service, size_t id, size_t nthreads)
+Worker::Worker(HttpService* service, size_t id)
     : service_(service)
-    , id_(id), nthreads_(nthreads) {}
+    , id_(id) {}
 
 void Worker::set_thread(std::thread&& other) {
     thread_ = std::move(other);
@@ -30,7 +30,7 @@ void Worker::join() {
 }
 
 std::string Worker::info() const {
-    return std::to_string(id_) + " out of " + std::to_string(nthreads_);
+    return std::to_string(id_);
 }
 
 void Worker::work() {
@@ -47,12 +47,12 @@ void Worker::work() {
                 log::debug("Worker " + info() + " encounters EPOLLIN from " + p_client->address().str());
                 TRY_UNTIL_EAGAIN(p_client->read_to_buffer);
                 try {
-                    Request req(p_client->read_buf());
+                    p_client->req_.parse(p_client->read_buf());
                 } catch (ExpectingData& exd) {
                     log::warn("Worker " + info()
                                         + " got incomplete request from "
                                         + p_client->address().str());
-                    p_client->subscribe(net::OPTION::READ);
+                    service_->subscribe(*p_client, net::OPTION::READ);
                     continue;
                 } catch (IncorrectData& ind) {
                     log::warn("Worker " + info()
@@ -63,7 +63,10 @@ void Worker::work() {
                 }
                 // TODO: LOCK
                 service_->listener_->OnRequest(*p_client);
-                p_client->unsubscribe(net::OPTION::READ);
+                if (!p_client->is_keep_alive())
+                    p_client->unsubscribe(net::OPTION::READ);
+                else
+                    p_client->read_.clear();
                 p_client->subscribe(net::OPTION::WRITE);
             } else if (event.events & EPOLLOUT) {
                 // SEGFAULT
@@ -84,9 +87,7 @@ void Worker::work() {
                 p_client->close();
                 continue;
             }
-            service_->connection_epoll_.mod(p_client, p_client->epoll_option_
-                        + net::OPTION::EDGETRIGGERED
-                        + net::OPTION::ONESHOT);
+            service_->subscribe(*p_client, p_client->epoll_option_);
         }
     }
     log::info("Worker " + info() + " finished");

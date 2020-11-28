@@ -71,7 +71,7 @@ class Responce : public Message {
     std::string text() const;
 
  private:
-    StatusCode code_{StatusCode::UNKNOWN};
+    StatusCode code_{StatusCode::None};
     std::string status_text_;
 };
 

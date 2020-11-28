@@ -6,8 +6,8 @@
 
 namespace http {
 
-using HttpManager = std::queue<HttpConnection, std::list<HttpConnection>>;
+using HttpManager = std::list<HttpConnection>;
 
-} // namespace http
+}  // namespace http
 
 #endif  // HTTP_MANAGER_H

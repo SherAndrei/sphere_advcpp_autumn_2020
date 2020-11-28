@@ -17,8 +17,14 @@ class HttpConnection : public net::BufferedConnection {
     void write(const Responce& resp);
     Request request()  const;
 
+ public:
+    bool is_keep_alive() const;
+
  private:
+    friend class HttpService;
     friend class Worker;
+ private:
+    Request req_;
 };
 
 }  // namespace http

@@ -14,13 +14,14 @@ class HttpService {
  public:
     explicit HttpService(IHttpListener* listener, size_t workersSize);
     void setListener(IHttpListener* listener);
-    void setWorkersSize(size_t size);
     void open(const tcp::Address& addr);
     void run();
     void close();
 
  private:
     friend class Worker;
+    void subscribe(HttpConnection& cn, net::OPTION opt)   const;
+    void unsubscribe(HttpConnection& cn, net::OPTION opt) const;
 
  private:
     IHttpListener* listener_{nullptr};

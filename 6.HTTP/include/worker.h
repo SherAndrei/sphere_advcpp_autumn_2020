@@ -11,7 +11,7 @@ class HttpService;
 
 class Worker {
  public:
-    Worker(HttpService* service, size_t id, size_t nthreads);
+    Worker(HttpService* service, size_t id);
     ~Worker() = default;
 
     Worker(const Worker& other)            = delete;
@@ -33,7 +33,6 @@ class Worker {
  private:
     HttpService  *service_;
     size_t id_;
-    size_t nthreads_;
     std::thread   thread_;
 };
 

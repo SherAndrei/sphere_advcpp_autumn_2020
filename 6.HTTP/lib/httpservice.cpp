@@ -8,20 +8,16 @@
 namespace http {
 
 HttpService::HttpService(IHttpListener* listener, size_t workerSize) {
+    workers_.reserve(std::min(static_cast<size_t>(std::thread::hardware_concurrency()),
+                        workerSize));
+    if (workers_.capacity() == 0u) {
+        throw WorkerError("Workers size == 0");
+    }
     setListener(listener);
-    setWorkersSize(workerSize);
 }
 
 void HttpService::setListener(IHttpListener* listener) {
     listener_ = listener;
-}
-
-void HttpService::setWorkersSize(size_t size) {
-    size_t nthreads = std::min(static_cast<size_t>(std::thread::hardware_concurrency()),
-                               size);
-    for (size_t i = 0; i < nthreads; i++) {
-        workers_.emplace_back(this, i + 1, nthreads);
-    }
 }
 
 void HttpService::open(const tcp::Address& addr) {
@@ -40,8 +36,10 @@ void HttpService::open(const tcp::Address& addr) {
 void HttpService::run() {
     if (listener_ == nullptr)
         throw net::ListenerError("Listener was not set");
-    if (workers_.size() == 0)
-        throw WorkerError("Worker size was not set");
+
+    for (size_t i = 0; i < workers_.capacity(); i++) {
+        workers_.emplace_back(this, i + 1);
+    }
 
     for (auto& worker : workers_) {
         worker.set_thread(std::thread(&Worker::work, std::ref(worker)));
@@ -53,14 +51,13 @@ void HttpService::run() {
         tcp::Connection new_c = server_.accept();
         log::debug("Server accepts: " + new_c.address().str());
         new_c.set_nonblock();
-        manager_.emplace(std::move(new_c), &connection_epoll_);
-        connection_epoll_.add(&(manager_.back()), net::OPTION::READ
-                                             + net::OPTION::EDGETRIGGERED
-                                             + net::OPTION::ONESHOT);
-        // TODO: LOCK
-        while (!manager_.front().fd().valid()) {
-            manager_.pop();
-        }
+        manager_.emplace_back(std::move(new_c));
+        connection_epoll_.add(&(manager_.back()), net::OPTION::UNKNOW);
+        subscribe(manager_.back(), net::OPTION::READ);
+        // // TODO: LOCK
+        // while (!manager_.front().fd().valid()) {
+        //     manager_.pop();
+        // }
         log::info("Active connections: " + std::to_string(manager_.size()));
     }
 
@@ -70,6 +67,19 @@ void HttpService::run() {
     }
 
     log::info("Server finished");
+}
+
+void HttpService::subscribe(HttpConnection& cn, net::OPTION opt)   const {
+    cn.epoll_option_ = cn.epoll_option_ + opt
+                     + net::OPTION::EDGETRIGGERED
+                     + net::OPTION::ONESHOT;
+    connection_epoll_.mod(&(cn), cn.epoll_option_);
+}
+void HttpService::unsubscribe(HttpConnection& cn, net::OPTION opt) const {
+    cn.epoll_option_ = cn.epoll_option_ - opt
+                     + net::OPTION::EDGETRIGGERED
+                     + net::OPTION::ONESHOT;
+    connection_epoll_.mod(&(cn), cn.epoll_option_);
 }
 
 
