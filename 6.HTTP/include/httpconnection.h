@@ -7,8 +7,6 @@
 
 namespace http {
 
-class Worker;
-
 class HttpConnection : public net::BufferedConnection {
  public:
     using BufferedConnection::BufferedConnection;
@@ -25,7 +23,6 @@ class HttpConnection : public net::BufferedConnection {
 
  private:
     friend class HttpService;
-    friend class Worker;
  private:
     Request req_;
 };
