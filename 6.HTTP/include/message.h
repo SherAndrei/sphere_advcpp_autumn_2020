@@ -14,6 +14,9 @@ struct Header {
 std::string to_string(const Header& header);
 
 class Message {
+ protected:
+    Message() = default;
+
  public:
     virtual ~Message() = default;
 

@@ -1,5 +1,7 @@
 #include <iostream>
 #include <string>
+#include "message.h"
+#include "httperr.h"
 #include "connection.h"
 
 int main() {
@@ -7,10 +9,31 @@ int main() {
     std::string request = "GET first HTTP/1.1\r\nConnection: keep-alive\r\n\r\n";
     std::string responce(512, '\0');
     c.write(request.data(), request.length());
-    c.read(responce.data(), responce.length());
+    size_t size = c.read(responce.data(), responce.length());
+    responce.resize(size);
+    try {
+        http::Responce res(responce);
+        std::cout << res.text() << std::endl;
+    } catch (http::ParsingError& ex) {
+        std::cout << "Server wrote garbage :\n"
+                  << ex.what()
+                  << " in "
+                  << responce;
+    }
     sleep(2);
     request = "GET second HTTP/1.1\r\n\r\n";
+    responce.clear();
+    responce.resize(512);
     c.write(request.data(), request.length());
-    c.read(responce.data(), responce.length());
-    std::cout << responce << std::endl;
+    size = c.read(responce.data(), responce.length());
+    responce.resize(size);
+    try {
+        http::Responce res(responce);
+        std::cout << res.text() << std::endl;
+    } catch (http::ParsingError& ex) {
+        std::cout << "Server wrote garbage :\n"
+                  << ex.what()
+                  << " in "
+                  << responce;
+    }
 }

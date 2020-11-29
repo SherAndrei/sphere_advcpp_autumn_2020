@@ -18,12 +18,12 @@ for(;;) {                              \
 
 namespace {
 
-bool is_keep_alive(const http::Request& req) {
-    auto it = std::find_if(req.headers().begin(), req.headers().end(),
+bool is_keep_alive(const std::vector<http::Header>& headers) {
+     auto it = std::find_if(headers.begin(), headers.end(),
                           [](const http::Header& h) {
                               return h.name == "Connection";
                           });
-    if (it == req.headers().end()) {
+    if (it == headers.end()) {
         return false;
     }
 
@@ -116,8 +116,10 @@ void HttpService::work(size_t th_num) {
                     p_client->read_to_buffer();
                 )
                 try {
-                    p_client->req_.parse(p_client->read_buf());
-                    p_client->keep_alive = is_keep_alive(p_client->req_);
+                    Request req(p_client->read_buf());
+                    p_client->keep_alive = is_keep_alive(req.headers());
+                    p_client->req_ = std::move(req);
+                    log::warn(std::to_string(p_client->keep_alive));
                 } catch (ExpectingData& exd) {
                     log::warn("Worker " + std::to_string(th_num)
                                         + " got incomplete request from "

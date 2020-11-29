@@ -18,6 +18,7 @@ class HttpConnection : public net::BufferedConnection {
     void subscribe(net::OPTION opt) override;
     void unsubscribe(net::OPTION opt) override;
 
+    void close() override;
  public:
     bool is_keep_alive() const;
 

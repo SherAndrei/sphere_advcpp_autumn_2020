@@ -19,6 +19,11 @@ void HttpConnection::unsubscribe(net::OPTION opt) {
     epoll_option_ = epoll_option_ - opt + net::OPTION::ET_ONESHOT;
 }
 
+void HttpConnection::close() {
+    epoll_option_ = net::OPTION::ET_ONESHOT;
+    connection_.close();
+}
+
 bool HttpConnection::is_keep_alive() const {
     return keep_alive;
 }
