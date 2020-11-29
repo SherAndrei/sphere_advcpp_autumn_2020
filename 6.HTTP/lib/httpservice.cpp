@@ -6,6 +6,16 @@
 #include "httperr.h"
 #include "connection.h"
 
+#define TRY_UNTIL_EAGAIN(x)            \
+for(;;) {                              \
+    try {                              \
+        if (x() == 0)                  \
+            break;                     \
+    } catch (tcp::TimeOutError& ex) {  \
+        break;                         \
+    }                                  \
+}
+
 namespace http {
 
 HttpService::HttpService(IHttpListener* listener, size_t workerSize) {
@@ -35,13 +45,10 @@ void HttpService::run() {
         throw net::ListenerError("Listener was not set");
 
     for (size_t i = 0; i < workers_.capacity(); i++) {
-        workers_.emplace_back(this, i + 1);
+        workers_.emplace_back(&HttpService::work, this, i + 1);
+        log::debug("Thread " + std::to_string(i + 1) + " up and running");
     }
 
-    for (auto& worker : workers_) {
-        worker.set_thread(std::thread(&Worker::work, std::ref(worker)));
-        log::debug("Thread " + worker.info() + " up and running");
-    }
     HttpConnection* p_client = nullptr;
     while (true) {
         log::debug("Server waits");
@@ -79,12 +86,77 @@ void HttpService::run() {
         log::info("Active connections: " + std::to_string(manager_.size() - closed_.size()));
     }
 
-    for (auto& worker : workers_) {
-        worker.join();
-        log::debug("Thread " + worker.info() + " finished");
+    for (size_t i = 0; i < workers_.size(); i++) {
+        workers_[i].join();
+        log::debug("Thread " + std::to_string(i + 1) + " finished");
     }
-
     log::info("Server finished");
+}
+
+void HttpService::work(size_t th_num) {
+    while (true) {
+        log::debug("Worker " + std::to_string(th_num) + " waits");
+        std::vector<::epoll_event> epoll_events = connection_epoll_.wait();
+        log::debug("Worker " + std::to_string(th_num)
+                             + " got " + std::to_string(epoll_events.size())
+                             + " new epoll events");
+        for (::epoll_event& event : epoll_events) {
+            HttpConnection* p_client = static_cast<HttpConnection*>(event.data.ptr);
+
+                if (event.events & EPOLLIN) {
+                log::debug("Worker " + std::to_string(th_num)
+                                     + " encounters EPOLLIN from " + p_client->address().str());
+                TRY_UNTIL_EAGAIN(p_client->read_to_buffer);
+                try {
+                    p_client->req_.parse(p_client->read_buf());
+                } catch (ExpectingData& exd) {
+                    log::warn("Worker " + std::to_string(th_num)
+                                        + " got incomplete request from "
+                                        + p_client->address().str());
+                    subscribe(*p_client, net::OPTION::READ);
+                    continue;
+                } catch (IncorrectData& ind) {
+                    log::warn("Worker " + std::to_string(th_num)
+                                        + " got incorrect request from "
+                                        + p_client->address().str());
+                    // TODO: p_client->close();
+                    continue;
+                }
+                // TODO: LOCK
+                listener_->OnRequest(*p_client);
+                if (!p_client->is_keep_alive())
+                    p_client->unsubscribe(net::OPTION::READ);
+                else
+                    p_client->read_.clear();
+                p_client->subscribe(net::OPTION::WRITE);
+                log::info("Worker " + std::to_string(th_num)
+                                    + " successfully read from "
+                                    + p_client->address().str());
+            } else if (event.events & EPOLLOUT) {
+                log::debug("Worker " + std::to_string(th_num)
+                                     + " encounters EPOLLOUT from "
+                                     + p_client->address().str());
+                TRY_UNTIL_EAGAIN(p_client->write_from_buffer);
+                if (p_client->write_buf().empty())
+                    p_client->unsubscribe(net::OPTION::WRITE);
+                log::info("Worker " + std::to_string(th_num)
+                                    + " successfully wrote to "
+                                    + p_client->address().str());
+            } else {
+                log::error("Worker " + std::to_string(th_num) + " encounters "
+                          + (event.events & EPOLLRDHUP ? "EPOLLRDHUP" : "EPOLLERR")
+                          + " from " + p_client->address().str());
+                // TODO: p_client->close();
+                continue;
+            }
+            subscribe(*p_client, p_client->epoll_option_);
+        }
+    }
+}
+
+
+void HttpService::close() {
+    server_.close();
 }
 
 void HttpService::subscribe(HttpConnection& cn, net::OPTION opt)   const {

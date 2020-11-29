@@ -1,6 +1,5 @@
 
 add_library(http STATIC message.cpp
-                        worker.cpp
                         status_code.cpp
                         httpconnection.cpp
                         httpservice.cpp)
