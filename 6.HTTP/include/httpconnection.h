@@ -24,6 +24,7 @@ class HttpConnection : public net::BufferedConnection {
  private:
     friend class HttpService;
  private:
+    bool keep_alive = false;
     Request req_;
 };
 

@@ -1,4 +1,3 @@
-#include <algorithm>
 #include "httperr.h"
 #include "httpconnection.h"
 
@@ -21,15 +20,7 @@ void HttpConnection::unsubscribe(net::OPTION opt) {
 }
 
 bool HttpConnection::is_keep_alive() const {
-    auto it = std::find_if(req_.headers_.begin(), req_.headers_.end(),
-                          [](const Header& h) {
-                              return h.name == "Connection";
-                          });
-    if (it == req_.headers_.end()) {
-        return false;
-    }
-
-    return it->value.find("keep-alive") != it->value.npos;
+    return keep_alive;
 }
 
 }  // namespace http

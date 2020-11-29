@@ -25,6 +25,7 @@ class HttpService {
     void work(size_t thread_num);
     void subscribe(HttpConnection& cn, net::OPTION opt)   const;
     void unsubscribe(HttpConnection& cn, net::OPTION opt) const;
+    void close_connection(HttpConnection* cn);
 
  private:
     IHttpListener* listener_{nullptr};
@@ -32,7 +33,6 @@ class HttpService {
     tcp::Server server_;
     HttpManager manager_;
     std::queue<HttpConnection*, std::list<HttpConnection*>> closed_;
-    net::EPoll server_epoll_;
     net::EPoll connection_epoll_;
     std::shared_mutex mutex_;
 };
