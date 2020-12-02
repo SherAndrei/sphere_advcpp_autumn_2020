@@ -13,6 +13,8 @@ void handle_error(int errnum) {
             errno == EWOULDBLOCK ||
             errno == EINPROGRESS) {
             throw tcp::TimeOutError(std::strerror(errno));
+        } else if (errno == EBADF) {
+            throw tcp::DescriptorError(std::strerror(errno));
         } else {
             throw tcp::Error(std::strerror(errno));
         }

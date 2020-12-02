@@ -1,6 +1,4 @@
-foreach(test server simple keep_alive)
+foreach(test server simple keep_alive keep_alive_zombie zombie)
     add_executable(${test} ${test}.cpp )
     target_link_libraries(${test} http)
 endforeach(test)
-
-

@@ -5,6 +5,7 @@
 #include <shared_mutex>
 #include <queue>
 #include <list>
+#include "timeout.h"
 #include "server.h"
 #include "httplistener.h"
 #include "httpmanager.h"
@@ -30,6 +31,7 @@ class HttpService {
     bool try_write_responce(HttpConnection* p_client);
 
     void close_connection(HttpConnection* cn);
+    void close_if_timed_out(HttpConnection* cn);
 
  private:
     IHttpListener* listener_{nullptr};
