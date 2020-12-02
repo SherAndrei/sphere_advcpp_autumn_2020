@@ -167,6 +167,58 @@ void HttpService::work(size_t th_num) {
     }
 }
 
+bool HttpService::try_write_responce(HttpConnection* p_client) {
+    while (true) {
+        try {
+            if (p_client->write_from_buffer() == 0u)
+                break;
+        } catch (tcp::TimeOutError& ex) {
+            break;
+        } catch (tcp::DescriptorError& ex) {
+            log::warn(std::string(ex.what()) + " at " + p_client->address().str());
+            close_connection(p_client);
+            return false;
+        }
+    }
+
+    return p_client->write_buf().empty();
+}
+
+bool HttpService::try_read_request(HttpConnection* p_client, size_t th_num) {
+    while (true) {
+        try {
+            if (p_client->read_to_buffer() == 0) {
+                log::info("Client " + p_client->address().str() + " closed unexpectedly");
+                unsubscribe(*p_client, net::OPTION::READ);
+                return false;
+            }
+        } catch (tcp::TimeOutError& ex) {
+            break;
+        } catch (tcp::DescriptorError& ex) {
+            log::warn(std::string(ex.what()) + " at " + p_client->address().str());
+            close_connection(p_client);
+            return false;
+        }
+    }
+    try {
+        Request req(p_client->read_buf());
+        p_client->keep_alive_ = is_keep_alive(req.headers());
+        p_client->req_ = std::move(req);
+    } catch (ExpectingData& exd) {
+        log::warn("Worker " + std::to_string(th_num)
+                            + " got incomplete request from "
+                            + p_client->address().str());
+        subscribe(*p_client, net::OPTION::READ);
+        return false;
+    } catch (IncorrectData& ind) {
+        log::warn("Worker " + std::to_string(th_num)
+                            + " got incorrect request from "
+                            + p_client->address().str());
+        close_connection(p_client);
+        return false;
+    }
+    return true;
+}
 
 void HttpService::close() {
     server_.close();
