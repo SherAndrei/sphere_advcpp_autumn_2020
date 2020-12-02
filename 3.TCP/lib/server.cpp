@@ -65,18 +65,33 @@ Connection Server::accept() {
                                 peer_addr.sin_port } };
 }
 
+Connection Server::accept_non_block() {
+    sockaddr_in peer_addr{};
+    socklen_t s = sizeof(peer_addr);
+    int client;
+    handle_error(client = ::accept4(socket_.fd(),
+                                   reinterpret_cast<sockaddr*>(&peer_addr),
+                                   &s, SOCK_NONBLOCK));
+
+    return Connection{ Descriptor{client},
+                       Address{ ::inet_ntoa(peer_addr.sin_addr),
+                                peer_addr.sin_port } };
+}
+
 void Server::close() {
     socket_.close();
 }
 
 void Server::set_timeout(ssize_t sec, ssize_t usec) const {
     timeval timeout = { sec, usec };
-    if (setsockopt(socket_.fd(), SOL_SOCKET, SO_SNDTIMEO,
-                   &timeout, sizeof(timeout)) == -1) {
+    int error = setsockopt(socket_.fd(), SOL_SOCKET, SO_SNDTIMEO,
+                   &timeout, sizeof(timeout));
+    if (error == -1) {
         throw SocketOptionError(std::strerror(errno), "SO_SNDTIMEO");
     }
-    if (setsockopt(socket_.fd(), SOL_SOCKET, SO_RCVTIMEO,
-                   &timeout, sizeof(timeout) == -1)) {
+    error = setsockopt(socket_.fd(), SOL_SOCKET, SO_RCVTIMEO,
+                   &timeout, sizeof(timeout));
+    if (error == -1) {
         throw SocketOptionError(std::strerror(errno), "SO_RCVTIMEO");
     }
 }

@@ -22,6 +22,7 @@ class Server {
  public:
     void listen(const Address& addr);
     Connection accept();
+    Connection accept_non_block();
 
     void close();
     void set_timeout(ssize_t sec, ssize_t usec = 0l) const;
