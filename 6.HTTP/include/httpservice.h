@@ -2,7 +2,7 @@
 #define HTTP_SERVICE_H
 #include <vector>
 #include <thread>
-#include <shared_mutex>
+#include <mutex>
 #include <queue>
 #include <list>
 #include "timeout.h"
@@ -17,7 +17,19 @@ namespace http {
 class HttpService {
  public:
     explicit HttpService(IHttpListener* listener, size_t workersSize);
+    ~HttpService() = default;
+
+    HttpService(HttpService& other)             = delete;
+    HttpService& operator=(HttpService&  other) = delete;
+
+    HttpService(HttpService&& other)            = default;
+    HttpService& operator=(HttpService&& other) = default;
+
+ public:
     void setListener(IHttpListener* listener);
+    size_t connections_size();
+
+ public:
     void open(const tcp::Address& addr);
     void run();
     void close();
@@ -27,6 +39,7 @@ class HttpService {
     void subscribe(HttpConnection& cn, net::OPTION opt)   const;
     void unsubscribe(HttpConnection& cn, net::OPTION opt) const;
 
+    bool try_replace_closed_with_new_connection(HttpConnection* p_client, tcp::Connection&& cn);
     bool try_read_request(HttpConnection* p_client, size_t thread_num);
     bool try_write_responce(HttpConnection* p_client);
 
@@ -40,7 +53,7 @@ class HttpService {
     HttpManager manager_;
     std::queue<HttpConnection*, std::list<HttpConnection*>> closed_;
     net::EPoll connection_epoll_;
-    std::shared_mutex mutex_;
+    std::mutex mutex_;
 };
 
 }  // namespace http
