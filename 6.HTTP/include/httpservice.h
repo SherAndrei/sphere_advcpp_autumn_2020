@@ -39,7 +39,7 @@ class HttpService {
     void subscribe(HttpConnection& cn, net::OPTION opt)   const;
     void unsubscribe(HttpConnection& cn, net::OPTION opt) const;
 
-    bool try_replace_closed_with_new_connection(HttpConnection* p_client, tcp::Connection&& cn);
+    bool try_replace_closed_with_new_connection(HttpConnection*& p_client, tcp::Connection&& cn);
     bool try_read_request(HttpConnection* p_client, size_t thread_num);
     bool try_write_responce(HttpConnection* p_client);
 

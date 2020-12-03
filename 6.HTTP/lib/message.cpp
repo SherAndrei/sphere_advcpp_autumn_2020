@@ -35,7 +35,7 @@ const std::array<const std::string_view, 3>
 VERSIONS = { "0.9", "1.0", "1.1" };
 
 const std::array<const std::string_view, 45>
-REQUEST_HEADER_NAMES =  { "A-IM", "Accept-Charset", "Accept-Control-Request-Headers",
+REQUEST_HEADER_NAMES =  { "A-IM", "Accept", "Accept-Charset", "Accept-Control-Request-Headers",
                           "Accept-Control-Request-Method", "Accept-DateTime", "Accept-Encoding",
                           "Accept-Language", "Authorization", "Cache-Control", "Connection",
                           "Content-Encoding", "Content-Length", "Content-MD5", "Content-Type",

@@ -15,7 +15,7 @@ int main(int argc, char* argv[]) {
         std::cout << "Usage: " << argv[0] << " <sizeof(workers)>\n";
         return -1;
     }
-    log::init_with_stderr_logger();
+    log::init_with_stderr_logger(log::LEVEL::WARN);
     TestListener tl;
     http::HttpService serv(&tl, std::stoi(argv[1]));
     bool addr_reus = true;

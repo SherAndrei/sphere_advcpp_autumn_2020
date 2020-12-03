@@ -142,7 +142,7 @@ void HttpService::work(size_t th_num) {
     }
 }
 
-bool HttpService::try_replace_closed_with_new_connection(HttpConnection* p_client, tcp::Connection&& cn) {
+bool HttpService::try_replace_closed_with_new_connection(HttpConnection*& p_client, tcp::Connection&& cn) {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!closed_.empty()) {
         p_client = closed_.front();
