@@ -42,6 +42,7 @@ class HttpService {
     bool try_replace_closed_with_new_connection(HttpConnection*& p_client, tcp::Connection&& cn);
     bool try_read_request(HttpConnection* p_client, size_t thread_num);
     bool try_write_responce(HttpConnection* p_client);
+    bool try_reset_last_activity_time(HttpConnection* p_client);
 
     void close_connection(HttpConnection* cn);
     void close_if_timed_out(HttpConnection* cn);

@@ -20,5 +20,5 @@ int main() {
                   << " in "
                   << responce;
     }
-    sleep(5);
+    sleep(12);
 }

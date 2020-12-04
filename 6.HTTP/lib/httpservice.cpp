@@ -102,11 +102,10 @@ void HttpService::work(size_t th_num) {
                              + " new epoll events");
         for (::epoll_event& event : epoll_events) {
             HttpConnection* p_client = static_cast<HttpConnection*>(event.data.ptr);
-            mutex_.lock();
-            if (!p_client->is_timed_out()) {
-                p_client->reset_time_of_last_activity();
-            }
-            mutex_.unlock();
+
+            if (!try_reset_last_activity_time(p_client))
+                continue;
+
             if (event.events & EPOLLIN) {
                 log::debug("Worker " + std::to_string(th_num)
                                      + " encounters EPOLLIN from " + p_client->address().str());
@@ -205,6 +204,15 @@ bool HttpService::try_read_request(HttpConnection* p_client, size_t th_num) {
         return false;
     }
     return true;
+}
+
+bool HttpService::try_reset_last_activity_time(HttpConnection* p_client) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (p_client->socket().valid()) {
+        p_client->reset_time_of_last_activity();
+        return true;
+    }
+    return false;
 }
 
 void HttpService::close() {

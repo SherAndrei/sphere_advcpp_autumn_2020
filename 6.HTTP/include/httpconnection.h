@@ -15,13 +15,6 @@ class HttpConnection : public net::BufferedConnection {
 
  public:
     void write(const Responce& resp);
-
-    void subscribe(net::OPTION opt) override;
-    void unsubscribe(net::OPTION opt) override;
-
-    void close() override;
-
- public:
     Request request()  const;
 
     bool is_keep_alive() const;
@@ -30,6 +23,9 @@ class HttpConnection : public net::BufferedConnection {
  private:
     friend class HttpService;
     void reset_time_of_last_activity();
+    void subscribe(net::OPTION opt) override;
+    void unsubscribe(net::OPTION opt) override;
+    void close() override;
 
  private:
     time_point_t start_;
