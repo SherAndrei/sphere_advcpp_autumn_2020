@@ -35,10 +35,15 @@ struct Routine {
         func = f;
         finished = false;
         exception = {};
+
+        ctx.uc_stack.ss_sp = stack.get();
+        ctx.uc_stack.ss_size = Ordinator::STACK_SIZE;
+        ctx.uc_link = &ordinator.ctx;
+        getcontext(&ctx);
         makecontext(&ctx, entry, 0);
     }
 
-    Routine(const RoutineFunction& f)
+    explicit Routine(const RoutineFunction& f)
             : func{f},
               stack{std::make_unique<uint8_t[]>(Ordinator::STACK_SIZE)} {
         ctx.uc_stack.ss_sp = stack.get();
@@ -71,9 +76,10 @@ bool resume(routine_t id) {
     if (id == 0 || id > o.routines.size())
         return false;
 
-    const auto& routine = o.routines[id - 1];
-    if (routine.finished)
-        return false;
+    auto& routine = o.routines[id - 1];
+    if (routine.finished) {
+        routine.reset(routine.func);
+    }
 
     o.current = id;
     if (swapcontext(&o.ctx, &routine.ctx) < 0) {
@@ -98,6 +104,13 @@ void yield() {
 
 routine_t current() {
     return ordinator.current;
+}
+
+bool is_done(routine_t id) {
+    auto& o = ordinator;
+
+    const auto& routine = o.routines[id - 1];
+    return routine.finished;
 }
 
 namespace {

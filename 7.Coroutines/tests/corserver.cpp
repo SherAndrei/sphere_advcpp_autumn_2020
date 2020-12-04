@@ -1,5 +1,7 @@
 #include <iostream>
 #include "globallogger.h"
+#include "address.h"
+#include "tcperr.h"
 #include "corservice.h"
 
 class TestListener : public http::cor::ICoroutineListener {
@@ -16,7 +18,7 @@ int main(int argc, char* argv[]) {
         std::cout << "Usage: " << argv[0] << " <sizeof(workers)>\n";
         return -1;
     }
-    log::init_with_stderr_logger(log::LEVEL::INFO);
+    log::init_with_stderr_logger(log::LEVEL::DEBUG);
     TestListener tl;
     http::cor::CoroutineService serv(&tl, std::stoi(argv[1]));
     bool addr_reus = true;

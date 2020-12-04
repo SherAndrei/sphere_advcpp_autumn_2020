@@ -14,9 +14,13 @@ class CorConnection : public HttpConnection {
  public:
     routine_t routine_id() const;
 
- protected:
-    CorConnection() = default;
+ private:
     friend class CoroutineService;
+    using HttpConnection::HttpConnection;
+
+    void set_routine(routine_t id);
+
+ private:
     routine_t _r_id;
 };
 

@@ -13,6 +13,9 @@
 namespace http {
 
 class HttpService : public net::BaseService {
+ protected:
+    HttpService() = default;
+
  public:
     explicit HttpService(IHttpListener* listener, size_t workersSize);
     virtual ~HttpService() = default;
@@ -38,6 +41,8 @@ class HttpService : public net::BaseService {
     HttpConnection* try_replace_closed_with_new_connection(HttpConnection&& cn);
     bool try_read_request(HttpConnection* p_client, size_t thread_num);
     bool try_write_responce(HttpConnection* p_client);
+
+ protected:
     bool try_reset_last_activity_time(HttpConnection* p_client);
 
  private:
