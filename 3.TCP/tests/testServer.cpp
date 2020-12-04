@@ -6,8 +6,7 @@ void TestServer();
 
 void TestServer() {
     try {
-        tcp::Server ser;
-        ser.listen({"127.0.0.1", 8080});
+        tcp::Server ser({"127.0.0.1", 8080});
         std::string text = "You are awesome!\n";
 
         while (1) {
