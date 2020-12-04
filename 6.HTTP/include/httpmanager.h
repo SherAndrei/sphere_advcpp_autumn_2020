@@ -7,6 +7,7 @@
 namespace http {
 
 using HttpManager = std::list<HttpConnection>;
+using PtrsToClosedHttpConnections = std::queue<HttpConnection*, std::list<HttpConnection*>>;
 
 }  // namespace http
 

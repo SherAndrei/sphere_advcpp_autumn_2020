@@ -2,24 +2,24 @@
 #define NET_SERVICE_H
 #include "address.h"
 #include "listener.h"
-#include "server.h"
+#include "base_service.h"
 #include "connection_manager.h"
-#include "epoll.h"
 
 namespace net {
 
-class Service {
+class Service : public BaseService {
  public:
     explicit Service(IServiceListener* listener);
     void setListener(IServiceListener* listener);
-    void open(const tcp::Address& addr);
-    void run();
-    void close();
+ 
+ public:
+    void open(const tcp::Address& addr) override;
+    void run() override;
+    void close() override;
+
  private:
     IServiceListener* listener_{nullptr};
-    tcp::Server server_;
     ConnectionManager manager_;
-    EPoll epoll_;
 };
 
 }  // namespace net

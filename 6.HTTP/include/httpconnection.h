@@ -13,6 +13,11 @@ class HttpConnection : public net::BufferedConnection {
     using BufferedConnection::BufferedConnection;
     explicit HttpConnection(tcp::Connection && other);
 
+    HttpConnection(HttpConnection && other)             = default;
+    HttpConnection& operator= (HttpConnection && other) = default;
+
+    virtual ~HttpConnection() = default;
+
  public:
     void write(const Responce& resp);
     Request request()  const;
@@ -20,14 +25,14 @@ class HttpConnection : public net::BufferedConnection {
     bool is_keep_alive() const;
     bool is_timed_out() const;
 
- private:
+ protected:
     friend class HttpService;
     void reset_time_of_last_activity();
     void subscribe(net::OPTION opt) override;
     void unsubscribe(net::OPTION opt) override;
     void close() override;
 
- private:
+ protected:
     time_point_t start_;
     Request req_;
     bool keep_alive_ = false;
