@@ -25,12 +25,13 @@ class HttpConnection : public net::BufferedConnection {
     bool is_keep_alive() const;
     bool is_timed_out() const;
 
+    void close() override;
+
  protected:
     friend class HttpService;
     void reset_time_of_last_activity();
     void subscribe(net::OPTION opt) override;
     void unsubscribe(net::OPTION opt) override;
-    void close() override;
 
  protected:
     time_point_t start_;
