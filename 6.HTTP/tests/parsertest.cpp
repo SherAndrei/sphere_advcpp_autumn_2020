@@ -271,6 +271,15 @@ void TestHeaders() {
     } catch (http::ParsingError& ex) {
         ASSERT(false);
     }
+    try {
+        http::Request r("GET /home/andrew/helloworld.hmtl HTTP/1.0\r\nHost: 127.0.0.1:8080\r\nUser-Agent: ApacheBench/2.3\r\nAccept: */*\r\n\r\n");
+        ASSERT_EQUAL(r.headers().size(), 3u);
+        ASSERT_EQUAL(http::to_string(r.headers()[0]), "Host: 127.0.0.1:8080\r\n");
+        ASSERT_EQUAL(http::to_string(r.headers()[1]), "User-Agent: ApacheBench/2.3\r\n");
+        ASSERT_EQUAL(http::to_string(r.headers()[2]), "Accept: */*\r\n");
+    } catch (http::ParsingError& ex) {
+        ASSERT(false);
+    }
 }
 
 void TestBody() {

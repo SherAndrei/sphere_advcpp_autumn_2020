@@ -60,12 +60,11 @@ void HttpService::run() {
         log::debug("Thread " + std::to_string(i + 1) + " up and running");
     }
 
-    HttpConnection* p_client = nullptr;
     while (server_.socket().valid()) {
         log::debug("Server waits");
-        tcp::Connection new_c;
+        HttpConnection new_c;
         try {
-            new_c = server_.accept_non_block();
+            new_c = HttpConnection(server_.accept_non_block());
         } catch (tcp::TimeOutError& er) {
             log::debug("Server dropping coonnections");
             for (auto& connection : manager_) {
@@ -75,14 +74,13 @@ void HttpService::run() {
             continue;
         }
         log::info("Server accepts: " + new_c.address().str());
-
-        if (!try_replace_closed_with_new_connection(p_client, std::move(new_c))) {
+        HttpConnection* p_client = try_replace_closed_with_new_connection(std::move(new_c));
+        if (p_client == nullptr) {
             manager_.emplace_back(std::move(new_c));
             p_client = &(manager_.back());
         }
-
         p_client->epoll_option_ = net::OPTION::READ + net::OPTION::ET_ONESHOT;
-        connection_epoll_.add(p_client, p_client->epoll_option_);
+        epoll_.add(p_client, p_client->epoll_option_);
         log::info("Active connections: " + std::to_string(connections_size()));
     }
 
@@ -96,7 +94,7 @@ void HttpService::run() {
 void HttpService::work(size_t th_num) {
     while (true) {
         log::debug("Worker " + std::to_string(th_num) + " waits");
-        std::vector<::epoll_event> epoll_events = connection_epoll_.wait();
+        std::vector<::epoll_event> epoll_events = epoll_.wait();
         log::debug("Worker " + std::to_string(th_num)
                              + " got " + std::to_string(epoll_events.size())
                              + " new epoll events");
@@ -141,16 +139,15 @@ void HttpService::work(size_t th_num) {
     }
 }
 
-bool HttpService::try_replace_closed_with_new_connection(HttpConnection*& p_client, tcp::Connection&& cn) {
+HttpConnection* HttpService::try_replace_closed_with_new_connection(HttpConnection&& cn) {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!closed_.empty()) {
-        p_client = closed_.front();
-        *p_client = HttpConnection(std::move(cn));
-
+        HttpConnection* p_cn = closed_.front();
+        *p_cn = std::move(cn);
         closed_.pop();
-        return true;
+        return p_cn;
     }
-    return false;
+    return nullptr;
 }
 
 bool HttpService::try_write_responce(HttpConnection* p_client) {
@@ -221,12 +218,12 @@ void HttpService::close() {
 
 void HttpService::subscribe(HttpConnection& cn, net::OPTION opt)   const {
     cn.epoll_option_ = cn.epoll_option_ + opt + net::OPTION::ET_ONESHOT;
-    connection_epoll_.mod(&(cn), cn.epoll_option_);
+    epoll_.mod(&(cn), cn.epoll_option_);
 }
 
 void HttpService::unsubscribe(HttpConnection& cn, net::OPTION opt) const {
     cn.epoll_option_ = cn.epoll_option_ - opt + net::OPTION::ET_ONESHOT;
-    connection_epoll_.mod(&(cn), cn.epoll_option_);
+    epoll_.mod(&(cn), cn.epoll_option_);
 }
 
 void HttpService::close_if_timed_out(HttpConnection* cn) {

@@ -13,13 +13,14 @@ class BufferedConnection {
     BufferedConnection() = default;
     explicit BufferedConnection(tcp::Connection && other);
 
-    BufferedConnection& operator= (const BufferedConnection&  other) = delete;
-    BufferedConnection(const BufferedConnection& other)              = delete;
-
     BufferedConnection(BufferedConnection && other)             = default;
     BufferedConnection& operator= (BufferedConnection && other) = default;
 
     virtual ~BufferedConnection() = default;
+
+ private:
+    BufferedConnection& operator= (const BufferedConnection&  other) = delete;
+    BufferedConnection(const BufferedConnection& other)              = delete;
 
  public:
     virtual void subscribe(OPTION opt);
