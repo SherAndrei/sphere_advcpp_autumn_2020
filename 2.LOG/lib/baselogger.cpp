@@ -10,19 +10,15 @@ BaseLogger::BaseLogger(std::ostream& another, LEVEL l)
     : _out(&another), _level(l) {}
 
 void  BaseLogger::debug(const std::string& message) {
-    std::scoped_lock sl(mutex_);
     log("[DEBUG]: " + message, LEVEL::DEBUG);
 }
 void  BaseLogger::info(const std::string& message) {
-    std::scoped_lock sl(mutex_);
     log("[INFO]: "  + message, LEVEL::INFO);
 }
 void  BaseLogger::warn(const std::string& message) {
-    std::scoped_lock sl(mutex_);
     log("[WARNING]: " + message, LEVEL::WARN);
 }
 void  BaseLogger::error(const std::string& message) {
-    std::scoped_lock sl(mutex_);
     log("[ERROR]: " + message, LEVEL::ERROR);
 }
 void  BaseLogger::set_level(LEVEL lev) {
@@ -37,6 +33,7 @@ void BaseLogger::flush() {
     _out->flush();
 }
 void BaseLogger::log(const std::string& m, LEVEL l) {
+    std::scoped_lock sl(mutex_);
     if (l >= _level)
         (*_out) << m << std::endl;
 }

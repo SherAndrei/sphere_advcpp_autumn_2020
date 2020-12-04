@@ -13,8 +13,13 @@
 namespace http {
 
 class HttpService : public net::BaseService {
+ protected:
+    HttpService() = default;
+
  public:
-    explicit HttpService(IHttpListener* listener, size_t workersSize);
+    explicit HttpService(IHttpListener* listener, size_t workersSize,
+                         size_t connection_timeout_sec = CONNECTION_TIMEOUT,
+                         size_t keep_alive_timeout_sec = KEEP_ALIVE_CONNECTION_TIMEOUT);
     virtual ~HttpService() = default;
 
  public:
@@ -38,6 +43,8 @@ class HttpService : public net::BaseService {
     HttpConnection* try_replace_closed_with_new_connection(HttpConnection&& cn);
     bool try_read_request(HttpConnection* p_client, size_t thread_num);
     bool try_write_responce(HttpConnection* p_client);
+
+ protected:
     bool try_reset_last_activity_time(HttpConnection* p_client);
 
  private:
@@ -46,6 +53,8 @@ class HttpService : public net::BaseService {
     PtrsToClosedHttpConnections closed_;
 
  protected:
+    size_t conn_timeo;
+    size_t ka_conn_timeo;
     std::vector<std::thread> workers_;
     std::mutex mutex_;
 };

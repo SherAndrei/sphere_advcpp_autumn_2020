@@ -23,7 +23,7 @@ class HttpConnection : public net::BufferedConnection {
     Request request()  const;
 
     bool is_keep_alive() const;
-    bool is_timed_out() const;
+    bool is_timed_out(size_t timeo) const;
 
     void close() override;
 

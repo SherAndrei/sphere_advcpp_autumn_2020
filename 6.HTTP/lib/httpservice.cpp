@@ -25,7 +25,10 @@ bool is_keep_alive(const std::vector<http::Header>& headers) {
 
 namespace http {
 
-HttpService::HttpService(IHttpListener* listener, size_t workerSize) {
+HttpService::HttpService(IHttpListener* listener, size_t workerSize,
+    size_t connection_timeout_sec, size_t keep_alive_timeout_sec)
+    : conn_timeo(connection_timeout_sec)
+    , ka_conn_timeo(keep_alive_timeout_sec) {
     workers_.reserve(std::min(static_cast<size_t>(std::thread::hardware_concurrency()),
                         workerSize));
     if (workers_.capacity() == 0u) {
@@ -228,7 +231,8 @@ void HttpService::unsubscribe(HttpConnection& cn, net::OPTION opt) const {
 
 void HttpService::close_if_timed_out(HttpConnection* cn) {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (cn->socket().valid() && cn->is_timed_out()) {
+    size_t timeo = (cn->keep_alive_ ? ka_conn_timeo : conn_timeo);
+    if (cn->socket().valid() && cn->is_timed_out(timeo)) {
         log::info("Connection timed out: " + cn->address().str());
         closed_.push(cn);
         cn->close();
