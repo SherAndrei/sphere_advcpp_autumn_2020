@@ -1,5 +1,6 @@
 #include <iostream>
 #include "service.h"
+#include "bufconnection.h"
 #include "tcperr.h"
 
 class EchoListner : public net::IServiceListener {
@@ -33,9 +34,8 @@ class EchoListner : public net::IServiceListener {
 
 int main() {
     EchoListner el;
-    net::Service service(&el);
     try {
-        service.open({"127.0.0.1", 8080});
+        net::Service service(&el, {"127.0.0.1", 8080});
         service.run();
     } catch (tcp::AddressError& ex) {
         std::cout << ex.what() << std::endl;

@@ -1,6 +1,7 @@
 #include <iostream>
 #include "globallogger.h"
 #include "service.h"
+#include "bufconnection.h"
 #include "tcperr.h"
 
 class Calculator : public net::IServiceListener {
@@ -36,13 +37,10 @@ class Calculator : public net::IServiceListener {
 int main() {
     log::init_with_stderr_logger();
     Calculator el;
-    net::Service service(&el);
-    bool addr_reus = true;
-    while (addr_reus) {
+    while (true) {
         try {
-            service.open({"127.0.0.1", 8080});
-            addr_reus = false;
+            net::Service service(&el, {"127.0.0.1", 8080});
+            service.run();
         } catch (...) { std::cout << "useaddr" << std::endl; }
     }
-    service.run();
 }

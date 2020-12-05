@@ -3,8 +3,8 @@
 #include <sys/epoll.h>
 #include <vector>
 #include "option.h"
-#include "descriptor.h"
-#include "bufconnection.h"
+#include "iConnectable.h"
+#include "client_container.h"
 
 namespace net {
 
@@ -23,8 +23,11 @@ class EPoll {
     void add(const tcp::Descriptor& fd, OPTION opt) const;
     void mod(const tcp::Descriptor& fd, OPTION opt) const;
 
-    void add(BufferedConnection* cn, OPTION opt) const;
-    void mod(BufferedConnection* cn, OPTION opt) const;
+    void add(tcp::IConnectable* cn, OPTION opt) const;
+    void mod(tcp::IConnectable* cn, OPTION opt) const;
+
+    void add(IClient& client, OPTION opt) const;
+    void mod(IClient& client, OPTION opt) const;
 
     void del(const tcp::Descriptor& fd) const;
 

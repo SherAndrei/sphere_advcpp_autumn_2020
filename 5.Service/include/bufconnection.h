@@ -1,42 +1,27 @@
 #ifndef NET_BUFFERED_CONNECTION_H
 #define NET_BUFFERED_CONNECTION_H
 #include <string>
-#include "connection.h"
+#include "nonblock_connection.h"
 #include "option.h"
 
 namespace net {
 
 class Service;
 
-class BufferedConnection {
+class BufferedConnection : public tcp::NonBlockConnection {
  public:
-    BufferedConnection() = default;
-    explicit BufferedConnection(tcp::Connection && other);
-
-    BufferedConnection(BufferedConnection && other)             = default;
-    BufferedConnection& operator= (BufferedConnection && other) = default;
-
-    virtual ~BufferedConnection() = default;
-
- private:
-    BufferedConnection& operator= (const BufferedConnection&  other) = delete;
-    BufferedConnection(const BufferedConnection& other)              = delete;
+    explicit BufferedConnection(tcp::NonBlockConnection && other);
 
  public:
     virtual void subscribe(OPTION opt);
     virtual void unsubscribe(OPTION opt);
-    void write(const std::string& data);
-    void read(std::string& data);
+    size_t write(const std::string& data) override;
+    size_t read(std::string& data) override;
     virtual void close();
 
  public:
     std::string& read_buf();
     std::string& write_buf();
-
-    tcp::Address address() const;
-
-    tcp::Descriptor& socket();
-    const tcp::Descriptor& socket() const;
 
  private:
     friend class Service;
@@ -48,7 +33,6 @@ class BufferedConnection {
  protected:
     std::string read_;
     std::string write_;
-    tcp::Connection connection_;
     OPTION epoll_option_{OPTION::UNKNOWN};
 };
 

@@ -46,18 +46,31 @@ void EPoll::mod(const tcp::Descriptor& d, OPTION opt) const {
     try_set_epoll(epoll_fd_.fd(), EPOLL_CTL_MOD, d.fd(), event);
 }
 
-void EPoll::add(net::BufferedConnection* cn, OPTION opt) const {
+void EPoll::add(tcp::IConnectable* cn, OPTION opt) const {
     ::epoll_event event{};
     event.events  = static_cast<uint32_t>(opt);
     event.data.ptr = cn;
     try_set_epoll(epoll_fd_.fd(), EPOLL_CTL_ADD, cn->socket().fd(), event);
 }
 
-void EPoll::mod(net::BufferedConnection* cn, OPTION opt) const {
+void EPoll::mod(tcp::IConnectable* cn, OPTION opt) const {
     ::epoll_event event{};
     event.events  = static_cast<uint32_t>(opt);
     event.data.ptr = cn;
     try_set_epoll(epoll_fd_.fd(), EPOLL_CTL_MOD, cn->socket().fd(), event);
+}
+
+void EPoll::add(IClient& client, OPTION opt) const {
+    ::epoll_event event{};
+    event.events  = static_cast<uint32_t>(opt);
+    event.data.ptr = &client;
+    try_set_epoll(epoll_fd_.fd(), EPOLL_CTL_ADD, client.conn->socket().fd(), event);
+}
+void EPoll::mod(IClient& client, OPTION opt) const {
+    ::epoll_event event{};
+    event.events  = static_cast<uint32_t>(opt);
+    event.data.ptr = &client;
+    try_set_epoll(epoll_fd_.fd(), EPOLL_CTL_MOD, client.conn->socket().fd(), event);
 }
 
 void EPoll::del(const tcp::Descriptor& d) const {
