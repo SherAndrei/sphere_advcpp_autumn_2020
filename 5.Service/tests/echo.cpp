@@ -35,7 +35,7 @@ class EchoListner : public net::IServiceListener {
 int main() {
     EchoListner el;
     try {
-        net::Service service(&el, {"127.0.0.1", 8080});
+        net::Service service({"127.0.0.1", 8080}, &el);
         service.run();
     } catch (tcp::AddressError& ex) {
         std::cout << ex.what() << std::endl;

@@ -3,21 +3,16 @@
 #include <vector>
 #include <thread>
 #include <mutex>
-#include <queue>
-#include <list>
-#include "base_service.h"
+#include "iService.h"
+#include "httpcontainers.h"
 #include "timeout.h"
 #include "httplistener.h"
-#include "httpmanager.h"
 
 namespace http {
 
-class HttpService : public net::BaseService {
- protected:
-    HttpService() = default;
-
+class HttpService : public net::IService {
  public:
-    explicit HttpService(IHttpListener* listener, size_t workersSize,
+    explicit HttpService(const tcp::Address& addr, IHttpListener* listener, size_t workersSize,
                          size_t connection_timeout_sec = CONNECTION_TIMEOUT,
                          size_t keep_alive_timeout_sec = KEEP_ALIVE_CONNECTION_TIMEOUT);
     virtual ~HttpService() = default;
@@ -33,30 +28,33 @@ class HttpService : public net::BaseService {
 
  protected:
     virtual void work(size_t thread_num);
-    void subscribe(HttpConnection& cn, net::OPTION opt)   const;
-    void unsubscribe(HttpConnection& cn, net::OPTION opt) const;
+    void subscribe(net::IClient* cn, net::OPTION opt)   const;
+    void unsubscribe(net::IClient* cn, net::OPTION opt) const;
 
-    void close_connection(HttpConnection* cn);
-    void close_if_timed_out(HttpConnection* cn);
+    net::IClient* add_new_connection(tcp::NonBlockConnection&& cn);
+    void close_client(net::IClient* p_client);
+
+    void dump_timed_out_connections();
+    bool close_if_timed_out(net::IClient* p_client);
 
  private:
-    HttpConnection* try_replace_closed_with_new_connection(HttpConnection&& cn);
-    bool try_read_request(HttpConnection* p_client, size_t thread_num);
-    bool try_write_responce(HttpConnection* p_client);
+    bool try_read_request(net::IClient* p_client, size_t thread_num);
+    bool try_write_responce(net::IClient* p_client);
 
  protected:
-    bool try_reset_last_activity_time(HttpConnection* p_client);
+    bool try_reset_last_activity_time(net::IClient* p_client);
 
  private:
     IHttpListener* listener_{nullptr};
-    HttpManager manager_;
-    PtrsToClosedHttpConnections closed_;
+    PtrsToClosedClients closed_;
+    TimeOrderedQueue timeo_qu_;
 
  protected:
     size_t conn_timeo;
     size_t ka_conn_timeo;
     std::vector<std::thread> workers_;
-    std::mutex mutex_;
+    std::mutex closing_mutex_;
+    std::mutex timeout_mutex_;
 };
 
 }  // namespace http

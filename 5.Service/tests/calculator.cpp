@@ -39,7 +39,7 @@ int main() {
     Calculator el;
     while (true) {
         try {
-            net::Service service(&el, {"127.0.0.1", 8080});
+            net::Service service({"127.0.0.1", 8080}, &el);
             service.run();
         } catch (...) { std::cout << "useaddr" << std::endl; }
     }

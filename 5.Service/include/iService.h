@@ -10,9 +10,7 @@ class IService {
  protected:
     IService() = default;
     explicit IService(const tcp::Address& addr)
-            : server_(addr) {
-        epoll_.add(server_.socket(), net::OPTION::READ);
-    }
+            : server_(addr) {}
 
  public:
     virtual ~IService() = default;

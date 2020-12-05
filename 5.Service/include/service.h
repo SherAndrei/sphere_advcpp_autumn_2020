@@ -7,7 +7,7 @@ namespace net {
 
 class Service : public IService {
  public:
-    Service(IServiceListener* listener, const tcp::Address& addr);
+    Service(const tcp::Address& addr, IServiceListener* listener);
     void setListener(IServiceListener* listener);
 
  public:

@@ -5,10 +5,11 @@
 
 class TestListener : public http::IHttpListener {
     void OnRequest(http::HttpConnection& cn) override {
-        std::cout << cn.request().str();
+        // std::cout << cn.request().str();
         cn.write(http::Responce("HTTP/1.1 200 "
                                 + http::to_string(http::StatusCode::OK)
-                                + "\r\nContent-Length: 11\r\n\r\nHello world"));
+                                + "\r\nContent-Length: 76\r\n\r\nHello world! My name is Andrew Sherstobitov"
+                                + "And i'm studying at Technosphere!"));
     }
 };
 
@@ -19,15 +20,13 @@ int main(int argc, char* argv[]) {
     }
     log::init_with_stderr_logger(log::LEVEL::DEBUG);
     TestListener tl;
-    http::HttpService serv(&tl, std::stoi(argv[1]));
-    bool addr_reus = true;
-    while (addr_reus) {
+    while (true) {
         try {
-            serv.open({"127.0.0.1", 8080});
-            addr_reus = false;
+            http::HttpService serv({"127.0.0.1", 8080}, &tl, std::stoi(argv[1]), 5ul, 10ul);
+            serv.run();
+            break;
         } catch (tcp::AddressError& ex) { std::cout << "useaddr" << std::endl; }
     }
-    serv.run();
 
     return 0;
 }

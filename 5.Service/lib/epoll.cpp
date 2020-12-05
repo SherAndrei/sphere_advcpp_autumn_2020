@@ -60,17 +60,17 @@ void EPoll::mod(tcp::IConnectable* cn, OPTION opt) const {
     try_set_epoll(epoll_fd_.fd(), EPOLL_CTL_MOD, cn->socket().fd(), event);
 }
 
-void EPoll::add(IClient& client, OPTION opt) const {
+void EPoll::add(IClient* p_client, OPTION opt) const {
     ::epoll_event event{};
     event.events  = static_cast<uint32_t>(opt);
-    event.data.ptr = &client;
-    try_set_epoll(epoll_fd_.fd(), EPOLL_CTL_ADD, client.conn->socket().fd(), event);
+    event.data.ptr = p_client;
+    try_set_epoll(epoll_fd_.fd(), EPOLL_CTL_ADD, p_client->conn->socket().fd(), event);
 }
-void EPoll::mod(IClient& client, OPTION opt) const {
+void EPoll::mod(IClient* p_client, OPTION opt) const {
     ::epoll_event event{};
     event.events  = static_cast<uint32_t>(opt);
-    event.data.ptr = &client;
-    try_set_epoll(epoll_fd_.fd(), EPOLL_CTL_MOD, client.conn->socket().fd(), event);
+    event.data.ptr = p_client;
+    try_set_epoll(epoll_fd_.fd(), EPOLL_CTL_MOD, p_client->conn->socket().fd(), event);
 }
 
 void EPoll::del(const tcp::Descriptor& d) const {

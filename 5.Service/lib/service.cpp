@@ -14,11 +14,12 @@ net::BufferedConnection* get(tcp::IConnectable* p_conn) {
 
 namespace net {
 
-Service::Service(IServiceListener* listener, const tcp::Address& addr)
+Service::Service(const tcp::Address& addr, IServiceListener* listener)
     : IService(addr)
     , listener_(listener) {
     server_.set_reuseaddr();
     server_.set_nonblock();
+    epoll_.add(server_.socket(), net::OPTION::READ);
 }
 
 void Service::setListener(IServiceListener* listener) {
@@ -48,11 +49,11 @@ void Service::run() {
                 clients_.back().iter = std::prev(clients_.end());
                 BufferedConnection* p_conn = get(clients_.back().conn.get());
                 log::info("Server accepted " + p_conn->address().str());
-                epoll_.add(clients_.back(), OPTION::CLOSE);
+                epoll_.add(&clients_.back(), OPTION::CLOSE);
 
                 listener_->onNewConnection(*p_conn);
                 if (p_conn->socket().valid()) {
-                    epoll_.mod(clients_.back(), p_conn->epoll_option_);
+                    epoll_.mod(&clients_.back(), p_conn->epoll_option_);
                 }
             } else {
                 IClient* p_client = static_cast<IClient*>(event.data.ptr);
@@ -87,7 +88,7 @@ void Service::run() {
                     clients_.erase(it_client);
                 }
                 if (p_conn->socket().valid()) {
-                    epoll_.mod(*p_client, p_conn->epoll_option_);
+                    epoll_.mod(p_client, p_conn->epoll_option_);
                 }
             }
         }

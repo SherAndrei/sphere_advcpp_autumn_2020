@@ -26,8 +26,8 @@ class EPoll {
     void add(tcp::IConnectable* cn, OPTION opt) const;
     void mod(tcp::IConnectable* cn, OPTION opt) const;
 
-    void add(IClient& client, OPTION opt) const;
-    void mod(IClient& client, OPTION opt) const;
+    void add(IClient* client, OPTION opt) const;
+    void mod(IClient* client, OPTION opt) const;
 
     void del(const tcp::Descriptor& fd) const;
 

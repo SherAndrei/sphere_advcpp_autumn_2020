@@ -1,13 +1,16 @@
+#include "httpservice.h"
 #include <algorithm>
 #include "globallogger.h"
-#include "httpservice.h"
-#include "option.h"
+#include "httpconnection.h"
 #include "tcperr.h"
 #include "neterr.h"
 #include "httperr.h"
-#include "connection.h"
 
 namespace {
+
+http::HttpConnection* get(tcp::IConnectable* p_conn) {
+    return dynamic_cast<http::HttpConnection*>(p_conn);
+}
 
 bool is_keep_alive(const std::vector<http::Header>& headers) {
      auto it = std::find_if(headers.begin(), headers.end(),
@@ -25,16 +28,19 @@ bool is_keep_alive(const std::vector<http::Header>& headers) {
 
 namespace http {
 
-HttpService::HttpService(IHttpListener* listener, size_t workerSize,
+HttpService::HttpService(const tcp::Address& addr, IHttpListener* listener, size_t workerSize,
     size_t connection_timeout_sec, size_t keep_alive_timeout_sec)
-    : conn_timeo(connection_timeout_sec)
+    : IService(addr)
+    , listener_(listener)
+    , conn_timeo(connection_timeout_sec)
     , ka_conn_timeo(keep_alive_timeout_sec) {
+    server_.set_reuseaddr();
+    server_.set_timeout(ACCEPT_TIMEOUT);
     workers_.reserve(std::min(static_cast<size_t>(std::thread::hardware_concurrency()),
                         workerSize));
     if (workers_.capacity() == 0u) {
         throw WorkerError("Workers size == 0");
     }
-    setListener(listener);
 }
 
 void HttpService::setListener(IHttpListener* listener) {
@@ -42,8 +48,8 @@ void HttpService::setListener(IHttpListener* listener) {
 }
 
 size_t HttpService::connections_size() {
-    std::lock_guard<std::mutex> lock(mutex_);
-    return manager_.size() - closed_.size();
+    std::lock_guard<std::mutex> lock(closing_mutex_);
+    return clients_.size() - closed_.size();
 }
 
 void HttpService::open(const tcp::Address& addr) {
@@ -65,25 +71,18 @@ void HttpService::run() {
 
     while (server_.socket().valid()) {
         log::debug("Server waits");
-        HttpConnection new_c;
         try {
-            new_c = HttpConnection(server_.accept_non_block());
+            net::IClient* p_client = add_new_connection(server_.accept_non_block());
+            log::info("Server accepts: " + p_client->conn->address().str());
+            net::OPTION& client_opt = get(p_client->conn.get())->epoll_option_;
+            client_opt = net::OPTION::READ + net::OPTION::ET_ONESHOT;
+            epoll_.add(p_client, client_opt);
         } catch (tcp::TimeOutError& er) {
-            log::debug("Server dropping coonnections");
-            for (auto& connection : manager_) {
-                close_if_timed_out(&connection);
-            }
-            log::info("Active connections: " + std::to_string(connections_size()));
-            continue;
+            // ignore
+        } catch (net::EPollError& er) {
+            log::error("Server encounters " + std::string(er.what()));
         }
-        log::info("Server accepts: " + new_c.address().str());
-        HttpConnection* p_client = try_replace_closed_with_new_connection(std::move(new_c));
-        if (p_client == nullptr) {
-            manager_.emplace_back(std::move(new_c));
-            p_client = &(manager_.back());
-        }
-        p_client->epoll_option_ = net::OPTION::READ + net::OPTION::ET_ONESHOT;
-        epoll_.add(p_client, p_client->epoll_option_);
+        dump_timed_out_connections();
         log::info("Active connections: " + std::to_string(connections_size()));
     }
 
@@ -98,118 +97,129 @@ void HttpService::work(size_t th_num) {
     while (true) {
         log::debug("Worker " + std::to_string(th_num) + " waits");
         std::vector<::epoll_event> epoll_events = epoll_.wait();
-        log::debug("Worker " + std::to_string(th_num)
-                             + " got " + std::to_string(epoll_events.size())
-                             + " new epoll events");
+        log::debug("Worker " + std::to_string(th_num) + " got " + std::to_string(epoll_events.size())
+                                                      + " new epoll events");
         for (::epoll_event& event : epoll_events) {
-            HttpConnection* p_client = static_cast<HttpConnection*>(event.data.ptr);
+            net::IClient* p_client = static_cast<net::IClient*>(event.data.ptr);
+            HttpConnection* p_conn = get(p_client->conn.get());
 
             if (!try_reset_last_activity_time(p_client))
                 continue;
 
             if (event.events & EPOLLIN) {
-                log::debug("Worker " + std::to_string(th_num)
-                                     + " encounters EPOLLIN from " + p_client->address().str());
+                log::debug("Worker " + std::to_string(th_num) + " encounters EPOLLIN from "
+                                                              + p_conn->address().str());
 
                 if (!try_read_request(p_client, th_num))
                     continue;
-                listener_->OnRequest(*p_client);
+                listener_->OnRequest(*p_conn);
 
-                if (!p_client->keep_alive_)
-                    p_client->unsubscribe(net::OPTION::READ);
+                if (!p_conn->keep_alive_)
+                    p_conn->unsubscribe(net::OPTION::READ);
                 else
-                    p_client->read_.clear();
-                p_client->subscribe(net::OPTION::WRITE);
-                log::info("Worker " + std::to_string(th_num)
-                                    + " successfully read from "
-                                    + p_client->address().str());
+                    p_conn->read_.clear();
+                p_conn->subscribe(net::OPTION::WRITE);
+                log::info("Worker " + std::to_string(th_num) + " successfully read from "
+                                                             + p_conn->address().str());
             } else if (event.events & EPOLLOUT) {
-                log::debug("Worker " + std::to_string(th_num)
-                                     + " encounters EPOLLOUT from "
-                                     + p_client->address().str());
+                log::debug("Worker " + std::to_string(th_num) + " encounters EPOLLOUT from "
+                                                              + p_conn->address().str());
                 if (try_write_responce(p_client))
-                    p_client->unsubscribe(net::OPTION::WRITE);
-                log::info("Worker " + std::to_string(th_num)
-                                    + " successfully wrote to "
-                                    + p_client->address().str());
+                    p_conn->unsubscribe(net::OPTION::WRITE);
+                log::info("Worker " + std::to_string(th_num) + " successfully wrote to "
+                                                             + p_conn->address().str());
             }
-            if (p_client->epoll_option_ == net::OPTION::ET_ONESHOT) {
-                close_connection(p_client);
+            if (p_conn->epoll_option_ == net::OPTION::ET_ONESHOT) {
+                close_client(p_client);
             } else {
-                subscribe(*p_client, net::OPTION::UNKNOWN);
+                subscribe(p_client, net::OPTION::UNKNOWN);
             }
         }
     }
 }
 
-HttpConnection* HttpService::try_replace_closed_with_new_connection(HttpConnection&& cn) {
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (!closed_.empty()) {
-        HttpConnection* p_cn = closed_.front();
-        *p_cn = std::move(cn);
-        closed_.pop();
-        return p_cn;
-    }
-    return nullptr;
+void HttpService::dump_timed_out_connections() {
+    std::lock_guard<std::mutex> lock_to(timeout_mutex_);
+    while (!timeo_qu_.empty() && close_if_timed_out(timeo_qu_.front()))
+        timeo_qu_.pop();
 }
 
-bool HttpService::try_write_responce(HttpConnection* p_client) {
+net::IClient* HttpService::add_new_connection(tcp::NonBlockConnection&& cn) {
+    {
+        std::lock_guard<std::mutex> lock(closing_mutex_);
+        if (!closed_.empty()) {
+            net::IClient* p_client = closed_.front();
+            (*p_client).conn = std::make_unique<HttpConnection>(std::move(cn));
+            closed_.pop();
+            std::lock_guard<std::mutex> lock(timeout_mutex_);
+            timeo_qu_.emplace(p_client);
+            return p_client;
+        }
+    }
+    clients_.push_back(net::IClient{std::make_unique<HttpConnection>(std::move(cn))});
+    clients_.back().iter = std::prev(clients_.end());
+    net::IClient* p_client = &(clients_.back());
+    std::lock_guard<std::mutex> lock(timeout_mutex_);
+    timeo_qu_.emplace(p_client);
+    return p_client;
+}
+
+bool HttpService::try_write_responce(net::IClient* p_client) {
+    HttpConnection* p_conn = get(p_client->conn.get());
     while (true) {
         try {
-            if (p_client->write_from_buffer() == 0u)
-                break;
+            p_conn->write_from_buffer();
+            if (p_conn->write_buf().empty())
+                return true;
         } catch (tcp::TimeOutError& ex) {
             break;
         } catch (tcp::DescriptorError& ex) {
-            log::warn(std::string(ex.what()) + " at " + p_client->address().str());
-            close_connection(p_client);
+            log::warn(std::string(ex.what()) + " at " + p_conn->address().str());
+            close_client(p_client);
             return false;
         }
     }
-
-    return p_client->write_buf().empty();
+    return  false;
 }
 
-bool HttpService::try_read_request(HttpConnection* p_client, size_t th_num) {
+bool HttpService::try_read_request(net::IClient* p_client, size_t th_num) {
+    HttpConnection* p_conn = get(p_client->conn.get());
     while (true) {
         try {
-            if (p_client->read_to_buffer() == 0) {
-                log::info("Client " + p_client->address().str() + " closed unexpectedly");
-                close_connection(p_client);
+            if (p_conn->read_to_buffer() == 0) {
+                log::info("Client " + p_conn->address().str() + " closed unexpectedly");
+                close_client(p_client);
                 return false;
             }
+            Request req(p_conn->read_buf());
+            p_conn->keep_alive_ = is_keep_alive(req.headers());
+            p_conn->req_ = std::move(req);
         } catch (tcp::TimeOutError& ex) {
             break;
         } catch (tcp::DescriptorError& ex) {
-            log::warn(std::string(ex.what()) + " at " + p_client->address().str());
-            close_connection(p_client);
+            log::warn(std::string(ex.what()) + " at " + p_conn->address().str());
+            close_client(p_client);
+            return false;
+        } catch (ExpectingData& exd) {
+            log::warn("Worker " + std::to_string(th_num) + " got incomplete request from "
+                                                         + p_conn->address().str());
+            subscribe(p_client, net::OPTION::READ);
+            return false;
+        } catch (IncorrectData& ind) {
+            log::warn("Worker " + std::to_string(th_num) + " got incorrect request from "
+                                                         + p_conn->address().str());
+            close_client(p_client);
             return false;
         }
-    }
-    try {
-        Request req(p_client->read_buf());
-        p_client->keep_alive_ = is_keep_alive(req.headers());
-        p_client->req_ = std::move(req);
-    } catch (ExpectingData& exd) {
-        log::warn("Worker " + std::to_string(th_num)
-                            + " got incomplete request from "
-                            + p_client->address().str());
-        subscribe(*p_client, net::OPTION::READ);
-        return false;
-    } catch (IncorrectData& ind) {
-        log::warn("Worker " + std::to_string(th_num)
-                            + " got incorrect request from "
-                            + p_client->address().str());
-        close_connection(p_client);
-        return false;
     }
     return true;
 }
 
-bool HttpService::try_reset_last_activity_time(HttpConnection* p_client) {
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (p_client->socket().valid()) {
-        p_client->reset_time_of_last_activity();
+bool HttpService::try_reset_last_activity_time(net::IClient* p_client) {
+    HttpConnection* p_conn = get(p_client->conn.get());
+    std::lock_guard<std::mutex> lock(p_conn->timeout_mutex_);
+    if (p_conn->socket().valid()) {
+        p_conn->reset_time_of_last_activity();
         return true;
     }
     return false;
@@ -219,31 +229,37 @@ void HttpService::close() {
     server_.close();
 }
 
-void HttpService::subscribe(HttpConnection& cn, net::OPTION opt)   const {
-    cn.epoll_option_ = cn.epoll_option_ + opt + net::OPTION::ET_ONESHOT;
-    epoll_.mod(&(cn), cn.epoll_option_);
+void HttpService::subscribe(net::IClient* p_client, net::OPTION opt)   const {
+    HttpConnection* p_conn = get(p_client->conn.get());
+    p_conn->epoll_option_ = p_conn->epoll_option_ + opt + net::OPTION::ET_ONESHOT;
+    epoll_.mod(p_client, p_conn->epoll_option_);
 }
 
-void HttpService::unsubscribe(HttpConnection& cn, net::OPTION opt) const {
-    cn.epoll_option_ = cn.epoll_option_ - opt + net::OPTION::ET_ONESHOT;
-    epoll_.mod(&(cn), cn.epoll_option_);
+void HttpService::unsubscribe(net::IClient* p_client, net::OPTION opt) const {
+    HttpConnection* p_conn = get(p_client->conn.get());
+    p_conn->epoll_option_ = p_conn->epoll_option_ - opt + net::OPTION::ET_ONESHOT;
+    epoll_.mod(p_client, p_conn->epoll_option_);
 }
 
-void HttpService::close_if_timed_out(HttpConnection* cn) {
-    std::lock_guard<std::mutex> lock(mutex_);
+bool HttpService::close_if_timed_out(net::IClient* p_client) {
+    HttpConnection* cn = get(p_client->conn.get());
     size_t timeo = (cn->keep_alive_ ? ka_conn_timeo : conn_timeo);
+    std::scoped_lock lock(closing_mutex_, cn->timeout_mutex_);
     if (cn->socket().valid() && cn->is_timed_out(timeo)) {
         log::info("Connection timed out: " + cn->address().str());
-        closed_.push(cn);
+        closed_.push(p_client);
         cn->close();
+        return true;
     }
+    return false;
 }
 
-void HttpService::close_connection(HttpConnection* cn) {
-    std::lock_guard<std::mutex> lock(mutex_);
+void HttpService::close_client(net::IClient* client) {
+    HttpConnection* cn = get(client->conn.get());
+    std::lock_guard<std::mutex> lock(closing_mutex_);
     if (cn->socket().valid()) {
         log::info("Closing connection: " + cn->address().str());
-        closed_.push(cn);
+        closed_.push(client);
         cn->close();
     }
 }

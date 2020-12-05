@@ -1,7 +1,6 @@
 #ifndef HTTP_CONNECTION_H
 #define HTTP_CONNECTION_H
-#include <string>
-#include "epoll.h"
+#include <mutex>
 #include "timeout.h"
 #include "bufconnection.h"
 #include "message.h"
@@ -10,13 +9,7 @@ namespace http {
 
 class HttpConnection : public net::BufferedConnection {
  public:
-    using BufferedConnection::BufferedConnection;
-    explicit HttpConnection(tcp::Connection && other);
-
-    HttpConnection(HttpConnection && other)             = default;
-    HttpConnection& operator= (HttpConnection && other) = default;
-
-    virtual ~HttpConnection() = default;
+    explicit HttpConnection(tcp::NonBlockConnection&& other);
 
  public:
     void write(const Responce& resp);
@@ -34,6 +27,7 @@ class HttpConnection : public net::BufferedConnection {
     void unsubscribe(net::OPTION opt) override;
 
  protected:
+    std::mutex timeout_mutex_;
     time_point_t start_;
     Request req_;
     bool keep_alive_ = false;
