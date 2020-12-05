@@ -155,7 +155,7 @@ std::vector<http::Header> parse_headers(InputIt begin, InputIt end, std::string_
 
 std::string parse_body(const std::vector<http::Header>& headers, std::string_view& mes_sv) {
     auto it = std::find_if(headers.begin(), headers.end(), [] (const http::Header& h) {
-                                return h.name == "Content-Length";
+                                return h.name == "Content-Length" || h.name == "Transfer-Encoding";
                                 });
     if (it != headers.end()) {
         size_t size;
@@ -235,7 +235,7 @@ void Request::parse(const std::string& req) {
     headers_ = parse_headers(REQUEST_HEADER_NAMES.begin(),
                              REQUEST_HEADER_NAMES.end(), req_sv);
     req_sv.remove_prefix(2);
-    body_    = parse_body(headers_, req_sv);
+    body_ = parse_body(headers_, req_sv);
 }
 
 Responce::Responce(const std::string& res) {

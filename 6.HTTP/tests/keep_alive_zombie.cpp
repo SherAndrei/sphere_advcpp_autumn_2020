@@ -6,7 +6,7 @@
 
 int main() {
     tcp::Connection c({"127.0.0.1", 8080});
-    std::string request = "GET first HTTP/1.1\r\nConnection: keep-alive\r\n\r\n";
+    std::string request = "GET first HTTP/1.1\r\nConnection: Keep-Alive\r\n\r\n";
     std::string responce(512, '\0');
     c.write(request.data(), request.length());
     size_t size = c.read(responce.data(), responce.length());

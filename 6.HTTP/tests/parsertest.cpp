@@ -255,19 +255,19 @@ void TestHeaders() {
     }
 
     try {
-        http::Request r("GET / HTTP/1.1\r\n Host: localhost:8080\r\nConnection: keep-alive\r\n\r\n");
+        http::Request r("GET / HTTP/1.1\r\n Host: localhost:8080\r\nConnection: Keep-Alive\r\n\r\n");
         ASSERT_EQUAL(r.headers().size(), 2u);
         ASSERT_EQUAL(http::to_string(r.headers()[0]), "Host: localhost:8080\r\n");
-        ASSERT_EQUAL(http::to_string(r.headers()[1]), "Connection: keep-alive\r\n");
+        ASSERT_EQUAL(http::to_string(r.headers()[1]), "Connection: Keep-Alive\r\n");
     } catch (http::ParsingError& ex) {
         ASSERT(false);
     }
 
     try {
-        http::Request r("GET / HTTP/1.1\r\n \t \t Host: localhost:8080\r\n  \t  \tConnection: keep-alive\r\n\r\n");
+        http::Request r("GET / HTTP/1.1\r\n \t \t Host: localhost:8080\r\n  \t  \tConnection: Keep-Alive\r\n\r\n");
         ASSERT_EQUAL(r.headers().size(), 2u);
         ASSERT_EQUAL(http::to_string(r.headers()[0]), "Host: localhost:8080\r\n");
-        ASSERT_EQUAL(http::to_string(r.headers()[1]), "Connection: keep-alive\r\n");
+        ASSERT_EQUAL(http::to_string(r.headers()[1]), "Connection: Keep-Alive\r\n");
     } catch (http::ParsingError& ex) {
         ASSERT(false);
     }

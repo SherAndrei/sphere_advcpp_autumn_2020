@@ -26,13 +26,14 @@ void handle_error(int errnum) {
 namespace tcp {
 
 Connection::Connection(const Address& addr)
-    : address_(addr) {
+    : IConnectable(addr) {
     connect(addr);
 }
+
 Connection::Connection(Descriptor && fd, const Address& addr)
-    : address_(addr)
-    , socket_(std::move(fd))
-{}
+    : IConnectable(addr) {
+    set_socket(std::move(fd));
+}
 
 void Connection::connect(const Address& addr) {
     int error;
@@ -88,6 +89,7 @@ void Connection::readExact(void* data, size_t len) {
 
 void Connection::close() {
     socket_.close();
+    address_ = {{}, 0u};
 }
 void Connection::set_timeout(ssize_t sec, ssize_t usec) const {
     timeval timeout = { sec, usec };
@@ -109,18 +111,6 @@ void Connection::set_nonblock() const {
     if ((fcntl(socket_.fd(), F_SETFL, flags | O_NONBLOCK)) == -1) {
         throw SocketOptionError(std::strerror(errno), "O_NONBLOCK");
     }
-}
-
-Descriptor& Connection::socket() {
-    return socket_;
-}
-
-const Descriptor& Connection::socket() const {
-    return socket_;
-}
-
-Address Connection::address() const {
-    return address_;
 }
 
 }  // namespace tcp

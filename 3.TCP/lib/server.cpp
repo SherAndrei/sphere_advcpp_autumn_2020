@@ -24,7 +24,7 @@ void handle_error(int errnum) {
 namespace tcp {
 
 Server::Server(const Address& addr)
-    : address_(addr) {
+    : IConnectable(addr) {
     listen(addr);
 }
 
@@ -65,17 +65,16 @@ Connection Server::accept() {
                                 peer_addr.sin_port } };
 }
 
-Connection Server::accept_non_block() {
+NonBlockConnection Server::accept_non_block() {
     sockaddr_in peer_addr{};
     socklen_t s = sizeof(peer_addr);
     int client;
-    handle_error(client = ::accept4(socket_.fd(),
-                                   reinterpret_cast<sockaddr*>(&peer_addr),
-                                   &s, SOCK_NONBLOCK));
-
-    return Connection{ Descriptor{client},
-                       Address{ ::inet_ntoa(peer_addr.sin_addr),
-                                peer_addr.sin_port } };
+    client = ::accept4(socket_.fd(), reinterpret_cast<sockaddr*>(&peer_addr),
+                      &s, SOCK_NONBLOCK);
+    handle_error(client);
+    return NonBlockConnection{ Descriptor{client},
+                               Address{ ::inet_ntoa(peer_addr.sin_addr),
+                                        peer_addr.sin_port } };
 }
 
 void Server::close() {
@@ -111,18 +110,6 @@ void Server::set_reuseaddr() const {
     if (setsockopt(socket_.fd(), SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int)) == -1) {
         throw SocketOptionError(std::strerror(errno), "SO_REUSEADDR");
     }
-}
-
-Descriptor& Server::socket() {
-    return socket_;
-}
-
-const Descriptor& Server::socket() const {
-    return socket_;
-}
-
-Address Server::address() const {
-    return address_;
 }
 
 }  // namespace tcp

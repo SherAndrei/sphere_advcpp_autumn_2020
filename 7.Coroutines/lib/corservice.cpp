@@ -8,6 +8,14 @@
 
 namespace {
 
+namespace {
+
+http::HttpConnection* get(tcp::IConnectable* p_conn) {
+    return dynamic_cast<http::HttpConnection*>(p_conn);
+}
+
+}
+
 bool is_keep_alive(const std::vector<http::Header>& headers) {
      auto it = std::find_if(headers.begin(), headers.end(),
                           [](const http::Header& h) {
@@ -36,11 +44,6 @@ CoroutineService::CoroutineService(ICoroutineListener* listener, size_t workerSi
 
 void CoroutineService::setListener(ICoroutineListener* listener) {
     listener_ = listener;
-}
-
-size_t CoroutineService::connections_size() {
-    std::lock_guard<std::mutex> lock(mutex_);
-    return manager_.size() - closed_.size();
 }
 
 void CoroutineService::run() {
@@ -130,92 +133,59 @@ void CoroutineService::work(size_t th_num) {
     }
 }
 
-CorConnection* CoroutineService::try_replace_closed_with_new_connection(CorConnection&& cn) {
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (!closed_.empty()) {
-        CorConnection* p_cn = closed_.front();
-        *p_cn = std::move(cn);
-        closed_.pop();
-        return p_cn;
-    }
-    return nullptr;
-}
-
-bool CoroutineService::try_read_request(CorConnection* p_client) {
+bool HttpService::try_read_request(net::IClient* p_client, size_t th_num) {
+    HttpConnection* p_conn = get(p_client->conn.get());
     while (true) {
         try {
-            if (p_client->read_to_buffer() == 0) {
-                log::info("Client " + p_client->address().str() + " closed unexpectedly");
-                close_connection(p_client);
+            if (p_conn->read_to_buffer() == 0) {
+                log::info("Client " + p_conn->address().str() + " closed unexpectedly");
+                close_client(p_client);
                 return false;
             }
-            try {
-                Request req(p_client->read_buf());
-                p_client->keep_alive_ = is_keep_alive(req.headers());
-                p_client->req_ = std::move(req);
-            } catch (ExpectingData& exd) {
-                log::warn("Worker got incomplete request from "
-                                    + p_client->address().str());
-                subscribe(*p_client, net::OPTION::READ);
-                cor::yield();
-                continue;
-            } catch (IncorrectData& ind) {
-                log::warn("Worker got incorrect request from "
-                                 + p_client->address().str());
-                close_connection(p_client);
-                return false;
-            }
+            Request req(p_conn->read_buf());
+            p_conn->keep_alive_ = is_keep_alive(req.headers());
+            p_conn->req_ = std::move(req);
         } catch (tcp::TimeOutError& ex) {
             break;
         } catch (tcp::DescriptorError& ex) {
-            log::warn(std::string(ex.what()) + " at " + p_client->address().str());
-            close_connection(p_client);
+            log::warn(std::string(ex.what()) + " at " + p_conn->address().str());
+            close_client(p_client);
             return false;
-        }
-    }
-
-    return true;
-}
-
-bool CoroutineService::try_write_responce(CorConnection* p_client) {
-    while (true) {
-        try {
-            p_client->write_from_buffer();
-            if (!p_client->write_buf().empty()) {
-                cor::yield();
-                continue;
-            } else {
-                break;
-            }
-        } catch (tcp::TimeOutError& ex) {
-            break;
-        } catch (tcp::DescriptorError& ex) {
-            log::warn(std::string(ex.what()) + " at " + p_client->address().str());
-            close_connection(p_client);
+        } catch (ExpectingData& exd) {
+            log::warn("Worker " + std::to_string(th_num) + " got incomplete request from "
+                                                         + p_conn->address().str());
+            subscribe(p_client, net::OPTION::READ);
+            cor::yield();
+            continue;
+        } catch (IncorrectData& ind) {
+            log::warn("Worker " + std::to_string(th_num) + " got incorrect request from "
+                                                         + p_conn->address().str());
+            close_client(p_client);
             return false;
         }
     }
     return true;
 }
 
-void CoroutineService::close_if_timed_out(CorConnection* cn) {
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (cn->socket().valid() && cn->is_timed_out()) {
-        log::info("Connection timed out: " + cn->address().str());
-        closed_.push(cn);
-        cn->close();
+bool CoroutineService::try_write_responce(net::IClient* p_client) {
+    HttpConnection* p_conn = get(p_client->conn.get());
+    while (true) {
+        try {
+            p_conn->write_from_buffer();
+        } catch (tcp::TimeOutError& ex) {
+            if (!p_conn->write_buf().empty()) {
+                cor::yield();
+                continue;
+            }
+            break;
+        } catch (tcp::DescriptorError& ex) {
+            log::warn(std::string(ex.what()) + " at " + p_conn->address().str());
+            close_client(p_client);
+            return false;
+        }
     }
+    return true;
 }
-
-void CoroutineService::close_connection(CorConnection* cn) {
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (cn->socket().valid()) {
-        log::info("Closing connection: " + cn->address().str());
-        closed_.push(cn);
-        cn->close();
-    }
-}
-
 
 }  // namespace cor
 }  // namespace http

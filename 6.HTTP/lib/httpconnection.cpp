@@ -1,9 +1,9 @@
-#include "httperr.h"
 #include "httpconnection.h"
+#include "httperr.h"
 
 namespace http {
 
-HttpConnection::HttpConnection(tcp::Connection && other)
+HttpConnection::HttpConnection(tcp::NonBlockConnection&& other)
     : net::BufferedConnection(std::move(other))
     , start_(std::chrono::system_clock::now()) {}
 
@@ -25,7 +25,7 @@ void HttpConnection::unsubscribe(net::OPTION opt) {
 
 void HttpConnection::close() {
     epoll_option_ = net::OPTION::ET_ONESHOT;
-    connection_.close();
+    tcp::NonBlockConnection::close();
 }
 
 void HttpConnection::reset_time_of_last_activity() {
@@ -36,9 +36,9 @@ bool HttpConnection::is_keep_alive() const {
     return keep_alive_;
 }
 
-bool HttpConnection::is_timed_out() const {
+bool HttpConnection::is_timed_out(size_t timeo) const {
     time_point_t now = std::chrono::system_clock::now();
-    auto limit = std::chrono::seconds((keep_alive_ ? KEEP_ALIVE_CONNECTION_TIMEOUT : CONNECTION_TIMEOUT));
+    auto limit = std::chrono::seconds(timeo);
     return (now - start_) > limit;
 }
 

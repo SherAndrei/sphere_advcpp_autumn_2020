@@ -9,7 +9,7 @@ namespace cor {
 
 class CorConnection : public HttpConnection {
  public:
-    CorConnection(tcp::Connection&& cn, routine_t r_id);
+    CorConnection(tcp::NonBlockConnection&& cn, routine_t r_id);
 
  public:
     routine_t routine_id() const;
