@@ -47,7 +47,6 @@ class HttpService : public net::IService {
  private:
     IHttpListener* listener_{nullptr};
     PtrsToClosedClients closed_;
-    TimeOrderedQueue timeo_qu_;
 
  protected:
     size_t conn_timeo;

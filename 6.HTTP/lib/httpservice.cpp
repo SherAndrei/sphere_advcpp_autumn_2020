@@ -1,6 +1,7 @@
 #include "httpservice.h"
 #include <algorithm>
 #include "globallogger.h"
+#include "client_container.h"
 #include "httpconnection.h"
 #include "tcperr.h"
 #include "neterr.h"
@@ -21,7 +22,11 @@ bool is_keep_alive(const std::vector<http::Header>& headers) {
         return false;
     }
 
-    return it->value.find("keep-alive") != it->value.npos;
+    return it->value.find("Keep-Alive") != it->value.npos;
+}
+
+void shift_to_back(net::ClientContainer& cont, net::IClient* p_client) {
+    cont.splice(cont.end(), cont, p_client->iter);
 }
 
 }  // namespace
@@ -78,7 +83,7 @@ void HttpService::run() {
             client_opt = net::OPTION::READ + net::OPTION::ET_ONESHOT;
             epoll_.add(p_client, client_opt);
         } catch (tcp::TimeOutError& er) {
-            // ignore
+            log::debug("Server accepts nothing");
         } catch (net::EPollError& er) {
             log::error("Server encounters " + std::string(er.what()));
         }
@@ -140,8 +145,11 @@ void HttpService::work(size_t th_num) {
 
 void HttpService::dump_timed_out_connections() {
     std::lock_guard<std::mutex> lock_to(timeout_mutex_);
-    while (!timeo_qu_.empty() && close_if_timed_out(timeo_qu_.front()))
-        timeo_qu_.pop();
+    for (auto it = clients_.begin(); it != clients_.end(); it++) {
+        if (!close_if_timed_out(&(*it))) {
+            break;
+        }
+    }
 }
 
 net::IClient* HttpService::add_new_connection(tcp::NonBlockConnection&& cn) {
@@ -152,15 +160,13 @@ net::IClient* HttpService::add_new_connection(tcp::NonBlockConnection&& cn) {
             (*p_client).conn = std::make_unique<HttpConnection>(std::move(cn));
             closed_.pop();
             std::lock_guard<std::mutex> lock(timeout_mutex_);
-            timeo_qu_.emplace(p_client);
+            shift_to_back(clients_, p_client);
             return p_client;
         }
     }
     clients_.push_back(net::IClient{std::make_unique<HttpConnection>(std::move(cn))});
     clients_.back().iter = std::prev(clients_.end());
     net::IClient* p_client = &(clients_.back());
-    std::lock_guard<std::mutex> lock(timeout_mutex_);
-    timeo_qu_.emplace(p_client);
     return p_client;
 }
 
@@ -219,6 +225,7 @@ bool HttpService::try_reset_last_activity_time(net::IClient* p_client) {
     HttpConnection* p_conn = get(p_client->conn.get());
     std::lock_guard<std::mutex> lock(p_conn->timeout_mutex_);
     if (p_conn->socket().valid()) {
+        shift_to_back(clients_, p_client);
         p_conn->reset_time_of_last_activity();
         return true;
     }
