@@ -4,8 +4,8 @@
 #include <thread>
 #include <mutex>
 #include "iService.h"
+#include "iTimed.h"
 #include "httpcontainers.h"
-#include "timeout.h"
 #include "httplistener.h"
 
 namespace http {

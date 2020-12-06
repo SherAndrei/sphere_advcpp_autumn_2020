@@ -4,8 +4,7 @@
 namespace http {
 
 HttpConnection::HttpConnection(tcp::NonBlockConnection&& other)
-    : net::BufferedConnection(std::move(other))
-    , start_(std::chrono::system_clock::now()) {}
+    : net::BufferedConnection(std::move(other)) {}
 
 void HttpConnection::write(const Responce& res) {
     write_ = res.str();
@@ -28,18 +27,9 @@ void HttpConnection::close() {
     tcp::NonBlockConnection::close();
 }
 
-void HttpConnection::reset_time_of_last_activity() {
-    start_ = std::chrono::system_clock::now();
-}
-
 bool HttpConnection::is_keep_alive() const {
     return keep_alive_;
 }
 
-bool HttpConnection::is_timed_out(size_t timeo) const {
-    time_point_t now = std::chrono::system_clock::now();
-    auto limit = std::chrono::seconds(timeo);
-    return (now - start_) > limit;
-}
 
 }  // namespace http

@@ -2,7 +2,8 @@
 add_library(http STATIC message.cpp
                         status_code.cpp
                         httpconnection.cpp
-                        httpservice.cpp)
+                        httpservice.cpp
+                        iTimed.cpp)
 target_include_directories(http PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_include_directories(http PUBLIC ${CMAKE_SOURCE_DIR}/2.LOG/include)
 target_include_directories(http PUBLIC ${CMAKE_SOURCE_DIR}/3.TCP/include)

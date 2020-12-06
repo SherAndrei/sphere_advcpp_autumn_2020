@@ -1,13 +1,12 @@
 #ifndef HTTP_CONNECTION_H
 #define HTTP_CONNECTION_H
-#include <mutex>
-#include "timeout.h"
 #include "bufconnection.h"
 #include "message.h"
+#include "iTimed.h"
 
 namespace http {
 
-class HttpConnection : public net::BufferedConnection {
+class HttpConnection : public net::BufferedConnection, protected ITimed {
  public:
     explicit HttpConnection(tcp::NonBlockConnection&& other);
 
@@ -16,19 +15,16 @@ class HttpConnection : public net::BufferedConnection {
     Request request()  const;
 
     bool is_keep_alive() const;
-    bool is_timed_out(size_t timeo) const;
 
     void close() override;
 
  protected:
     friend class HttpService;
-    void reset_time_of_last_activity();
+
     void subscribe(net::OPTION opt) override;
     void unsubscribe(net::OPTION opt) override;
 
  protected:
-    std::mutex timeout_mutex_;
-    time_point_t start_;
     Request req_;
     bool keep_alive_ = false;
 };

@@ -222,11 +222,11 @@ bool HttpService::try_read_request(net::IClient* p_client, size_t th_num) {
 }
 
 bool HttpService::try_reset_last_activity_time(net::IClient* p_client) {
-    HttpConnection* p_conn = get(p_client->conn.get());
-    std::lock_guard<std::mutex> lock(p_conn->timeout_mutex_);
-    if (p_conn->socket().valid()) {
+    ITimed* p_timed = dynamic_cast<ITimed*>(get(p_client->conn.get()));
+    std::lock_guard<std::mutex> lock(p_timed->mutex());
+    if (p_client->conn->socket().valid()) {
         shift_to_back(clients_, p_client);
-        p_conn->reset_time_of_last_activity();
+        p_timed->reset_time_of_last_activity();
         return true;
     }
     return false;
