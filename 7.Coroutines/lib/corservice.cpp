@@ -25,7 +25,11 @@ bool is_keep_alive(const std::vector<http::Header>& headers) {
         return false;
     }
 
-    return it->value.find("keep-alive") != it->value.npos;
+    return it->value.find("Keep-Alive") != it->value.npos;
+}
+
+void shift_to_back(net::ClientContainer& cont, net::IClient* p_client) {
+    cont.splice(cont.end(), cont, p_client->iter);
 }
 
 }  // namespace
@@ -33,14 +37,10 @@ bool is_keep_alive(const std::vector<http::Header>& headers) {
 namespace http {
 namespace cor {
 
-CoroutineService::CoroutineService(ICoroutineListener* listener, size_t workerSize) {
-    workers_.reserve(std::min(static_cast<size_t>(std::thread::hardware_concurrency()),
-                        workerSize));
-    if (workers_.capacity() == 0u) {
-        throw WorkerError("Workers size == 0");
-    }
-    setListener(listener);
-}
+CoroutineService::CoroutineService(const tcp::Address& addr, ICoroutineListener* listener, size_t workersSize,
+                                   size_t connection_timeout_sec, size_t keep_alive_timeout_sec)
+    : HttpService(addr, workersSize, connection_timeout_sec, keep_alive_timeout_sec)
+    , listener_(listener) {}
 
 void CoroutineService::setListener(ICoroutineListener* listener) {
     listener_ = listener;
@@ -86,7 +86,27 @@ void CoroutineService::run() {
     log::info("Server finished");
 }
 
-void CoroutineService::serve_client(CorConnection* p_client) {
+net::IClient* CoroutineService::emplace_connection(tcp::NonBlockConnection&& cn) {
+    {
+        std::lock_guard<std::mutex> lock(closing_mutex_);
+        if (!closed_.empty()) {
+            net::IClient* p_client = closed_.front();
+            (*p_client).conn = std::make_unique<CorConnection>(std::move(cn),
+                        cor::create([this, p_client] { serve_client(p_client); }));
+            closed_.pop();
+            std::lock_guard<std::mutex> lock(timeout_mutex_);
+            shift_to_back(clients_, p_client);
+            return p_client;
+        }
+    }
+    clients_.push_back(net::IClient{std::make_unique<CorConnection>(std::move(cn), 0)});
+    net::IClient* p_client = &(clients_.back());
+    p_client->iter = std::prev(clients_.end());
+    get(p_client->conn.get())->set_routine(
+            cor::create([this, p_client] { serve_client(p_client); }));
+    return p_client;
+}
+
     if (!try_reset_last_activity_time(p_client))
         return;
 

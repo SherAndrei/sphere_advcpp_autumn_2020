@@ -6,10 +6,11 @@
 
 class TestListener : public http::cor::ICoroutineListener {
     http::Responce OnRequest(const http::Request& req) override {
-        std::cout << req.str();
+        (void) req.str();
         return http::Responce("HTTP/1.1 200 "
                                 + http::to_string(http::StatusCode::OK)
-                                + "\r\nContent-Length: 11\r\n\r\nHello world");
+                                + "\r\nContent-Length: 76\r\n\r\nHello world! My name is Andrew Sherstobitov"
+                                + "And i'm studying at Technosphere!");
     }
 };
 
@@ -18,17 +19,15 @@ int main(int argc, char* argv[]) {
         std::cout << "Usage: " << argv[0] << " <sizeof(workers)>\n";
         return -1;
     }
-    log::init_with_stderr_logger(log::LEVEL::DEBUG);
+    log::init_with_stdout_logger(log::LEVEL::DEBUG);
     TestListener tl;
-    http::cor::CoroutineService serv(&tl, std::stoi(argv[1]));
-    bool addr_reus = true;
-    while (addr_reus) {
+    while (true) {
         try {
-            serv.open({"127.0.0.1", 8080});
-            addr_reus = false;
+            http::cor::CoroutineService serv({"127.0.0.1", 8080}, &tl, std::stoi(argv[1]), 10ul, 15ul);
+            serv.run();
+            break;
         } catch (tcp::AddressError& ex) { std::cout << "useaddr" << std::endl; }
     }
-    serv.run();
 
     return 0;
 }

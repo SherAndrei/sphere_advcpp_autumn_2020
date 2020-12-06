@@ -10,11 +10,17 @@ namespace cor {
 
 class CoroutineService : public HttpService {
  public:
-    CoroutineService(ICoroutineListener* listener, size_t workersSize);
+    using HttpService::HttpService;
+    CoroutineService(const tcp::Address& addr, ICoroutineListener* listener, size_t workersSize,
+                     size_t connection_timeout_sec = CONNECTION_TIMEOUT,
+                     size_t keep_alive_timeout_sec = KEEP_ALIVE_CONNECTION_TIMEOUT);
+
     virtual ~CoroutineService() = default;
 
  public:
     void setListener(ICoroutineListener* listener);
+
+    net::IClient* emplace_connection(tcp::NonBlockConnection&& cn) override;
 
  public:
     void run() override;
@@ -24,7 +30,7 @@ class CoroutineService : public HttpService {
     void serve_client(net::IClient* p_client);
 
  private:
-    bool try_read_request(net::IClient* p_client, size_t thread_num) override;
+    bool try_read_request(net::IClient* p_client) override;
     bool try_write_responce(net::IClient* p_client) override;
 
  private:

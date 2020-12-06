@@ -29,6 +29,16 @@ void shift_to_back(net::ClientContainer& cont, net::IClient* p_client) {
     cont.splice(cont.end(), cont, p_client->iter);
 }
 
+void ctor_impl(tcp::Server& serv, std::vector<std::thread>& threads, size_t size) {
+    serv.set_reuseaddr();
+    serv.set_timeout(http::ACCEPT_TIMEOUT);
+    threads.reserve(std::min(static_cast<size_t>(std::thread::hardware_concurrency()),
+                             size));
+    if (threads.capacity() == 0u) {
+        throw http::WorkerError("Workers size == 0");
+    }
+}
+
 }  // namespace
 
 namespace http {
@@ -39,13 +49,15 @@ HttpService::HttpService(const tcp::Address& addr, IHttpListener* listener, size
     , listener_(listener)
     , conn_timeo(connection_timeout_sec)
     , ka_conn_timeo(keep_alive_timeout_sec) {
-    server_.set_reuseaddr();
-    server_.set_timeout(ACCEPT_TIMEOUT);
-    workers_.reserve(std::min(static_cast<size_t>(std::thread::hardware_concurrency()),
-                        workerSize));
-    if (workers_.capacity() == 0u) {
-        throw WorkerError("Workers size == 0");
-    }
+    ctor_impl(server_, workers_, workerSize);
+}
+
+HttpService::HttpService(const tcp::Address& addr, size_t workerSize,
+    size_t connection_timeout_sec, size_t keep_alive_timeout_sec)
+    : IService(addr)
+    , conn_timeo(connection_timeout_sec)
+    , ka_conn_timeo(keep_alive_timeout_sec) {
+    ctor_impl(server_, workers_, workerSize);
 }
 
 void HttpService::setListener(IHttpListener* listener) {
@@ -77,7 +89,7 @@ void HttpService::run() {
     while (server_.socket().valid()) {
         log::debug("Server waits");
         try {
-            net::IClient* p_client = add_new_connection(server_.accept_non_block());
+            net::IClient* p_client = emplace_connection(server_.accept_non_block());
             log::info("Server accepts: " + p_client->conn->address().str());
             net::OPTION& client_opt = get(p_client->conn.get())->epoll_option_;
             client_opt = net::OPTION::READ + net::OPTION::ET_ONESHOT;
@@ -115,7 +127,7 @@ void HttpService::work(size_t th_num) {
                 log::debug("Worker " + std::to_string(th_num) + " encounters EPOLLIN from "
                                                               + p_conn->address().str());
 
-                if (!try_read_request(p_client, th_num))
+                if (!try_read_request(p_client))
                     continue;
                 listener_->OnRequest(*p_conn);
 
@@ -152,22 +164,22 @@ void HttpService::dump_timed_out_connections() {
     }
 }
 
-net::IClient* HttpService::add_new_connection(tcp::NonBlockConnection&& cn) {
+net::IClient* HttpService::emplace_connection(tcp::NonBlockConnection&& cn) {
+    std::unique_ptr u_conn = std::make_unique<HttpConnection>(std::move(cn));
     {
         std::lock_guard<std::mutex> lock(closing_mutex_);
         if (!closed_.empty()) {
             net::IClient* p_client = closed_.front();
-            (*p_client).conn = std::make_unique<HttpConnection>(std::move(cn));
+            (*p_client).conn = std::move(u_conn);
             closed_.pop();
             std::lock_guard<std::mutex> lock(timeout_mutex_);
             shift_to_back(clients_, p_client);
             return p_client;
         }
     }
-    clients_.push_back(net::IClient{std::make_unique<HttpConnection>(std::move(cn))});
+    clients_.push_back(net::IClient{std::move(u_conn)});
     clients_.back().iter = std::prev(clients_.end());
-    net::IClient* p_client = &(clients_.back());
-    return p_client;
+    return &(clients_.back());
 }
 
 bool HttpService::try_write_responce(net::IClient* p_client) {
@@ -188,7 +200,7 @@ bool HttpService::try_write_responce(net::IClient* p_client) {
     return  false;
 }
 
-bool HttpService::try_read_request(net::IClient* p_client, size_t th_num) {
+bool HttpService::try_read_request(net::IClient* p_client) {
     HttpConnection* p_conn = get(p_client->conn.get());
     while (true) {
         try {
@@ -207,13 +219,11 @@ bool HttpService::try_read_request(net::IClient* p_client, size_t th_num) {
             close_client(p_client);
             return false;
         } catch (ExpectingData& exd) {
-            log::warn("Worker " + std::to_string(th_num) + " got incomplete request from "
-                                                         + p_conn->address().str());
+            log::warn("Worker got incomplete request from " + p_conn->address().str());
             subscribe(p_client, net::OPTION::READ);
             return false;
         } catch (IncorrectData& ind) {
-            log::warn("Worker " + std::to_string(th_num) + " got incorrect request from "
-                                                         + p_conn->address().str());
+            log::warn("Worker got incorrect request from " + p_conn->address().str());
             close_client(p_client);
             return false;
         }

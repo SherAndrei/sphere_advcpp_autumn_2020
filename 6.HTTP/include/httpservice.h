@@ -12,9 +12,14 @@ namespace http {
 
 class HttpService : public net::IService {
  public:
-    explicit HttpService(const tcp::Address& addr, IHttpListener* listener, size_t workersSize,
-                         size_t connection_timeout_sec = CONNECTION_TIMEOUT,
-                         size_t keep_alive_timeout_sec = KEEP_ALIVE_CONNECTION_TIMEOUT);
+    HttpService(const tcp::Address& addr, IHttpListener* listener, size_t workersSize,
+                size_t connection_timeout_sec = CONNECTION_TIMEOUT,
+                size_t keep_alive_timeout_sec = KEEP_ALIVE_CONNECTION_TIMEOUT);
+
+    HttpService(const tcp::Address& addr, size_t workersSize,
+                size_t connection_timeout_sec = CONNECTION_TIMEOUT,
+                size_t keep_alive_timeout_sec = KEEP_ALIVE_CONNECTION_TIMEOUT);
+
     virtual ~HttpService() = default;
 
  public:
@@ -31,14 +36,14 @@ class HttpService : public net::IService {
     void subscribe(net::IClient* cn, net::OPTION opt)   const;
     void unsubscribe(net::IClient* cn, net::OPTION opt) const;
 
-    net::IClient* add_new_connection(tcp::NonBlockConnection&& cn);
+    virtual net::IClient* emplace_connection(tcp::NonBlockConnection&& cn);
     void close_client(net::IClient* p_client);
 
     void dump_timed_out_connections();
     bool close_if_timed_out(net::IClient* p_client);
 
  private:
-    virtual bool try_read_request(net::IClient* p_client, size_t thread_num);
+    virtual bool try_read_request(net::IClient* p_client);
     virtual bool try_write_responce(net::IClient* p_client);
 
  protected:
