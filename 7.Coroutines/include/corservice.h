@@ -18,23 +18,21 @@ class CoroutineService : public HttpService {
     virtual ~CoroutineService() = default;
 
  public:
+    ICoroutineListener* getListener();
     void setListener(ICoroutineListener* listener);
-
-    net::IClient* emplace_connection(tcp::NonBlockConnection&& cn) override;
-
- public:
-    void run() override;
 
  private:
     void work(size_t thread_num) override;
     void serve_client(net::IClient* p_client);
+
+    net::IClient* emplace_connection(tcp::NonBlockConnection&& cn) override;
 
  private:
     bool try_read_request(net::IClient* p_client) override;
     bool try_write_responce(net::IClient* p_client) override;
 
  private:
-    ICoroutineListener* listener_;
+    void activate_workers() override;
 };
 
 }  // namespace cor

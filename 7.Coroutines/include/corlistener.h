@@ -1,13 +1,12 @@
 #ifndef HTTP_COR_LISTENER_H
 #define HTTP_COR_LISTENER_H
+#include "iListener.h"
 #include "message.h"
-#include "httpservice.h"
-#include "httpconnection.h"
 
 namespace http {
 namespace cor  {
 
-class ICoroutineListener {
+class ICoroutineListener : public net::IListener {
  public:
     virtual Responce OnRequest(const Request&) = 0;
 };

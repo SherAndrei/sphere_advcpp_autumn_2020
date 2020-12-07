@@ -15,8 +15,7 @@ net::BufferedConnection* get(tcp::IConnectable* p_conn) {
 namespace net {
 
 Service::Service(const tcp::Address& addr, IServiceListener* listener)
-    : IService(addr)
-    , listener_(listener) {
+    : IService(addr, listener) {
     server_.set_reuseaddr();
     server_.set_nonblock();
     epoll_.add(server_.socket(), net::OPTION::READ);
@@ -24,6 +23,10 @@ Service::Service(const tcp::Address& addr, IServiceListener* listener)
 
 void Service::setListener(IServiceListener* listener) {
     listener_ = listener;
+}
+
+IServiceListener* Service::getListener() {
+    return dynamic_cast<IServiceListener*>(listener_);
 }
 
 void Service::open(const tcp::Address& addr) {
@@ -36,8 +39,9 @@ void Service::open(const tcp::Address& addr) {
 }
 
 void Service::run() {
-    if (listener_ == nullptr)
-        throw ListenerError("Listener was not set");
+    IServiceListener* listener = getListener();
+    if (listener == nullptr)
+        throw ListenerError("Listener was set incorrectly");
     while (true) {
         log::info(std::to_string(clients_.size()) + " active connections");
         log::debug("Server waits");
@@ -51,7 +55,7 @@ void Service::run() {
                 log::info("Server accepted " + p_conn->address().str());
                 epoll_.add(&clients_.back(), OPTION::CLOSE);
 
-                listener_->onNewConnection(*p_conn);
+                listener->onNewConnection(*p_conn);
                 if (p_conn->socket().valid()) {
                     epoll_.mod(&clients_.back(), p_conn->epoll_option_);
                 }
@@ -61,28 +65,28 @@ void Service::run() {
                 BufferedConnection* p_conn = get(p_client->conn.get());
                 if (event.events & EPOLLERR) {
                     log::error("Server encountered EPOLLERR from " + p_conn->address().str());
-                    listener_->onError(*p_conn);
+                    listener->onError(*p_conn);
                 } else if (event.events & EPOLLIN) {
                     log::debug("Server encountered EPOLLIN from " + p_conn->address().str());
                     size_t size;
                     size = p_conn->read_to_buffer();
                     if (size == 0)
-                        listener_->onError(*p_conn);
+                        listener->onError(*p_conn);
                     else
-                        listener_->onReadAvailable(*p_conn);
+                        listener->onReadAvailable(*p_conn);
                 } else if (event.events & EPOLLOUT) {
                     log::debug("Server encountered EPOLLOUT from " + p_conn->address().str());
                     if (!p_conn->write_buf().empty()) {
                         size_t size = p_conn->write_from_buffer();
                         if (size == 0)
-                            listener_->onError(*p_conn);
+                            listener->onError(*p_conn);
                     } else {
-                        listener_->onWriteDone(*p_conn);
+                        listener->onWriteDone(*p_conn);
                     }
                 }
                 if (p_conn->epoll_option_ == OPTION::UNKNOWN ||
                     event.events & EPOLLRDHUP) {
-                    listener_->onClose(*p_conn);
+                    listener->onClose(*p_conn);
                     p_conn->close();
                     log::info("Server closed " + p_conn->address().str());
                     clients_.erase(it_client);

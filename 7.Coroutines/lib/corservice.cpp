@@ -46,45 +46,12 @@ void CoroutineService::setListener(ICoroutineListener* listener) {
     listener_ = listener;
 }
 
-void CoroutineService::run() {
-    if (listener_ == nullptr)
-        throw net::ListenerError("Listener was not set");
-
+void CoroutineService::activate_workers() {
     for (size_t i = 0; i < workers_.capacity(); i++) {
         workers_.emplace_back(&CoroutineService::work, this, i + 1);
         log::debug("Thread " + std::to_string(i + 1) + " up and running");
     }
-
-    while (server_.socket().valid()) {
-        log::debug("Server waits");
-        CorConnection new_c;
-        try {
-            new_c = CorConnection(server_.accept_non_block());
-        } catch (tcp::TimeOutError& er) {
-            log::debug("Server dropping coonnections");
-            for (auto& connection : manager_) {
-                close_if_timed_out(&connection);
             }
-            log::info("Active connections: " + std::to_string(connections_size()));
-            continue;
-        }
-        log::info("Server accepts: " + new_c.address().str());
-        CorConnection* p_client = try_replace_closed_with_new_connection(std::move(new_c));
-        if (p_client == nullptr) {
-            manager_.emplace_back(std::move(new_c));
-            p_client = &(manager_.back());
-        }
-        p_client->set_routine(cor::create([this, p_client] { this->serve_client(p_client); }));
-        p_client->epoll_option_ = net::OPTION::READ + net::OPTION::ET_ONESHOT;
-        epoll_.add(p_client, p_client->epoll_option_);
-        log::info("Active connections: " + std::to_string(connections_size()));
-    }
-    for (size_t i = 0; i < workers_.size(); i++) {
-        workers_[i].join();
-        log::debug("Thread " + std::to_string(i + 1) + " finished");
-    }
-    log::info("Server finished");
-}
 
 net::IClient* CoroutineService::emplace_connection(tcp::NonBlockConnection&& cn) {
     {

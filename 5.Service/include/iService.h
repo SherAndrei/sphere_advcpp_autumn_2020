@@ -2,6 +2,7 @@
 #define NET_BASE_SERVICE_H
 #include "server.h"
 #include "epoll.h"
+#include "iListener.h"
 #include "client_container.h"
 
 namespace net {
@@ -9,8 +10,8 @@ namespace net {
 class IService {
  protected:
     IService() = default;
-    explicit IService(const tcp::Address& addr)
-            : server_(addr) {}
+    explicit IService(const tcp::Address& addr, IListener* listener)
+            : server_(addr), listener_(listener) {}
 
  public:
     virtual ~IService() = default;
@@ -19,7 +20,6 @@ class IService {
     IService& operator=(IService&& other) = default;
 
  public:
-
     virtual void open(const tcp::Address& addr) = 0;
     virtual void run() = 0;
     virtual void close() = 0;
@@ -31,6 +31,7 @@ class IService {
  protected:
     tcp::Server server_;
     EPoll epoll_;
+    IListener* listener_{nullptr};
     ClientContainer clients_;
 };
 

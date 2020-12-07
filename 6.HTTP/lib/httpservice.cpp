@@ -29,39 +29,30 @@ void shift_to_back(net::ClientContainer& cont, net::IClient* p_client) {
     cont.splice(cont.end(), cont, p_client->iter);
 }
 
-void ctor_impl(tcp::Server& serv, std::vector<std::thread>& threads, size_t size) {
-    serv.set_reuseaddr();
-    serv.set_timeout(http::ACCEPT_TIMEOUT);
-    threads.reserve(std::min(static_cast<size_t>(std::thread::hardware_concurrency()),
-                             size));
-    if (threads.capacity() == 0u) {
-        throw http::WorkerError("Workers size == 0");
-    }
-}
-
 }  // namespace
 
 namespace http {
 
 HttpService::HttpService(const tcp::Address& addr, IHttpListener* listener, size_t workerSize,
     size_t connection_timeout_sec, size_t keep_alive_timeout_sec)
-    : IService(addr)
-    , listener_(listener)
+    : IService(addr, listener)
     , conn_timeo(connection_timeout_sec)
     , ka_conn_timeo(keep_alive_timeout_sec) {
-    ctor_impl(server_, workers_, workerSize);
+    server_.set_reuseaddr();
+    server_.set_timeout(http::ACCEPT_TIMEOUT);
+    workers_.reserve(std::min(static_cast<size_t>(std::thread::hardware_concurrency()),
+                             workerSize));
+    if (workers_.capacity() == 0u) {
+        throw http::WorkerError("Workers size == 0");
 }
-
-HttpService::HttpService(const tcp::Address& addr, size_t workerSize,
-    size_t connection_timeout_sec, size_t keep_alive_timeout_sec)
-    : IService(addr)
-    , conn_timeo(connection_timeout_sec)
-    , ka_conn_timeo(keep_alive_timeout_sec) {
-    ctor_impl(server_, workers_, workerSize);
 }
 
 void HttpService::setListener(IHttpListener* listener) {
     listener_ = listener;
+}
+
+IHttpListener* HttpService::getListener() {
+    return dynamic_cast<IHttpListener*>(listener_);
 }
 
 size_t HttpService::connections_size() {
@@ -77,14 +68,18 @@ void HttpService::open(const tcp::Address& addr) {
     log::info("Server " + server_.address().str() +  " succesfully opened");
 }
 
-void HttpService::run() {
-    if (listener_ == nullptr)
-        throw net::ListenerError("Listener was not set");
-
+void HttpService::activate_workers() {
     for (size_t i = 0; i < workers_.capacity(); i++) {
         workers_.emplace_back(&HttpService::work, this, i + 1);
         log::debug("Thread " + std::to_string(i + 1) + " up and running");
     }
+}
+
+void HttpService::run() {
+    if (listener_ == nullptr)
+        throw net::ListenerError("Listener was not set");
+
+    activate_workers();
 
     while (server_.socket().valid()) {
         log::debug("Server waits");
@@ -129,7 +124,8 @@ void HttpService::work(size_t th_num) {
 
                 if (!try_read_request(p_client))
                     continue;
-                listener_->OnRequest(*p_conn);
+
+                getListener()->OnRequest(*p_conn);
 
                 if (!p_conn->keep_alive_)
                     p_conn->unsubscribe(net::OPTION::READ);
@@ -205,7 +201,7 @@ bool HttpService::try_read_request(net::IClient* p_client) {
     while (true) {
         try {
             if (p_conn->read_to_buffer() == 0) {
-                log::info("Client " + p_conn->address().str() + " closed unexpectedly");
+                log::warn("Client " + p_conn->address().str() + " closed unexpectedly");
                 close_client(p_client);
                 return false;
             }

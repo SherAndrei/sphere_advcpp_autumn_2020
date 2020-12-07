@@ -1,11 +1,12 @@
 #ifndef NET_I_SERVICE_LISTENER_H
 #define NET_I_SERVICE_LISTENER_H
+#include "iListener.h"
 
 namespace net {
 
 class BufferedConnection;
 
-class IServiceListener {
+class IServiceListener : public IListener {
  public:
     virtual void onNewConnection(BufferedConnection& cn) = 0;
     virtual void onClose(BufferedConnection& cn)         = 0;

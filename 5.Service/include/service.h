@@ -8,15 +8,14 @@ namespace net {
 class Service : public IService {
  public:
     Service(const tcp::Address& addr, IServiceListener* listener);
+
     void setListener(IServiceListener* listener);
+    IServiceListener* getListener();
 
  public:
     void open(const tcp::Address& addr) override;
     void run() override;
     void close() override;
-
- private:
-    IServiceListener* listener_{nullptr};
 };
 
 }  // namespace net

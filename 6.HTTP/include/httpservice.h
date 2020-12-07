@@ -16,14 +16,11 @@ class HttpService : public net::IService {
                 size_t connection_timeout_sec = CONNECTION_TIMEOUT,
                 size_t keep_alive_timeout_sec = KEEP_ALIVE_CONNECTION_TIMEOUT);
 
-    HttpService(const tcp::Address& addr, size_t workersSize,
-                size_t connection_timeout_sec = CONNECTION_TIMEOUT,
-                size_t keep_alive_timeout_sec = KEEP_ALIVE_CONNECTION_TIMEOUT);
-
     virtual ~HttpService() = default;
 
  public:
     void setListener(IHttpListener* listener);
+    IHttpListener* getListener();
     size_t connections_size();
 
  public:
@@ -47,10 +44,11 @@ class HttpService : public net::IService {
     virtual bool try_write_responce(net::IClient* p_client);
 
  protected:
+    virtual void activate_workers();
+
+ protected:
     bool try_reset_last_activity_time(net::IClient* p_client);
 
- private:
-    IHttpListener* listener_{nullptr};
 
  protected:
     PtrsToClosedClients closed_;
