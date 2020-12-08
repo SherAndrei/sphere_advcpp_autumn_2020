@@ -24,7 +24,7 @@ void handle_error(int errnum) {
 namespace tcp {
 
 Server::Server(const Address& addr)
-    : s_addr(addr) {
+    : IConnectable(addr) {
     listen(addr);
 }
 
@@ -42,6 +42,10 @@ void Server::listen(const Address& addr) {
     if (!s.valid()) {
         throw SocketError(std::strerror(errno));
     }
+    int opt = 1;
+    if (setsockopt(s.fd(), SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int)) == -1) {
+        throw SocketOptionError(std::strerror(errno), "SO_REUSEADDR");
+    }
     error = ::bind(s.fd(), reinterpret_cast<sockaddr*>(&sock_addr),
                    sizeof(sock_addr));
     if (error == -1)
@@ -50,13 +54,13 @@ void Server::listen(const Address& addr) {
     error = ::listen(s.fd(), SOMAXCONN);
     if (error == -1)
         throw AddressError(std::strerror(errno), addr);
-    s_sock = std::move(s);
+    socket_ = std::move(s);
 }
 Connection Server::accept() {
     sockaddr_in peer_addr{};
     socklen_t s = sizeof(peer_addr);
     int client;
-    handle_error(client = ::accept(s_sock.fd(),
+    handle_error(client = ::accept(socket_.fd(),
                                    reinterpret_cast<sockaddr*>(&peer_addr),
                                    &s));
 
@@ -65,49 +69,51 @@ Connection Server::accept() {
                                 peer_addr.sin_port } };
 }
 
+NonBlockConnection Server::accept_non_block() {
+    sockaddr_in peer_addr{};
+    socklen_t s = sizeof(peer_addr);
+    int client;
+    client = ::accept4(socket_.fd(), reinterpret_cast<sockaddr*>(&peer_addr),
+                      &s, SOCK_NONBLOCK);
+    handle_error(client);
+    return NonBlockConnection{ Descriptor{client},
+                               Address{ ::inet_ntoa(peer_addr.sin_addr),
+                                        peer_addr.sin_port } };
+}
+
 void Server::close() {
-    s_sock.close();
+    socket_.close();
 }
 
 void Server::set_timeout(ssize_t sec, ssize_t usec) const {
     timeval timeout = { sec, usec };
-    if (setsockopt(s_sock.fd(), SOL_SOCKET, SO_SNDTIMEO,
-                   &timeout, sizeof(timeout)) == -1) {
+    int error = setsockopt(socket_.fd(), SOL_SOCKET, SO_SNDTIMEO,
+                   &timeout, sizeof(timeout));
+    if (error == -1) {
         throw SocketOptionError(std::strerror(errno), "SO_SNDTIMEO");
     }
-    if (setsockopt(s_sock.fd(), SOL_SOCKET, SO_RCVTIMEO,
-                   &timeout, sizeof(timeout) == -1)) {
+    error = setsockopt(socket_.fd(), SOL_SOCKET, SO_RCVTIMEO,
+                   &timeout, sizeof(timeout));
+    if (error == -1) {
         throw SocketOptionError(std::strerror(errno), "SO_RCVTIMEO");
     }
 }
 
 void Server::set_nonblock() const {
     int flags;
-    if ((flags = fcntl(s_sock.fd(), F_GETFL)) == -1) {
+    if ((flags = fcntl(socket_.fd(), F_GETFL)) == -1) {
         throw SocketOptionError(std::strerror(errno), "O_NONBLOCK");
     }
-    if ((fcntl(s_sock.fd(), F_SETFL, flags | O_NONBLOCK)) == -1) {
+    if ((fcntl(socket_.fd(), F_SETFL, flags | O_NONBLOCK)) == -1) {
         throw SocketOptionError(std::strerror(errno), "O_NONBLOCK");
     }
 }
 
 void Server::set_reuseaddr() const {
-    int opt;
-    if (setsockopt(s_sock.fd(), SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int)) == -1) {
+    int opt = 1;
+    if (setsockopt(socket_.fd(), SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int)) == -1) {
         throw SocketOptionError(std::strerror(errno), "SO_REUSEADDR");
     }
-}
-
-Descriptor& Server::fd() {
-    return s_sock;
-}
-
-const Descriptor& Server::fd() const {
-    return s_sock;
-}
-
-Address Server::address() const {
-    return s_addr;
 }
 
 }  // namespace tcp

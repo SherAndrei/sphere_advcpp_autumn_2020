@@ -4,11 +4,13 @@
 
 namespace net {
 
-enum class OPTION {
-    UNKNOW = 0,
+enum class OPTION : size_t {
+    UNKNOWN = 0,
     READ   = EPOLLIN,
     WRITE  = EPOLLOUT,
-    READ_AND_WRITE = EPOLLIN | EPOLLOUT
+    CLOSE  = EPOLLRDHUP,
+    EXCLUSIVE  = EPOLLEXCLUSIVE,
+    ET_ONESHOT = EPOLLET | EPOLLONESHOT
 };
 
 OPTION operator+(OPTION lhs, OPTION rhs);

@@ -3,42 +3,47 @@
 
 namespace net {
 
-BufferedConnection::BufferedConnection(tcp::Connection && other, EPoll* p_epoll)
-    : connection_(std::move(other))
-    , p_epoll_(p_epoll) {}
+BufferedConnection::BufferedConnection(tcp::NonBlockConnection && other)
+    : tcp::NonBlockConnection(std::move(other)) {}
 
-void BufferedConnection::write(const std::string& data) {
+size_t BufferedConnection::write(const std::string& data) {
     write_.append(data);
+    return data.length();
 }
-void BufferedConnection::read(std::string& data) {
+
+size_t BufferedConnection::read(std::string& data) {
     data = read_;
+    return data.length();
 }
 
 static constexpr size_t BUF_SIZE = 128;
 
 size_t BufferedConnection::read_to_buffer() {
-    size_t size = read_.size();
-    read_.resize(size + BUF_SIZE);
-    size = connection_.read(read_.data() + size, BUF_SIZE);
-    read_.resize(read_.size() - (BUF_SIZE - size));
+    std::string buf(BUF_SIZE, '\0');
+    size_t size = tcp::NonBlockConnection::read(buf);
+    buf.resize(size);
+    read_ += buf;
     return size;
 }
 
 size_t BufferedConnection::write_from_buffer() {
     size_t size;
-    size = connection_.write(write_.data(), write_.size());
+    size = tcp::NonBlockConnection::write(write_);
     write_.erase(0, size);
     return size;
 }
 
 void BufferedConnection::subscribe(OPTION opt) {
-    epoll_option_ = epoll_option_ + opt;
-    p_epoll_->mod(connection_.fd(), epoll_option_);
+    epoll_option_ = epoll_option_ + opt + net::OPTION::CLOSE;
 }
 
 void BufferedConnection::unsubscribe(OPTION opt) {
-    epoll_option_ = epoll_option_ - opt;
-    p_epoll_->mod(connection_.fd(), epoll_option_);
+    epoll_option_ = epoll_option_ - opt  + net::OPTION::CLOSE;
+}
+
+void BufferedConnection::close() {
+    epoll_option_ = OPTION::UNKNOWN;
+    tcp::NonBlockConnection::close();
 }
 
 std::string& BufferedConnection::read_buf() {
@@ -47,21 +52,6 @@ std::string& BufferedConnection::read_buf() {
 
 std::string& BufferedConnection::write_buf() {
     return write_;
-}
-
-void BufferedConnection::close() {
-    epoll_option_ = OPTION::UNKNOW;
-    connection_.close();
-}
-tcp::Descriptor& BufferedConnection::fd() {
-    return connection_.fd();
-}
-const tcp::Descriptor& BufferedConnection::fd() const {
-    return connection_.fd();
-}
-
-tcp::Address BufferedConnection::adress() const {
-    return connection_.address();
 }
 
 }  // namespace net

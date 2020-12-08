@@ -1,8 +1,6 @@
 #ifndef NET_ERROR_H
 #define NET_ERROR_H
-#include <string>
 #include <stdexcept>
-#include "address.h"
 
 namespace net {
 

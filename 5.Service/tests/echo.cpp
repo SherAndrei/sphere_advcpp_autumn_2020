@@ -1,15 +1,16 @@
 #include <iostream>
 #include "service.h"
+#include "bufconnection.h"
 #include "tcperr.h"
 
 class EchoListner : public net::IServiceListener {
     void onNewConnection(net::BufferedConnection& cn) override {
-        std::cout << "New client: " << cn.adress() << std::endl;
+        std::cout << "New client: " << cn.address() << std::endl;
         cn.subscribe(net::OPTION::READ);
         (void) cn;
     }
     void onClose(net::BufferedConnection& cn) override {
-        std::cout << "Client " << cn.adress() << " disconnected!" << std::endl;
+        std::cout << "Client " << cn.address() << " disconnected!" << std::endl;
         (void) cn;
     }
     void onWriteDone(net::BufferedConnection& cn) override {
@@ -33,9 +34,8 @@ class EchoListner : public net::IServiceListener {
 
 int main() {
     EchoListner el;
-    net::Service service(&el);
     try {
-        service.open({"127.0.0.1", 8080});
+        net::Service service({"127.0.0.1", 8080}, &el);
         service.run();
     } catch (tcp::AddressError& ex) {
         std::cout << ex.what() << std::endl;

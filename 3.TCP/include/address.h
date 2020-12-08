@@ -21,6 +21,7 @@ class Address {
  public:
     uint16_t    port()    const;
     std::string address() const;
+    std::string str()     const;
 
  private:
     std::string _address = {};

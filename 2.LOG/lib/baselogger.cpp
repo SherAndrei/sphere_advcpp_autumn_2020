@@ -22,15 +22,18 @@ void  BaseLogger::error(const std::string& message) {
     log("[ERROR]: " + message, LEVEL::ERROR);
 }
 void  BaseLogger::set_level(LEVEL lev) {
+    std::scoped_lock sl(mutex_);
     _level = lev;
 }
 LEVEL BaseLogger::level() const {
     return _level;
 }
 void BaseLogger::flush() {
+    std::scoped_lock sl(mutex_);
     _out->flush();
 }
 void BaseLogger::log(const std::string& m, LEVEL l) {
+    std::scoped_lock sl(mutex_);
     if (l >= _level)
         (*_out) << m << std::endl;
 }

@@ -1,5 +1,7 @@
 /.vscode
 build
+debug
+release
 CMakeLists.txt.user
 CMakeCache.txt
 CMakeFiles
@@ -13,7 +15,6 @@ CTestTestfile.cmake
 _deps
 *.a
 *.txt
-*.a
 !CMakeLists.txt
 
 *.o

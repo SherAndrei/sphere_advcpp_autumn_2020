@@ -9,8 +9,7 @@ void TestClient();
 
 void TestConnect() {
     try {
-        tcp::Connection c;
-        c.connect({"something", 8080});
+        tcp::Connection c({"something", 8080});
         ASSERT(false);
     } catch (tcp::AddressError& ex) {
         std::string exep = "incorrect address";
@@ -18,8 +17,7 @@ void TestConnect() {
     }
 
     try {
-        tcp::Connection c;
-        c.connect({"127.0.0.1", 1000});
+        tcp::Connection c({"127.0.0.1", 1000});
         ASSERT(false);
     } catch (tcp::AddressError& ex) {
         std::string exep = "Connection refused";
@@ -29,8 +27,7 @@ void TestConnect() {
 
 void TestClient() {
     try {
-        tcp::Connection con;
-        con.connect({"127.0.0.1", 8080});
+        tcp::Connection con({"127.0.0.1", 8080});
 
         std::string text = "Studying sphere!\n";
 
