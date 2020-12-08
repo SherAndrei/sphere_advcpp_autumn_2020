@@ -44,7 +44,7 @@ void Service::run() {
         std::vector<::epoll_event> epoll_events = epoll_.wait();
         for (::epoll_event& event : epoll_events) {
             if (event.data.fd == server_.socket().fd()) {
-                ConnectionPtr conn(std::make_unique<BufferedConnection>(server_.accept_non_block()));
+                ConnectionUPtr conn(std::make_unique<BufferedConnection>(server_.accept_non_block()));
                 clients_.push_back(IClient{std::move(conn)});
                 clients_.back().iter = std::prev(clients_.end());
                 BufferedConnection* p_conn = get(clients_.back().conn.get());

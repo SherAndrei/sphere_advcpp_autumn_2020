@@ -1,13 +1,14 @@
-#ifndef HTTP_connections_H
-#define HTTP_connections_H
+#ifndef HTTP_CONTAINERS_H
+#define HTTP_CONTAINERS_H
 #include <list>
 #include <queue>
 #include "client_container.h"
 
 namespace http {
 
-using PtrsToClosedClients = std::queue<net::IClient*, std::list<net::IClient*>>;
+using TimeOrderedClients    = net::ClientPlaces;
+using PlacesOfClosedClients = std::queue<net::IClientPlace, net::ClientPlaces>;
 
 }  // namespace http
 
-#endif  // HTTP_connections_H
+#endif  // HTTP_CONTAINERS_H
