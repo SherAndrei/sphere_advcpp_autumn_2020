@@ -16,12 +16,11 @@ class CorConnection : public HttpConnection {
 
  private:
     friend class CoroutineService;
-    using HttpConnection::HttpConnection;
-
     void set_routine(routine_t id);
 
  private:
     routine_t _r_id;
+    bool is_routine_set = false;
 };
 
 }  // namespace cor

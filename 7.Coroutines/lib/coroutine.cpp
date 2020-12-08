@@ -1,6 +1,7 @@
 #include <ucontext.h>
 #include <vector>
 #include <queue>
+#include <mutex>
 #include <memory>
 #include "coroutine.h"
 
@@ -11,11 +12,33 @@ struct Routine;
 
 namespace {
 
-struct Ordinator {
-    static constexpr size_t STACK_SIZE = 1 << 16;
+static constexpr size_t STACK_SIZE = 1 << 16;
 
+class MainOrdinator {
+ public:
+    Routine& at(routine_t id) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return routines[id - 1];
+    }
+
+    void emplace(routine_t id) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        finished.emplace(id);
+    }
+    size_t size() {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return routines.size();
+    }
+
+    friend routine_t http::cor::create(const RoutineFunction& function);
+
+ private:
     std::vector<Routine> routines;
     std::queue<routine_t> finished;
+    std::mutex mutex_;
+} main_ordinator;
+
+thread_local struct Ordinator {
     routine_t current = 0;
     ucontext_t ctx{};
 } ordinator;
@@ -37,7 +60,7 @@ struct Routine {
         exception = {};
 
         ctx.uc_stack.ss_sp = stack.get();
-        ctx.uc_stack.ss_size = Ordinator::STACK_SIZE;
+        ctx.uc_stack.ss_size = STACK_SIZE;
         ctx.uc_link = &ordinator.ctx;
         getcontext(&ctx);
         makecontext(&ctx, entry, 0);
@@ -45,9 +68,9 @@ struct Routine {
 
     explicit Routine(const RoutineFunction& f)
             : func{f},
-              stack{std::make_unique<uint8_t[]>(Ordinator::STACK_SIZE)} {
+              stack{std::make_unique<uint8_t[]>(STACK_SIZE)} {
         ctx.uc_stack.ss_sp = stack.get();
-        ctx.uc_stack.ss_size = Ordinator::STACK_SIZE;
+        ctx.uc_stack.ss_size = STACK_SIZE;
         ctx.uc_link = &ordinator.ctx;
         getcontext(&ctx);
         makecontext(&ctx, entry, 0);
@@ -58,14 +81,14 @@ struct Routine {
 };
 
 routine_t create(const RoutineFunction& function) {
-    auto& o = ordinator;
-    if (o.finished.empty()) {
-        o.routines.emplace_back(function);
-        return o.routines.size();
+    std::lock_guard<std::mutex> lock(main_ordinator.mutex_);
+    if (main_ordinator.finished.empty()) {
+        main_ordinator.routines.emplace_back(function);
+        return main_ordinator.routines.size();
     } else {
-        routine_t id = o.finished.front();
-        o.finished.pop();
-        auto& routine = o.routines[id - 1];
+        routine_t id = main_ordinator.finished.front();
+        main_ordinator.finished.pop();
+        auto& routine = main_ordinator.routines[id - 1];
         routine.reset(function);
         return id;
     }
@@ -73,10 +96,10 @@ routine_t create(const RoutineFunction& function) {
 
 bool resume(routine_t id) {
     auto& o = ordinator;
-    if (id == 0 || id > o.routines.size())
+    if (id == 0 || id > main_ordinator.size())
         return false;
 
-    auto& routine = o.routines[id - 1];
+    auto& routine = main_ordinator.at(id);
     if (routine.finished) {
         routine.reset(routine.func);
     }
@@ -96,7 +119,7 @@ bool resume(routine_t id) {
 void yield() {
     auto& o = ordinator;
     routine_t id = o.current;
-    auto& routine = o.routines[id - 1];
+    auto& routine = main_ordinator.at(id);
 
     o.current = 0;
     swapcontext(&routine.ctx, &o.ctx);
@@ -106,19 +129,12 @@ routine_t current() {
     return ordinator.current;
 }
 
-bool is_done(routine_t id) {
-    auto& o = ordinator;
-
-    const auto& routine = o.routines[id - 1];
-    return routine.finished;
-}
-
 namespace {
 
 void entry() {
     auto& o = ordinator;
     routine_t id = o.current;
-    auto &routine = o.routines[id - 1];
+    auto &routine = main_ordinator.at(id);
 
     if (routine.func) {
     try {
@@ -130,7 +146,7 @@ void entry() {
 
     routine.finished = true;
     o.current = 0;
-    o.finished.emplace(id);
+    main_ordinator.emplace(id);
 }
 
 }  // namespace
