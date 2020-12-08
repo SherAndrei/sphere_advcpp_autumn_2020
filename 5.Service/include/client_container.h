@@ -6,14 +6,20 @@
 
 namespace net {
 
-using ConnectionPtr = std::unique_ptr<tcp::IConnectable>;
+using ConnectionUPtr = std::unique_ptr<tcp::IConnectable>;
 
 struct IClient {
-    ConnectionPtr conn{};
+    ConnectionUPtr conn{};
     std::list<IClient>::iterator iter{};
 };
 
+struct IClientPlace {
+    IClient* p_client;
+    std::list<IClientPlace>::iterator iter{};
+};
+
 using ClientContainer = typename std::list<IClient>;
+using ClientPlaces    = typename std::list<IClientPlace>;
 
 }  // namespace net
 

@@ -6,7 +6,8 @@
 
 namespace http {
 
-using PtrsToClosedClients = std::queue<net::IClient*, std::list<net::IClient*>>;
+using TimeOrderedClients    = net::ClientPlaces;
+using PlacesOfClosedClients = std::queue<net::IClientPlace, net::ClientPlaces>;
 
 }  // namespace http
 

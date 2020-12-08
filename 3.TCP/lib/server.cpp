@@ -42,6 +42,10 @@ void Server::listen(const Address& addr) {
     if (!s.valid()) {
         throw SocketError(std::strerror(errno));
     }
+    int opt = 1;
+    if (setsockopt(s.fd(), SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int)) == -1) {
+        throw SocketOptionError(std::strerror(errno), "SO_REUSEADDR");
+    }
     error = ::bind(s.fd(), reinterpret_cast<sockaddr*>(&sock_addr),
                    sizeof(sock_addr));
     if (error == -1)

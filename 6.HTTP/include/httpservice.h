@@ -30,28 +30,31 @@ class HttpService : public net::IService {
 
  protected:
     virtual void work(size_t thread_num);
-    void subscribe(net::IClient* cn, net::OPTION opt)   const;
-    void unsubscribe(net::IClient* cn, net::OPTION opt) const;
+    void activate_workers();
 
-    virtual net::IClient* emplace_connection(tcp::NonBlockConnection&& cn);
-    void close_client(net::IClient* p_client);
+    void subscribe(net::IClientPlace* p_place, net::OPTION opt)   const;
+    void unsubscribe(net::IClientPlace* p_place, net::OPTION opt) const;
+
+    net::IClientPlace* emplace_client(tcp::NonBlockConnection&& cn);
+    void close_client(net::IClientPlace* p_place);
 
     void dump_timed_out_connections();
-    bool close_if_timed_out(net::IClient* p_client);
+    bool close_if_timed_out(net::IClientPlace* p_place);
 
  private:
-    virtual bool try_read_request(net::IClient* p_client);
-    virtual bool try_write_responce(net::IClient* p_client);
+    bool try_read_request(net::IClientPlace* p_place);
+    bool try_write_responce(net::IClientPlace* p_place);
 
  protected:
-    virtual void activate_workers();
+    net::IClientPlace* try_replace_closed_with_new_conn(tcp::NonBlockConnection&& cn);
+    bool try_reset_last_activity_time(net::IClientPlace* p_place);
+
+ private:
+    IHttpListener* listener_{nullptr};
+    PlacesOfClosedClients closed_;
+    TimeOrderedClients    timeod_;
 
  protected:
-    bool try_reset_last_activity_time(net::IClient* p_client);
-
-
- protected:
-    PtrsToClosedClients closed_;
     size_t conn_timeo;
     size_t ka_conn_timeo;
     std::vector<std::thread> workers_;
