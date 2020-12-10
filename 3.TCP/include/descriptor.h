@@ -18,7 +18,7 @@ class Descriptor {
     Descriptor(Descriptor && other);
     Descriptor& operator= (Descriptor && other);
 
-    ~Descriptor();
+    virtual ~Descriptor();
 
  public:
     void close();
@@ -27,10 +27,10 @@ class Descriptor {
     int  fd() const;
     void set_fd(int id);
 
- private:
+ protected:
     void invalidate();
 
- private:
+ protected:
     int _id = -1;
 };
 
