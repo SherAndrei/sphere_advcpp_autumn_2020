@@ -9,8 +9,8 @@ class Socket : public Descriptor {
     using Descriptor::Descriptor;
 
  public:
-    void set_sndtimeo(ssize_t sec, ssize_t usec) const;
-    void set_rcvtimeo(ssize_t sec, ssize_t usec) const;
+    void set_sndtimeo(ssize_t sec, ssize_t usec = 0l) const;
+    void set_rcvtimeo(ssize_t sec, ssize_t usec = 0l) const;
     void set_nonblock() const;
     void set_reuseaddr() const;
 };

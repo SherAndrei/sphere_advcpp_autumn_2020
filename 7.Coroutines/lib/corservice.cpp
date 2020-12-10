@@ -6,7 +6,7 @@
 
 namespace {
 
-http::cor::CorConnection* get(tcp::IConnectable* p_conn) {
+http::cor::CorConnection* get(tcp::IConnection* p_conn) {
     return dynamic_cast<http::cor::CorConnection*>(p_conn);
 }
 
@@ -22,7 +22,7 @@ bool is_keep_alive(const std::vector<http::Header>& headers) {
     return it->value.find("Keep-Alive") != it->value.npos;
 }
 
-void shift_to_back(net::ClientPlaces& cont, std::list<net::IClientPlace>::iterator iter) {
+void shift_to_back(net::ConnectionPlaces& cont, std::list<net::ConnectionPlace>::iterator iter) {
     cont.splice(cont.end(), cont, iter);
 }
 
@@ -52,19 +52,18 @@ void CoroutineService::work(size_t th_num) {
         log::debug("Worker " + std::to_string(th_num) + " got " + std::to_string(epoll_events.size())
                                                       + " new epoll events");
         for (::epoll_event& event : epoll_events) {
-            net::IClientPlace* p_place = static_cast<net::IClientPlace*>(event.data.ptr);
-            CorConnection* p_conn = get(p_place->p_client->conn.get());
+            net::ConnectionPlace* p_place = static_cast<net::ConnectionPlace*>(event.data.ptr);
+            CorConnection* p_conn = get(p_place->p_conn->get());
             if (!p_conn->is_routine_set) {
                 p_conn->set_routine(cor::create([this, p_place] { serve_client(p_place); }));
             }
-            cor::resume(p_conn->routine_id());
+            cor::resume(p_conn->routine());
         }
     }
 }
 
-void CoroutineService::serve_client(net::IClientPlace* p_place) {
-    net::IClient* p_client = p_place->p_client;
-    CorConnection* p_conn = get(p_client->conn.get());
+void CoroutineService::serve_client(net::ConnectionPlace* p_place) {
+    CorConnection* p_conn = get(p_place->p_conn->get());
 
     if (!try_reset_last_activity_time(p_place))
         return;
@@ -98,27 +97,27 @@ void CoroutineService::serve_client(net::IClientPlace* p_place) {
     log::debug("Worker ends routine");
 }
 
-net::IClientPlace* CoroutineService::emplace_client(tcp::NonBlockConnection&& cn) {
-    net::IClientPlace* p_place = try_replace_closed_with_new_conn(std::move(cn));
+net::ConnectionPlace* CoroutineService::emplace_connection(tcp::NonBlockConnection&& cn) {
+    net::ConnectionPlace* p_place = try_replace_closed_with_new_conn(std::move(cn));
     if (p_place != nullptr) {
         return p_place;
     }
-    clients_.emplace_back(net::IClient{std::make_unique<CorConnection>(std::move(cn), 0u)});
-    net::IClientPlace place;
-    place.p_client = &clients_.back();
+    connections_.emplace_back(std::make_unique<CorConnection>(std::move(cn), nullptr));
+    net::ConnectionPlace place;
+    place.p_conn = &connections_.back();
     std::lock_guard<std::mutex> lock_to(timeout_mutex_);
     timeod_.emplace_back(place);
     timeod_.back().iter = std::prev(timeod_.end());
     return &timeod_.back();
 }
 
-net::IClientPlace* CoroutineService::try_replace_closed_with_new_conn(tcp::NonBlockConnection&& cn) {
+net::ConnectionPlace* CoroutineService::try_replace_closed_with_new_conn(tcp::NonBlockConnection&& cn) {
     std::lock_guard<std::mutex> lock_cl(closing_mutex_);
     if (closed_.empty()) {
         return nullptr;
     }
-    net::IClientPlace place = closed_.front();
-    place.p_client->conn = std::make_unique<CorConnection>(std::move(cn), 0u);
+    net::ConnectionPlace place = closed_.front();
+    *place.p_conn = std::make_unique<CorConnection>(std::move(cn), nullptr);
     auto iter = place.iter;
     closed_.pop();
     std::lock_guard<std::mutex> lock_to(timeout_mutex_);
@@ -128,8 +127,8 @@ net::IClientPlace* CoroutineService::try_replace_closed_with_new_conn(tcp::NonBl
 }
 
 
-bool CoroutineService::try_read_request(net::IClientPlace* p_place) {
-    CorConnection* p_conn = get(p_place->p_client->conn.get());
+bool CoroutineService::try_read_request(net::ConnectionPlace* p_place) {
+    CorConnection* p_conn = get(p_place->p_conn->get());
     while (true) {
         try {
             if (p_conn->read_to_buffer() == 0) {
@@ -162,8 +161,8 @@ bool CoroutineService::try_read_request(net::IClientPlace* p_place) {
     return true;
 }
 
-bool CoroutineService::try_write_responce(net::IClientPlace* p_place) {
-    CorConnection* p_conn = get(p_place->p_client->conn.get());
+bool CoroutineService::try_write_responce(net::ConnectionPlace* p_place) {
+    CorConnection* p_conn = get(p_place->p_conn->get());
     while (true) {
         try {
             p_conn->write_from_buffer();

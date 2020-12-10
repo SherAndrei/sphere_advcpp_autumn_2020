@@ -3,16 +3,18 @@
 namespace http {
 namespace cor {
 
-CorConnection::CorConnection(tcp::NonBlockConnection&& cn, routine_t r_id)
-    : HttpConnection(std::move(cn)), _r_id(r_id), is_routine_set(r_id > 0) {}
+CorConnection::CorConnection(tcp::NonBlockConnection&& cn, Routine* p_rout)
+    : HttpConnection(std::move(cn))
+    , _p_rout(p_rout)
+    , is_routine_set(p_rout != nullptr) {}
 
-void CorConnection::set_routine(routine_t id) {
-    _r_id = id;
-    is_routine_set = (id > 0);
+void CorConnection::set_routine(Routine* p_rout) {
+    _p_rout = p_rout;
+    is_routine_set = (p_rout != nullptr);
 }
 
-routine_t CorConnection::routine_id() const {
-    return _r_id;
+Routine* CorConnection::routine() {
+    return _p_rout;
 }
 
 }  // namespace cor

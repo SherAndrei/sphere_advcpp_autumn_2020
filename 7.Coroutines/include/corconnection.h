@@ -7,19 +7,21 @@
 namespace http {
 namespace cor {
 
+struct Routine;
+
 class CorConnection : public HttpConnection {
  public:
-    CorConnection(tcp::NonBlockConnection&& cn, routine_t r_id);
+    CorConnection(tcp::NonBlockConnection&& cn, Routine* p_rout);
 
  public:
-    routine_t routine_id() const;
+    Routine* routine();
 
  private:
     friend class CoroutineService;
-    void set_routine(routine_t id);
+    void set_routine(Routine* p_rout);
 
  private:
-    routine_t _r_id;
+    Routine* _p_rout = nullptr;
     bool is_routine_set = false;
 };
 

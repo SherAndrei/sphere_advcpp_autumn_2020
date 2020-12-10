@@ -8,12 +8,12 @@ namespace cor {
 
 using routine_t = size_t;
 using RoutineFunction = std::function<void()>;
+struct Routine;
 
-routine_t create(const RoutineFunction& function);
-bool resume(routine_t id);
+Routine* create(const RoutineFunction& function);
+bool resume(Routine* p_rout);
 void yield();
-routine_t current();
-bool is_done(routine_t id);
+Routine* current();
 
 template <typename F, typename ...Args, typename = std::enable_if_t<!std::is_invocable_v<F>>>
 routine_t create(F&& f, Args&&... args) {

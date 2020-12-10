@@ -3,7 +3,7 @@
 #include "server.h"
 #include "epoll.h"
 #include "iListener.h"
-#include "client_container.h"
+#include "connection_container.h"
 
 namespace net {
 
@@ -32,7 +32,7 @@ class IService {
     tcp::Server server_;
     EPoll epoll_;
     IListener* listener_{nullptr};
-    ClientContainer clients_;
+    ConnectionContainer connections_;
 };
 
 }  // namespace net

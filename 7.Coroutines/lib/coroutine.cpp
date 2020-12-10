@@ -1,5 +1,5 @@
 #include <ucontext.h>
-#include <vector>
+#include <list>
 #include <queue>
 #include <mutex>
 #include <memory>
@@ -16,30 +16,25 @@ static constexpr size_t STACK_SIZE = 1 << 16;
 
 class MainOrdinator {
  public:
-    Routine& at(routine_t id) {
+    void emplace(Routine* p_rout) {
         std::lock_guard<std::mutex> lock(mutex_);
-        return routines[id - 1];
-    }
-
-    void emplace(routine_t id) {
-        std::lock_guard<std::mutex> lock(mutex_);
-        finished.emplace(id);
+        finished.emplace(p_rout);
     }
     size_t size() {
         std::lock_guard<std::mutex> lock(mutex_);
         return routines.size();
     }
 
-    friend routine_t http::cor::create(const RoutineFunction& function);
+    friend Routine* http::cor::create(const RoutineFunction& function);
 
  private:
-    std::vector<Routine> routines;
-    std::queue<routine_t> finished;
+    std::list<Routine> routines;
+    std::queue<Routine*> finished;
     std::mutex mutex_;
 } main_ordinator;
 
 thread_local struct Ordinator {
-    routine_t current = 0;
+    Routine*   current = nullptr;
     ucontext_t ctx{};
 } ordinator;
 
@@ -58,11 +53,6 @@ struct Routine {
         func = f;
         finished = false;
         exception = {};
-
-        ctx.uc_stack.ss_sp = stack.get();
-        ctx.uc_stack.ss_size = STACK_SIZE;
-        ctx.uc_link = &ordinator.ctx;
-        getcontext(&ctx);
         makecontext(&ctx, entry, 0);
     }
 
@@ -80,33 +70,31 @@ struct Routine {
     Routine(Routine&&) = default;
 };
 
-routine_t create(const RoutineFunction& function) {
+Routine* create(const RoutineFunction& function) {
     std::lock_guard<std::mutex> lock(main_ordinator.mutex_);
     if (main_ordinator.finished.empty()) {
         main_ordinator.routines.emplace_back(function);
-        return main_ordinator.routines.size();
+        Routine* p_rout = &main_ordinator.routines.back();
+        return p_rout;
     } else {
-        routine_t id = main_ordinator.finished.front();
+        Routine* p_rout = main_ordinator.finished.front();
         main_ordinator.finished.pop();
-        auto& routine = main_ordinator.routines[id - 1];
-        routine.reset(function);
-        return id;
+        p_rout->reset(function);
+        return p_rout;
     }
 }
 
-bool resume(routine_t id) {
+bool resume(Routine* p_rout) {
     auto& o = ordinator;
-    if (id == 0 || id > main_ordinator.size())
-        return false;
 
-    auto& routine = main_ordinator.at(id);
+    auto& routine = *p_rout;
     if (routine.finished) {
-        routine.reset(routine.func);
+        return false;
     }
 
-    o.current = id;
+    o.current = p_rout;
     if (swapcontext(&o.ctx, &routine.ctx) < 0) {
-        o.current = 0;
+        o.current = nullptr;
         return false;
     }
 
@@ -118,14 +106,13 @@ bool resume(routine_t id) {
 
 void yield() {
     auto& o = ordinator;
-    routine_t id = o.current;
-    auto& routine = main_ordinator.at(id);
+    Routine* p_rout = o.current;
 
-    o.current = 0;
-    swapcontext(&routine.ctx, &o.ctx);
+    o.current = nullptr;
+    swapcontext(&p_rout->ctx, &o.ctx);
 }
 
-routine_t current() {
+Routine* current() {
     return ordinator.current;
 }
 
@@ -133,24 +120,22 @@ namespace {
 
 void entry() {
     auto& o = ordinator;
-    routine_t id = o.current;
-    auto &routine = main_ordinator.at(id);
+    Routine* p_rout = o.current;
 
-    if (routine.func) {
+    if (p_rout->func) {
     try {
-      routine.func();
+      p_rout->func();
     } catch (...) {
-      routine.exception = std::current_exception();
+      p_rout->exception = std::current_exception();
     }
   }
 
-    routine.finished = true;
-    o.current = 0;
-    main_ordinator.emplace(id);
+    p_rout->finished = true;
+    o.current = nullptr;
+    main_ordinator.emplace(p_rout);
 }
 
 }  // namespace
-
 
 }  // namespace cor
 }  // namespace http

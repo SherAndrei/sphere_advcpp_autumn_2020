@@ -1,6 +1,6 @@
 #ifndef HTTP_COR_SERVICE_H
 #define HTTP_COR_SERVICE_H
-#include "client_container.h"
+#include "connection_container.h"
 #include "coroutine.h"
 #include "corlistener.h"
 #include "httpservice.h"
@@ -22,14 +22,14 @@ class CoroutineService : public HttpService {
 
  private:
     void work(size_t thread_num) override;
-    void serve_client(net::IClientPlace* p_client);
+    void serve_client(net::ConnectionPlace* p_place);
 
-    net::IClientPlace* emplace_client(tcp::NonBlockConnection&& cn) override;
-    net::IClientPlace* try_replace_closed_with_new_conn(tcp::NonBlockConnection&& cn) override;
+    net::ConnectionPlace* emplace_connection(tcp::NonBlockConnection&& cn) override;
+    net::ConnectionPlace* try_replace_closed_with_new_conn(tcp::NonBlockConnection&& cn) override;
 
  private:
-    bool try_read_request(net::IClientPlace* p_place) override;
-    bool try_write_responce(net::IClientPlace* p_place) override;
+    bool try_read_request(net::ConnectionPlace* p_place) override;
+    bool try_write_responce(net::ConnectionPlace* p_place) override;
 
  private:
     void activate_workers() override;
