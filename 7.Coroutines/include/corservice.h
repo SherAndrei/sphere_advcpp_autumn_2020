@@ -34,8 +34,10 @@ class CoroutineService : public HttpService {
  private:
     bool try_read_request(net::ConnectionAndData* p_place) override;
     bool try_write_responce(net::ConnectionAndData* p_place) override;
+    bool close_if_timed_out(net::ConnectionAndData* p_place) override;
 
  private:
+    Routine* get_routine(net::ConnectionAndData* p_place);
     CorConnection* get_connection_and_try_reset_last_activity_time(net::ConnectionAndData* p_place);
 
  private:

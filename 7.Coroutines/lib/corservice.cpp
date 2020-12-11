@@ -56,13 +56,18 @@ void CoroutineService::work(size_t th_num) {
                                                       + " new epoll events");
         for (::epoll_event& event : epoll_events) {
             net::ConnectionAndData* p_place = static_cast<net::ConnectionAndData*>(event.data.ptr);
-            CorConnection* p_conn = get(p_place->u_conn.get());
-            if (!p_conn->is_routine_set) {
-                p_conn->set_routine(cor::create([this, p_place] { serve_client(p_place); }));
-            }
-            cor::resume(p_conn->routine());
+            cor::resume(get_routine(p_place));
         }
     }
+}
+
+Routine* CoroutineService::get_routine(net::ConnectionAndData* p_place) {
+    std::lock_guard<std::mutex> lk(p_place->timeout_mutex);
+    CorConnection* p_conn = get(p_place->u_conn.get());
+    if (!p_conn->is_routine_set) {
+        p_conn->set_routine(cor::create([this, p_place] { serve_client(p_place); }));
+    }
+    return p_conn->routine();
 }
 
 void CoroutineService::serve_client(net::ConnectionAndData* p_place) {
@@ -212,6 +217,20 @@ void CoroutineService::unsubscribe(net::ConnectionAndData* p_place, net::OPTION 
     CorConnection* p_conn = get(p_place->u_conn.get());
     p_conn->epoll_option_ = p_conn->epoll_option_ - opt + net::OPTION::ET_ONESHOT;
     epoll_.mod(p_place, p_conn->epoll_option_);
+}
+
+bool CoroutineService::close_if_timed_out(net::ConnectionAndData* p_place) {
+    std::lock_guard<std::mutex> lock1(closing_mutex_);
+    std::lock_guard<std::mutex> lock2(p_place->timeout_mutex);
+    CorConnection* p_conn = get(p_place->u_conn.get());
+    size_t timeo = (p_conn->keep_alive_ ? ka_conn_timeo : conn_timeo);
+    if (p_conn->socket().valid() && p_conn->is_timed_out(timeo)) {
+        log::info("Connection timed out: " + p_conn->address().str());
+        closed_.push(p_place);
+        p_conn->close();
+        return true;
+    }
+    return false;
 }
 
 }  // namespace cor

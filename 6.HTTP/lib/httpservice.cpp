@@ -264,7 +264,8 @@ void HttpService::unsubscribe(net::ConnectionAndData* p_place, net::OPTION opt) 
 }
 
 bool HttpService::close_if_timed_out(net::ConnectionAndData* p_place) {
-    std::scoped_lock lock(closing_mutex_, p_place->timeout_mutex);
+    std::lock_guard<std::mutex> lock1(closing_mutex_);
+    std::lock_guard<std::mutex> lock2(p_place->timeout_mutex);
     HttpConnection* p_conn = get(p_place->u_conn.get());
     size_t timeo = (p_conn->keep_alive_ ? ka_conn_timeo : conn_timeo);
     if (p_conn->socket().valid() && p_conn->is_timed_out(timeo)) {

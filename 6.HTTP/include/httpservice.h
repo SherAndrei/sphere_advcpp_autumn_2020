@@ -39,7 +39,7 @@ class HttpService : public net::IService {
     void close_client(net::ConnectionAndData* p_place);
 
     void dump_timed_out_connections();
-    bool close_if_timed_out(net::ConnectionAndData* p_place);
+    virtual bool close_if_timed_out(net::ConnectionAndData* p_place);
 
  private:
     virtual bool try_read_request(net::ConnectionAndData* p_place);
