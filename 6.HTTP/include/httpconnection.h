@@ -20,6 +20,7 @@ class HttpConnection : public net::BufferedConnection, public ITimed {
 
  protected:
     friend class HttpService;
+    friend class HttpWorker;
 
     void subscribe(net::OPTION opt) override;
     void unsubscribe(net::OPTION opt) override;

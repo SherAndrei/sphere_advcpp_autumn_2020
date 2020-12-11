@@ -2,7 +2,6 @@
 #define HTTP_CONTAINERS_H
 #include <list>
 #include <queue>
-#include <mutex>
 #include "connection_container.h"
 
 namespace http {

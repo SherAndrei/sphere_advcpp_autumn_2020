@@ -2,6 +2,7 @@
 add_library(http STATIC message.cpp
                         status_code.cpp
                         httpconnection.cpp
+                        httpworker.cpp
                         httpservice.cpp
                         iTimed.cpp)
 target_include_directories(http PUBLIC ${PROJECT_SOURCE_DIR}/include)

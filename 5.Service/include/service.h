@@ -1,11 +1,11 @@
 #ifndef NET_SERVICE_H
 #define NET_SERVICE_H
-#include "iService.h"
+#include "BaseService.h"
 #include "listener.h"
 
 namespace net {
 
-class Service : public IService {
+class Service : public BaseService {
  public:
     Service(const tcp::Address& addr, IServiceListener* listener);
 

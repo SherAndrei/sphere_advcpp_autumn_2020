@@ -16,7 +16,7 @@ struct ConnectionAndData {
 
     ConnectionUPtr u_conn;
     std::list<ConnectionAndData*>::iterator timeout_iter{};
-    std::mutex timeout_mutex{};
+    std::mutex connection_mutex{};
 };
 
 }  // namespace net

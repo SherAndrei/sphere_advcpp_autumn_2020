@@ -15,7 +15,7 @@ net::BufferedConnection* get(tcp::IConnection* p_conn) {
 namespace net {
 
 Service::Service(const tcp::Address& addr, IServiceListener* listener)
-    : IService(addr, listener) {
+    : BaseService(addr, listener) {
     server_.socket().set_nonblock();
     server_.socket().set_reuseaddr();
     epoll_.add(server_.socket(), OPTION::READ);

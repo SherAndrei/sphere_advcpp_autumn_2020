@@ -1,16 +1,15 @@
 #ifndef HTTP_SERVICE_H
 #define HTTP_SERVICE_H
 #include <vector>
-#include <thread>
 #include <mutex>
-#include "iService.h"
-#include "iTimed.h"
+#include "BaseService.h"
+#include "httpworker.h"
 #include "httpcontainers.h"
 #include "httplistener.h"
 
 namespace http {
 
-class HttpService : public net::IService {
+class HttpService : public net::BaseService {
  public:
     HttpService(const tcp::Address& addr, IHttpListener* listener, size_t workersSize,
                 size_t connection_timeout_sec = CONNECTION_TIMEOUT,
@@ -29,34 +28,24 @@ class HttpService : public net::IService {
     void close() override;
 
  protected:
-    virtual void work(size_t thread_num);
     virtual void activate_workers();
 
-    virtual void subscribe(net::ConnectionAndData* p_place, net::OPTION opt)   const;
-    virtual void unsubscribe(net::ConnectionAndData* p_place, net::OPTION opt) const;
-
     virtual net::ConnectionAndData* emplace_connection(tcp::NonBlockConnection&& cn);
-    void close_client(net::ConnectionAndData* p_place);
-
     void dump_timed_out_connections();
     virtual bool close_if_timed_out(net::ConnectionAndData* p_place);
 
- private:
-    virtual bool try_read_request(net::ConnectionAndData* p_place);
-    virtual bool try_write_responce(net::ConnectionAndData* p_place);
-
  protected:
     virtual net::ConnectionAndData* try_replace_closed_with_new_conn(tcp::NonBlockConnection&& cn);
-    HttpConnection* get_connection_and_try_reset_last_activity_time(net::ConnectionAndData* p_place);
 
  protected:
+    friend class HttpWorker;
     PlacesOfClosedConnections closed_;
     TimeOrderedConnections    timeod_;
 
  protected:
     size_t conn_timeo;
     size_t ka_conn_timeo;
-    std::vector<std::thread> workers_;
+    std::vector<HttpWorker> workers_;
     std::mutex closing_mutex_;
     std::mutex timeout_mutex_;
 };

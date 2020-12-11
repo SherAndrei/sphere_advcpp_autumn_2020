@@ -8,17 +8,17 @@
 
 namespace net {
 
-class IService {
+class BaseService {
  protected:
-    IService() = default;
-    explicit IService(const tcp::Address& addr, IListener* listener)
+    BaseService() = default;
+    explicit BaseService(const tcp::Address& addr, IListener* listener)
             : server_(addr), listener_(listener) {}
 
  public:
-    virtual ~IService() = default;
+    virtual ~BaseService() = default;
 
-    IService(IService&& other)            = default;
-    IService& operator=(IService&& other) = default;
+    BaseService(BaseService&& other)            = default;
+    BaseService& operator=(BaseService&& other) = default;
 
  public:
     virtual void open(const tcp::Address& addr) = 0;
@@ -26,8 +26,8 @@ class IService {
     virtual void close() = 0;
 
  private:
-    IService(IService& other)             = delete;
-    IService& operator=(IService&  other) = delete;
+    BaseService(BaseService& other)             = delete;
+    BaseService& operator=(BaseService&  other) = delete;
 
  protected:
     tcp::Server server_;
