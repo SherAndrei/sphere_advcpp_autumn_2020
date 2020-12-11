@@ -5,7 +5,7 @@
 #include "corservice.h"
 
 class TestListener : public http::cor::ICoroutineListener {
-    http::Responce OnRequest(const http::Request& req) override {
+    http::Responce OnRequest(http::Request&& req) override {
         (void) req.str();
         return http::Responce("HTTP/1.1 200 "
                                 + http::to_string(http::StatusCode::OK)

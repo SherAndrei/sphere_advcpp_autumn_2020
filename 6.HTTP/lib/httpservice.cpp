@@ -114,9 +114,8 @@ void HttpService::work(size_t th_num) {
                                                       + " new epoll events");
         for (::epoll_event& event : epoll_events) {
             net::ConnectionAndData* p_place = static_cast<net::ConnectionAndData*>(event.data.ptr);
-            HttpConnection* p_conn = get(p_place->u_conn.get());
-
-            if (!try_reset_last_activity_time(p_place))
+            HttpConnection* p_conn = get_connection_and_try_reset_last_activity_time(p_place);
+            if (!p_conn)
                 continue;
 
             if (event.events & EPOLLIN) {
@@ -236,15 +235,16 @@ bool HttpService::try_read_request(net::ConnectionAndData* p_place) {
     return true;
 }
 
-bool HttpService::try_reset_last_activity_time(net::ConnectionAndData* p_place) {
+HttpConnection*
+HttpService::get_connection_and_try_reset_last_activity_time(net::ConnectionAndData* p_place) {
     std::scoped_lock lock(timeout_mutex_, p_place->timeout_mutex);
-    HttpConnection* p_timed = dynamic_cast<HttpConnection*>(get(p_place->u_conn.get()));
-    if (p_place->u_conn->socket().valid()) {
-        p_timed->reset_time_of_last_activity();
+    HttpConnection* p_conn = get(p_place->u_conn.get());
+    if (p_conn->socket().valid()) {
+        p_conn->reset_time_of_last_activity();
         shift_to_back(timeod_, p_place->timeout_iter);
-        return true;
+        return p_conn;
     }
-    return false;
+    return nullptr;
 }
 
 void HttpService::close() {
@@ -264,9 +264,9 @@ void HttpService::unsubscribe(net::ConnectionAndData* p_place, net::OPTION opt) 
 }
 
 bool HttpService::close_if_timed_out(net::ConnectionAndData* p_place) {
+    std::scoped_lock lock(closing_mutex_, p_place->timeout_mutex);
     HttpConnection* p_conn = get(p_place->u_conn.get());
     size_t timeo = (p_conn->keep_alive_ ? ka_conn_timeo : conn_timeo);
-    std::scoped_lock lock(closing_mutex_, p_place->timeout_mutex);
     if (p_conn->socket().valid() && p_conn->is_timed_out(timeo)) {
         log::info("Connection timed out: " + p_conn->address().str());
         closed_.push(p_place);
@@ -277,8 +277,8 @@ bool HttpService::close_if_timed_out(net::ConnectionAndData* p_place) {
 }
 
 void HttpService::close_client(net::ConnectionAndData* p_place) {
-    tcp::IConnection* p_conn = p_place->u_conn.get();
     std::lock_guard<std::mutex> lock(closing_mutex_);
+    tcp::IConnection* p_conn = p_place->u_conn.get();
     if (p_conn->socket().valid()) {
         log::info("Closing connection: " + p_conn->address().str());
         closed_.push(p_place);

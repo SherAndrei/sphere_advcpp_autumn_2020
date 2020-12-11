@@ -41,37 +41,37 @@ void routine3() {
 int main() {
     auto id = http::cor::create(Name);
 
-    // for (int i = 0; i < 12; i++) {
-    //     http::cor::resume(id);
-    // }
-    // auto c_id = http::cor::current();
+    for (int i = 0; i < 12; i++) {
+        http::cor::resume(id);
+    }
+    auto c_id = http::cor::current();
 
-    // std::cout << "routine1" << std::endl;
+    std::cout << "routine1" << std::endl;
 
-    // auto id = http::cor::create(routine1, 1, 10);
+    auto id = http::cor::create(routine1, 1, 10);
 
-    // for (size_t i = 0; i <= 10; i += 2) {
-    //     std::cout << c_id << ": " << i << std::endl;
-    //     http::cor::resume(id);
-    // }
+    for (size_t i = 0; i <= 10; i += 2) {
+        std::cout << c_id << ": " << i << std::endl;
+        http::cor::resume(id);
+    }
 
-    // std::cout << "routine2" << std::endl;
+    std::cout << "routine2" << std::endl;
 
-    // id = http::cor::create(routine2, 1, 6);
+    id = http::cor::create(routine2, 1, 6);
 
-    // for (size_t i = 0; i <= 10; i += 2) {
-    //     std::cout << c_id << ": " << i << std::endl;
-    //     http::cor::resume(id);
-    // }
+    for (size_t i = 0; i <= 10; i += 2) {
+        std::cout << c_id << ": " << i << std::endl;
+        http::cor::resume(id);
+    }
 
-    // std::cout << "routine3" << std::endl;
+    std::cout << "routine3" << std::endl;
 
-    // try {
-    //     http::cor::create_and_run(routine3);
-    // }
-    // catch (std::exception& e) {
-    //     std::cerr << e.what() << std::endl;
-    // }
+    try {
+        http::cor::create_and_run(routine3);
+    }
+    catch (std::exception& e) {
+        std::cerr << e.what() << std::endl;
+    }
 
     return 0;
 }

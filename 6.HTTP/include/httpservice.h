@@ -47,7 +47,7 @@ class HttpService : public net::IService {
 
  protected:
     virtual net::ConnectionAndData* try_replace_closed_with_new_conn(tcp::NonBlockConnection&& cn);
-    bool try_reset_last_activity_time(net::ConnectionAndData* p_place);
+    HttpConnection* get_connection_and_try_reset_last_activity_time(net::ConnectionAndData* p_place);
 
  protected:
     PlacesOfClosedConnections closed_;

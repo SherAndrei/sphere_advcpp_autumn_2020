@@ -66,8 +66,8 @@ void CoroutineService::work(size_t th_num) {
 }
 
 void CoroutineService::serve_client(net::ConnectionAndData* p_place) {
-    CorConnection* p_conn = get(p_place->u_conn.get());
-    if (!try_reset_last_activity_time(p_place))
+    CorConnection* p_conn = get_connection_and_try_reset_last_activity_time(p_place);
+    if (!p_conn)
         return;
 
     if (!try_read_request(p_place))
@@ -181,6 +181,18 @@ bool CoroutineService::try_write_responce(net::ConnectionAndData* p_place) {
         }
     }
     return  false;
+}
+
+CorConnection*
+CoroutineService::get_connection_and_try_reset_last_activity_time(net::ConnectionAndData* p_place) {
+    std::scoped_lock lock(timeout_mutex_, p_place->timeout_mutex);
+    CorConnection* p_conn = get(p_place->u_conn.get());
+    if (p_conn->socket().valid()) {
+        p_conn->reset_time_of_last_activity();
+        shift_to_back(timeod_, p_place->timeout_iter);
+        return p_conn;
+    }
+    return nullptr;
 }
 
 void CoroutineService::activate_workers() {

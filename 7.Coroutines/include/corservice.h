@@ -3,6 +3,7 @@
 #include "connection_container.h"
 #include "coroutine.h"
 #include "corlistener.h"
+#include "corconnection.h"
 #include "httpservice.h"
 
 namespace http {
@@ -33,6 +34,9 @@ class CoroutineService : public HttpService {
  private:
     bool try_read_request(net::ConnectionAndData* p_place) override;
     bool try_write_responce(net::ConnectionAndData* p_place) override;
+
+ private:
+    CorConnection* get_connection_and_try_reset_last_activity_time(net::ConnectionAndData* p_place);
 
  private:
     void activate_workers() override;

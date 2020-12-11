@@ -8,7 +8,7 @@ namespace cor  {
 
 class ICoroutineListener : public net::IListener {
  public:
-    virtual Responce OnRequest(const Request&) = 0;
+    virtual Responce OnRequest(Request&&) = 0;
 };
 
 }  // namespace cor

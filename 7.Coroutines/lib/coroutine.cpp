@@ -34,7 +34,7 @@ class MainOrdinator {
 } main_ordinator;
 
 thread_local struct Ordinator {
-    Routine*   current = nullptr;
+    Routine*   current{nullptr};
     ucontext_t ctx{};
 } ordinator;
 
@@ -74,8 +74,7 @@ Routine* create(const RoutineFunction& function) {
     std::lock_guard<std::mutex> lock(main_ordinator.mutex_);
     if (main_ordinator.finished.empty()) {
         main_ordinator.routines.emplace_back(function);
-        Routine* p_rout = &main_ordinator.routines.back();
-        return p_rout;
+        return &main_ordinator.routines.back();
     } else {
         Routine* p_rout = main_ordinator.finished.front();
         main_ordinator.finished.pop();
