@@ -1,7 +1,6 @@
 #ifndef HTTP_I_TIMED_H
 #define HTTP_I_TIMED_H
 #include <chrono>
-#include <mutex>
 
 namespace http {
 
@@ -20,10 +19,7 @@ class ITimed {
     bool is_timed_out(size_t timeo) const;
     void reset_time_of_last_activity();
 
-    std::mutex& mutex();
-
  protected:
-    std::mutex timeout_mutex_;
     time_point_t start_;
 };
 

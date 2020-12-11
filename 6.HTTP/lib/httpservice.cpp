@@ -24,8 +24,10 @@ bool is_keep_alive(const std::vector<http::Header>& headers) {
     return it->value.find("Keep-Alive") != it->value.npos;
 }
 
-void shift_to_back(net::ConnectionPlaces& cont, std::list<net::ConnectionPlace>::iterator iter) {
+void shift_to_back(std::list<net::ConnectionAndData*>& cont,
+                   std::list<net::ConnectionAndData*>::iterator iter) {
     cont.splice(cont.end(), cont, iter);
+    cont.back()->timeout_iter = std::prev(cont.end());
 }
 
 }  // namespace
@@ -83,9 +85,9 @@ void HttpService::run() {
     while (server_.socket().valid()) {
         log::debug("Server waits");
         try {
-            net::ConnectionPlace* p_place = emplace_connection(server_.accept_non_block());
-            log::info("Server accepts: " + (*p_place->p_conn)->address().str());
-            net::OPTION& client_opt = get(p_place->p_conn->get())->epoll_option_;
+            net::ConnectionAndData* p_place = emplace_connection(server_.accept_non_block());
+            log::info("Server accepts: " + p_place->u_conn->address().str());
+            net::OPTION& client_opt = get(p_place->u_conn.get())->epoll_option_;
             client_opt = net::OPTION::READ + net::OPTION::ET_ONESHOT;
             epoll_.add(p_place, client_opt);
         } catch (tcp::TimeOutError& er) {
@@ -111,8 +113,8 @@ void HttpService::work(size_t th_num) {
         log::debug("Worker " + std::to_string(th_num) + " got " + std::to_string(epoll_events.size())
                                                       + " new epoll events");
         for (::epoll_event& event : epoll_events) {
-            net::ConnectionPlace* p_place = static_cast<net::ConnectionPlace*>(event.data.ptr);
-            HttpConnection* p_conn = get(p_place->p_conn->get());
+            net::ConnectionAndData* p_place = static_cast<net::ConnectionAndData*>(event.data.ptr);
+            HttpConnection* p_conn = get(p_place->u_conn.get());
 
             if (!try_reset_last_activity_time(p_place))
                 continue;
@@ -152,42 +154,38 @@ void HttpService::work(size_t th_num) {
 
 void HttpService::dump_timed_out_connections() {
     std::lock_guard<std::mutex> lock(timeout_mutex_);
-    while (timeod_.size() > 0 && close_if_timed_out(&timeod_.front())) {
+    while (timeod_.size() > 0 && close_if_timed_out(timeod_.front())) {
         timeod_.pop_front();
     }
 }
 
-net::ConnectionPlace* HttpService::emplace_connection(tcp::NonBlockConnection&& cn) {
-    net::ConnectionPlace* p_place = try_replace_closed_with_new_conn(std::move(cn));
+net::ConnectionAndData* HttpService::emplace_connection(tcp::NonBlockConnection&& cn) {
+    net::ConnectionAndData* p_place = try_replace_closed_with_new_conn(std::move(cn));
     if (p_place != nullptr) {
         return p_place;
     }
     connections_.emplace_back(std::make_unique<HttpConnection>(std::move(cn)));
-    net::ConnectionPlace place;
-    place.p_conn = &connections_.back();
     std::lock_guard<std::mutex> lock_to(timeout_mutex_);
-    timeod_.emplace_back(place);
-    timeod_.back().iter = std::prev(timeod_.end());
-    return &timeod_.back();
+    timeod_.emplace_back(&connections_.back());
+    timeod_.back()->timeout_iter = std::prev(timeod_.end());
+    return timeod_.back();
 }
 
-net::ConnectionPlace* HttpService::try_replace_closed_with_new_conn(tcp::NonBlockConnection&& cn) {
+net::ConnectionAndData* HttpService::try_replace_closed_with_new_conn(tcp::NonBlockConnection&& cn) {
     std::lock_guard<std::mutex> lock_cl(closing_mutex_);
     if (closed_.empty()) {
         return nullptr;
     }
-    net::ConnectionPlace place = closed_.front();
-    *place.p_conn = std::make_unique<HttpConnection>(std::move(cn));
-    auto iter = place.iter;
-    closed_.pop();
     std::lock_guard<std::mutex> lock_to(timeout_mutex_);
+    closed_.front()->u_conn = std::make_unique<HttpConnection>(std::move(cn));
+    auto iter = closed_.front()->timeout_iter;
+    closed_.pop();
     shift_to_back(timeod_, iter);
-    timeod_.back().iter = std::prev(timeod_.end());
-    return &timeod_.back();
+    return timeod_.back();
 }
 
-bool HttpService::try_write_responce(net::ConnectionPlace* p_place) {
-    HttpConnection* p_conn = get(p_place->p_conn->get());
+bool HttpService::try_write_responce(net::ConnectionAndData* p_place) {
+    HttpConnection* p_conn = get(p_place->u_conn.get());
     while (true) {
         try {
             p_conn->write_from_buffer();
@@ -204,8 +202,8 @@ bool HttpService::try_write_responce(net::ConnectionPlace* p_place) {
     return  false;
 }
 
-bool HttpService::try_read_request(net::ConnectionPlace* p_place) {
-    HttpConnection* p_conn = get(p_place->p_conn->get());
+bool HttpService::try_read_request(net::ConnectionAndData* p_place) {
+    HttpConnection* p_conn = get(p_place->u_conn.get());
     while (true) {
         try {
             if (p_conn->read_to_buffer() == 0) {
@@ -213,35 +211,37 @@ bool HttpService::try_read_request(net::ConnectionPlace* p_place) {
                 close_client(p_place);
                 return false;
             }
-            Request req(p_conn->read_buf());
-            p_conn->keep_alive_ = is_keep_alive(req.headers());
-            p_conn->req_ = std::move(req);
         } catch (tcp::TimeOutError& ex) {
             break;
         } catch (tcp::DescriptorError& ex) {
             log::warn(std::string(ex.what()) + " at " + p_conn->address().str());
             close_client(p_place);
             return false;
-        } catch (ExpectingData& exd) {
-            log::warn("Worker got incomplete request from " + p_conn->address().str());
-            subscribe(p_place, net::OPTION::READ);
-            return false;
-        } catch (IncorrectData& ind) {
-            log::warn("Worker got incorrect request from " + p_conn->address().str());
-            close_client(p_place);
-            return false;
         }
     }
+    try {
+        Request req(p_conn->read_buf());
+        p_conn->keep_alive_ = is_keep_alive(req.headers());
+        p_conn->req_ = std::move(req);
+    } catch (ExpectingData& exd) {
+        log::warn("Worker got incomplete request from " + p_conn->address().str());
+        subscribe(p_place, net::OPTION::READ);
+        return false;
+    } catch (IncorrectData& ind) {
+        log::warn("Worker got incorrect request from " + p_conn->address().str());
+        close_client(p_place);
+        return false;
+    }
+
     return true;
 }
 
-bool HttpService::try_reset_last_activity_time(net::ConnectionPlace* p_place) {
-    ITimed* p_timed = dynamic_cast<ITimed*>(get(p_place->p_conn->get()));
-    std::scoped_lock lock(timeout_mutex_, p_timed->mutex());
-    if ((*p_place->p_conn)->socket().valid()) {
+bool HttpService::try_reset_last_activity_time(net::ConnectionAndData* p_place) {
+    std::scoped_lock lock(timeout_mutex_, p_place->timeout_mutex);
+    HttpConnection* p_timed = dynamic_cast<HttpConnection*>(get(p_place->u_conn.get()));
+    if (p_place->u_conn->socket().valid()) {
         p_timed->reset_time_of_last_activity();
-        shift_to_back(timeod_, p_place->iter);
-        timeod_.back().iter = std::prev(timeod_.end());
+        shift_to_back(timeod_, p_place->timeout_iter);
         return true;
     }
     return false;
@@ -251,37 +251,37 @@ void HttpService::close() {
     server_.close();
 }
 
-void HttpService::subscribe(net::ConnectionPlace* p_place, net::OPTION opt)   const {
-    HttpConnection* p_conn = get(p_place->p_conn->get());
+void HttpService::subscribe(net::ConnectionAndData* p_place, net::OPTION opt)   const {
+    HttpConnection* p_conn = get(p_place->u_conn.get());
     p_conn->epoll_option_ = p_conn->epoll_option_ + opt + net::OPTION::ET_ONESHOT;
     epoll_.mod(p_place, p_conn->epoll_option_);
 }
 
-void HttpService::unsubscribe(net::ConnectionPlace* p_place, net::OPTION opt) const {
-    HttpConnection* p_conn = get(p_place->p_conn->get());
+void HttpService::unsubscribe(net::ConnectionAndData* p_place, net::OPTION opt) const {
+    HttpConnection* p_conn = get(p_place->u_conn.get());
     p_conn->epoll_option_ = p_conn->epoll_option_ - opt + net::OPTION::ET_ONESHOT;
     epoll_.mod(p_place, p_conn->epoll_option_);
 }
 
-bool HttpService::close_if_timed_out(net::ConnectionPlace* place) {
-    HttpConnection* p_conn = get(place->p_conn->get());
+bool HttpService::close_if_timed_out(net::ConnectionAndData* p_place) {
+    HttpConnection* p_conn = get(p_place->u_conn.get());
     size_t timeo = (p_conn->keep_alive_ ? ka_conn_timeo : conn_timeo);
-    std::scoped_lock lock(closing_mutex_, p_conn->timeout_mutex_);
+    std::scoped_lock lock(closing_mutex_, p_place->timeout_mutex);
     if (p_conn->socket().valid() && p_conn->is_timed_out(timeo)) {
         log::info("Connection timed out: " + p_conn->address().str());
-        closed_.push(*place);
+        closed_.push(p_place);
         p_conn->close();
         return true;
     }
     return false;
 }
 
-void HttpService::close_client(net::ConnectionPlace* p_place) {
-    tcp::IConnection* p_conn = p_place->p_conn->get();
+void HttpService::close_client(net::ConnectionAndData* p_place) {
+    tcp::IConnection* p_conn = p_place->u_conn.get();
     std::lock_guard<std::mutex> lock(closing_mutex_);
     if (p_conn->socket().valid()) {
         log::info("Closing connection: " + p_conn->address().str());
-        closed_.push(*p_place);
+        closed_.push(p_place);
         p_conn->close();
     }
 }

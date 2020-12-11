@@ -49,7 +49,7 @@ void Service::run() {
         for (::epoll_event& event : epoll_events) {
             if (event.data.fd == server_.socket().fd()) {
                 connections_.emplace_back(std::make_unique<BufferedConnection>(server_.accept_non_block()));
-                BufferedConnection* p_conn = get(connections_.back().get());
+                BufferedConnection* p_conn = get(connections_.back().u_conn.get());
                 log::info("Server accepted " + p_conn->address().str());
                 epoll_.add(p_conn->socket(), OPTION::CLOSE);
 
@@ -59,10 +59,10 @@ void Service::run() {
                 }
             } else {
                 auto it_client = std::find_if(connections_.begin(), connections_.end(),
-                                              [&] (ConnectionUPtr& cn) {
-                                                  return cn->socket().fd() == event.data.fd;
+                                              [&] (const ConnectionAndData& cn_and_data) {
+                                                  return cn_and_data.u_conn->socket().fd() == event.data.fd;
                                               });
-                BufferedConnection* p_conn = get((*it_client).get());
+                BufferedConnection* p_conn = get((*it_client).u_conn.get());
                 if (event.events & EPOLLERR) {
                     log::error("Server encountered EPOLLERR from " + p_conn->address().str());
                     listener->onError(*p_conn);

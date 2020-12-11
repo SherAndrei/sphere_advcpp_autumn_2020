@@ -5,10 +5,6 @@ namespace http {
 ITimed::ITimed()
     : start_(std::chrono::system_clock::now()) {}
 
-std::mutex& ITimed::mutex() {
-    return timeout_mutex_;
-}
-
 bool ITimed::is_timed_out(size_t timeo) const {
     time_point_t now = std::chrono::system_clock::now();
     auto limit = std::chrono::seconds(timeo);

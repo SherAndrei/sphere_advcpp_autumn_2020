@@ -6,7 +6,7 @@
 
 namespace http {
 
-class HttpConnection : public net::BufferedConnection, protected ITimed {
+class HttpConnection : public net::BufferedConnection, public ITimed {
  public:
     explicit HttpConnection(tcp::NonBlockConnection&& other);
 

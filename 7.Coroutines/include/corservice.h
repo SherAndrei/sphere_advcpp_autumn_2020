@@ -22,14 +22,17 @@ class CoroutineService : public HttpService {
 
  private:
     void work(size_t thread_num) override;
-    void serve_client(net::ConnectionPlace* p_place);
+    void serve_client(net::ConnectionAndData* p_place);
 
-    net::ConnectionPlace* emplace_connection(tcp::NonBlockConnection&& cn) override;
-    net::ConnectionPlace* try_replace_closed_with_new_conn(tcp::NonBlockConnection&& cn) override;
+    net::ConnectionAndData* emplace_connection(tcp::NonBlockConnection&& cn) override;
+    net::ConnectionAndData* try_replace_closed_with_new_conn(tcp::NonBlockConnection&& cn) override;
+
+    void subscribe(net::ConnectionAndData* p_place, net::OPTION opt)   const override;
+    void unsubscribe(net::ConnectionAndData* p_place, net::OPTION opt) const override;
 
  private:
-    bool try_read_request(net::ConnectionPlace* p_place) override;
-    bool try_write_responce(net::ConnectionPlace* p_place) override;
+    bool try_read_request(net::ConnectionAndData* p_place) override;
+    bool try_write_responce(net::ConnectionAndData* p_place) override;
 
  private:
     void activate_workers() override;

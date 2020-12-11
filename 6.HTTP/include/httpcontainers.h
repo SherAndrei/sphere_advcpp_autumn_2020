@@ -2,12 +2,13 @@
 #define HTTP_CONTAINERS_H
 #include <list>
 #include <queue>
+#include <mutex>
 #include "connection_container.h"
 
 namespace http {
 
-using TimeOrderedConnections    = net::ConnectionPlaces;
-using PlacesOfClosedConnections = std::queue<net::ConnectionPlace, std::list<net::ConnectionPlace>>;
+using TimeOrderedConnections    = std::list<net::ConnectionAndData*>;
+using PlacesOfClosedConnections = std::queue<net::ConnectionAndData*, std::list<net::ConnectionAndData*>>;
 
 }  // namespace http
 

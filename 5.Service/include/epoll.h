@@ -23,8 +23,8 @@ class EPoll {
     void add(const tcp::Descriptor& fd, OPTION opt) const;
     void mod(const tcp::Descriptor& fd, OPTION opt) const;
 
-    void add(ConnectionPlace* p_place, OPTION opt) const;
-    void mod(ConnectionPlace* p_place, OPTION opt) const;
+    void add(ConnectionAndData* p_place, OPTION opt) const;
+    void mod(ConnectionAndData* p_place, OPTION opt) const;
 
     void del(const tcp::Descriptor& fd) const;
 

@@ -1,5 +1,6 @@
 #ifndef NET_BASE_SERVICE_H
 #define NET_BASE_SERVICE_H
+#include <list>
 #include "server.h"
 #include "epoll.h"
 #include "iListener.h"
@@ -32,7 +33,7 @@ class IService {
     tcp::Server server_;
     EPoll epoll_;
     IListener* listener_{nullptr};
-    ConnectionContainer connections_;
+    std::list<ConnectionAndData> connections_;
 };
 
 }  // namespace net

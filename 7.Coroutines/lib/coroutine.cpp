@@ -93,6 +93,7 @@ bool resume(Routine* p_rout) {
     }
 
     o.current = p_rout;
+    p_rout->ctx.uc_link = &o.ctx;
     if (swapcontext(&o.ctx, &routine.ctx) < 0) {
         o.current = nullptr;
         return false;
@@ -130,6 +131,7 @@ void entry() {
     }
   }
 
+    swapcontext(&p_rout->ctx, p_rout->ctx.uc_link);
     p_rout->finished = true;
     o.current = nullptr;
     main_ordinator.emplace(p_rout);
