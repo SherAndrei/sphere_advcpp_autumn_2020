@@ -41,6 +41,6 @@ int main() {
         try {
             net::Service service({"127.0.0.1", 8080}, &el);
             service.run();
-        } catch (...) { std::cout << "useaddr" << std::endl; }
+        } catch (std::exception& ex) { std::cout << ex.what() << std::endl; }
     }
 }

@@ -23,9 +23,9 @@ void handle_error(int errnum) {
 
 namespace tcp {
 
-NonBlockConnection::NonBlockConnection(Descriptor&& fd, const Address& addr)
-    : IConnectable(addr) {
-    set_socket(std::move(fd));
+NonBlockConnection::NonBlockConnection(Socket&& socket, const Address& addr)
+    : IConnection(addr) {
+    set_socket(std::move(socket));
 }
 
 void NonBlockConnection::close() {

@@ -6,10 +6,17 @@
 class TestListener : public http::IHttpListener {
     void OnRequest(http::HttpConnection& cn) override {
         // std::cout << cn.request().str();
-        cn.write(http::Responce("HTTP/1.1 200 "
-                                + http::to_string(http::StatusCode::OK)
-                                + "\r\nContent-Length: 76\r\n\r\nHello world! My name is Andrew Sherstobitov"
-                                + "And i'm studying at Technosphere!"));
+        if (cn.is_keep_alive()) {
+            cn.write(http::Responce("HTTP/1.1 200 "
+                                    + http::to_string(http::StatusCode::OK)
+                                    + "\r\nConnection: Keep-Alive\r\nContent-Length: 76\r\n\r\nHello world! My name is Andrew Sherstobitov"
+                                    + "And i'm studying at Technosphere!"));
+        } else {
+            cn.write(http::Responce("HTTP/1.1 200 "
+                                    + http::to_string(http::StatusCode::OK)
+                                    + "\r\nContent-Length: 76\r\n\r\nHello world! My name is Andrew Sherstobitov"
+                                    + "And i'm studying at Technosphere!"));
+        }
     }
 };
 

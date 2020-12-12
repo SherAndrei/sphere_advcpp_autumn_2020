@@ -26,12 +26,12 @@ void handle_error(int errnum) {
 namespace tcp {
 
 Connection::Connection(const Address& addr)
-    : IConnectable(addr) {
+    : IConnection(addr) {
     connect(addr);
 }
 
-Connection::Connection(Descriptor && fd, const Address& addr)
-    : IConnectable(addr) {
+Connection::Connection(Socket&& fd, const Address& addr)
+    : IConnection(addr) {
     set_socket(std::move(fd));
 }
 
@@ -45,7 +45,7 @@ void Connection::connect(const Address& addr) {
     if (error == 0)
         throw AddressError("incorrect address", addr);
 
-    Descriptor s(::socket(AF_INET, SOCK_STREAM, 0));
+    Socket s(::socket(AF_INET, SOCK_STREAM, 0));
     if (!s.valid()) {
         throw SocketError(std::strerror(errno));
     }
@@ -90,27 +90,6 @@ void Connection::readExact(void* data, size_t len) {
 void Connection::close() {
     socket_.close();
     address_ = {{}, 0u};
-}
-void Connection::set_timeout(ssize_t sec, ssize_t usec) const {
-    timeval timeout = { sec, usec };
-    if (setsockopt(socket_.fd(), SOL_SOCKET, SO_SNDTIMEO,
-                   &timeout, sizeof(timeout)) == -1) {
-        throw SocketOptionError(std::strerror(errno), "SO_SNDTIMEO");
-    }
-    if (setsockopt(socket_.fd(), SOL_SOCKET, SO_RCVTIMEO,
-                   &timeout, sizeof(timeout) == -1)) {
-        throw SocketOptionError(std::strerror(errno), "SO_RCVTIMEO");
-    }
-}
-
-void Connection::set_nonblock() const {
-    int flags;
-    if ((flags = fcntl(socket_.fd(), F_GETFL)) == -1) {
-        throw SocketOptionError(std::strerror(errno), "O_NONBLOCK");
-    }
-    if ((fcntl(socket_.fd(), F_SETFL, flags | O_NONBLOCK)) == -1) {
-        throw SocketOptionError(std::strerror(errno), "O_NONBLOCK");
-    }
 }
 
 }  // namespace tcp
