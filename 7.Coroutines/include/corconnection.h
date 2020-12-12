@@ -9,7 +9,7 @@ namespace cor {
 
 struct Routine;
 
-class CorConnection : public HttpConnection {
+class CorConnection final : public HttpConnection {
  public:
     CorConnection(tcp::NonBlockConnection&& cn, Routine* p_rout);
 
@@ -18,11 +18,11 @@ class CorConnection : public HttpConnection {
 
  private:
     friend class CoroutineService;
+    friend class CoroutineWorker;
     void set_routine(Routine* p_rout);
 
  private:
     Routine* _p_rout = nullptr;
-    bool is_routine_set = false;
 };
 
 }  // namespace cor

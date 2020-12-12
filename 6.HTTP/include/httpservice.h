@@ -45,9 +45,11 @@ class HttpService : public net::BaseService {
  protected:
     size_t conn_timeo;
     size_t ka_conn_timeo;
-    std::vector<HttpWorker> workers_;
     std::mutex closing_mutex_;
     std::mutex timeout_mutex_;
+
+ private:
+    std::vector<HttpWorker> workers_;
 };
 
 }  // namespace http

@@ -9,7 +9,7 @@ class TestListener : public http::cor::ICoroutineListener {
         (void) req.str();
         return http::Responce("HTTP/1.1 200 "
                                 + http::to_string(http::StatusCode::OK)
-                                + "\r\nContent-Length: 76\r\n\r\nHello world! My name is Andrew Sherstobitov"
+                                + "\r\nContent-Length: 76\r\nConnection: Keep-Alive\r\n\r\nHello world! My name is Andrew Sherstobitov"
                                 + "And i'm studying at Technosphere!");
     }
 };

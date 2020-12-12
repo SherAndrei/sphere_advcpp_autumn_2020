@@ -1,8 +1,8 @@
 #include "httpworker.h"
 #include <vector>
 #include <algorithm>
-#include "httpservice.h"
 #include "globallogger.h"
+#include "httpservice.h"
 #include "httpconnection.h"
 #include "httpcontainers.h"
 #include "tcperr.h"
@@ -35,9 +35,6 @@ void shift_to_back(std::list<net::ConnectionAndData*>& cont,
 }  // namespace
 
 namespace http {
-
-// HttpWorker::HttpWorker(std::thread&& thread, size_t th_num, HttpService* p_service)
-    // : p_service_(p_service), thread_num_(th_num), thread_(std::move(thread)) {}
 
 void HttpWorker::work() {
         while (true) {

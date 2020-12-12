@@ -1,6 +1,7 @@
 
 add_library(cor STATIC coroutine.cpp
                        corconnection.cpp
+                       corworker.cpp
                        corservice.cpp)
 target_include_directories(cor PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_include_directories(cor PUBLIC ${CMAKE_SOURCE_DIR}/2.LOG/include)

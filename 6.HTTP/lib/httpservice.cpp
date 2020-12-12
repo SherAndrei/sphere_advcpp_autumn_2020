@@ -24,9 +24,6 @@ HttpService::HttpService(const tcp::Address& addr, IHttpListener* listener, size
     server_.socket().set_reuseaddr();
     server_.socket().set_rcvtimeo(ACCEPT_TIMEOUT);
     workers_.resize(std::min(static_cast<size_t>(std::thread::hardware_concurrency()), workerSize));
-    if (workers_.size() == 0u) {
-        throw WorkerError("Workers size == 0");
-    }
 }
 
 void HttpService::setListener(IHttpListener* listener) {
@@ -51,6 +48,9 @@ void HttpService::open(const tcp::Address& addr) {
 }
 
 void HttpService::activate_workers() {
+    if (workers_.size() == 0ul) {
+        throw WorkerError("Workers size == 0");
+    }
     for (size_t i = 0; i < workers_.size(); i++) {
         workers_[i].set_service_pointer(this);
         workers_[i].set_thread_num(i);
@@ -90,9 +90,21 @@ void HttpService::run() {
 }
 
 void HttpService::dump_timed_out_connections() {
-    std::lock_guard lock(timeout_mutex_);
-    while (timeod_.size() > 0 && close_if_timed_out(timeod_.front())) {
-        timeod_.pop_front();
+    net::ConnectionAndData* p_place = nullptr;
+    while (true) {
+        {
+            std::lock_guard lock(timeout_mutex_);
+            if (timeod_.size() > 0)
+                p_place = timeod_.front();
+            else
+                break;
+        }
+        if (close_if_timed_out(p_place)) {
+            std::lock_guard lock(timeout_mutex_);
+            timeod_.pop_front();
+        } else {
+            break;
+        }
     }
 }
 

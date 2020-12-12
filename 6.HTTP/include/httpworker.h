@@ -23,25 +23,28 @@ class HttpWorker {
     std::string info() const;
 
  protected:
-    friend class HttpService;
     void set_thread(std::thread&& thread);
     void set_thread_num(size_t thread_num);
+
+ private:
+    friend class HttpService;
     void set_service_pointer(HttpService* p_service);
 
  protected:
     virtual void subscribe(net::ConnectionAndData* p_place, net::OPTION opt)   const;
     virtual void unsubscribe(net::ConnectionAndData* p_place, net::OPTION opt) const;
 
+    virtual void reset_last_activity_time(net::ConnectionAndData* p_place);
+    virtual void close_client(net::ConnectionAndData* p_place);
+
  private:
     virtual bool try_read_request(net::ConnectionAndData* p_place);
     virtual bool try_write_responce(net::ConnectionAndData* p_place);
 
-    void reset_last_activity_time(net::ConnectionAndData* p_place);
-    void close_client(net::ConnectionAndData* p_place);
-
+ private:
+    HttpService* p_service_{nullptr};
 
  protected:
-    HttpService* p_service_{nullptr};
     size_t thread_num_{0ul};
     std::thread thread_{};
 };
