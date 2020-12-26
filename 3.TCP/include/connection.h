@@ -1,10 +1,10 @@
 #ifndef TCP_CONNECTION_H
 #define TCP_CONNECTION_H
-#include "iConnection.h"
+#include "BaseConnection.h"
 
 namespace tcp {
 
-class Connection : public IConnection {
+class Connection : public BaseConnection {
  private:
     friend class Server;
     Connection(Socket&& socket, const Address& addr);

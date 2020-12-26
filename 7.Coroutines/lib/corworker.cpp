@@ -8,7 +8,7 @@
 #include "httperr.h"
 namespace {
 
-http::cor::CorConnection* get(tcp::IConnection* p_conn) {
+http::cor::CorConnection* get(tcp::BaseConnection* p_conn) {
     return dynamic_cast<http::cor::CorConnection*>(p_conn);
 }
 
@@ -88,7 +88,7 @@ void CoroutineWorker::reset_last_activity_time(net::ConnectionAndData* p_place) 
 }
 
 void CoroutineWorker::close_client(net::ConnectionAndData* p_place) {
-    tcp::IConnection* p_conn = p_place->u_conn.get();
+    tcp::BaseConnection* p_conn = p_place->u_conn.get();
     if (p_conn->socket().valid()) {
         log::info("Closing connection: " + p_conn->address().str());
         std::lock_guard<std::mutex> lock(p_service_->closing_mutex_);

@@ -21,13 +21,8 @@ int main(int argc, char* argv[]) {
     }
     log::init_with_stdout_logger(log::LEVEL::DEBUG);
     TestListener tl;
-    while (true) {
-        try {
-            http::cor::CoroutineService serv({"127.0.0.1", 8080}, &tl, std::stoi(argv[1]), 10ul, 15ul);
-            serv.run();
-            break;
-        } catch (tcp::AddressError& ex) { std::cout << "useaddr" << std::endl; }
-    }
+    http::cor::CoroutineService serv({"127.0.0.1", 8080}, &tl, std::stoi(argv[1]), 10ul, 15ul);
+    serv.run();
 
     return 0;
 }

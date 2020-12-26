@@ -3,11 +3,11 @@
 #include <list>
 #include <memory>
 #include <mutex>
-#include "iConnection.h"
+#include "BaseConnection.h"
 
 namespace net {
 
-using ConnectionUPtr = typename std::unique_ptr<tcp::IConnection>;
+using ConnectionUPtr = typename std::unique_ptr<tcp::BaseConnection>;
 
 struct ConnectionAndData {
  public:

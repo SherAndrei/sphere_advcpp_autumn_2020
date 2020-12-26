@@ -8,7 +8,7 @@
 
 namespace {
 
-http::cor::CorConnection* get(tcp::IConnection* p_conn) {
+http::cor::CorConnection* get(tcp::BaseConnection* p_conn) {
     return dynamic_cast<http::cor::CorConnection*>(p_conn);
 }
 

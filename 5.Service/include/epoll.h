@@ -3,7 +3,7 @@
 #include <sys/epoll.h>
 #include <vector>
 #include "option.h"
-#include "iConnection.h"
+#include "BaseConnection.h"
 #include "connection_container.h"
 
 namespace net {

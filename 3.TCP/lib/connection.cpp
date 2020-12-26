@@ -26,12 +26,12 @@ void handle_error(int errnum) {
 namespace tcp {
 
 Connection::Connection(const Address& addr)
-    : IConnection(addr) {
+    : BaseConnection(addr) {
     connect(addr);
 }
 
 Connection::Connection(Socket&& fd, const Address& addr)
-    : IConnection(addr) {
+    : BaseConnection(addr) {
     set_socket(std::move(fd));
 }
 

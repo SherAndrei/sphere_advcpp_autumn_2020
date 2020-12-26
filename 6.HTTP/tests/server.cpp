@@ -27,13 +27,8 @@ int main(int argc, char* argv[]) {
     }
     log::init_with_stderr_logger(log::LEVEL::DEBUG);
     TestListener tl;
-    while (true) {
-        try {
-            http::HttpService serv({"127.0.0.1", 8080}, &tl, std::stoi(argv[1]), 5ul, 10ul);
-            serv.run();
-            break;
-        } catch (tcp::AddressError& ex) { std::cout << "useaddr" << std::endl; }
-    }
+    http::HttpService serv({"127.0.0.1", 8080}, &tl, std::stoi(argv[1]), 5ul, 10ul);
+    serv.run();
 
     return 0;
 }

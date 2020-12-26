@@ -22,7 +22,7 @@ bool is_keep_alive(const std::vector<http::Header>& headers) {
     return it->value.find("Keep-Alive") != it->value.npos;
 }
 
-http::HttpConnection* get(tcp::IConnection* p_conn) {
+http::HttpConnection* get(tcp::BaseConnection* p_conn) {
     return dynamic_cast<http::HttpConnection*>(p_conn);
 }
 
@@ -157,7 +157,7 @@ void HttpWorker::unsubscribe(net::ConnectionAndData* p_place, net::OPTION opt) c
 }
 
 void HttpWorker::close_client(net::ConnectionAndData* p_place) {
-    tcp::IConnection* p_conn = p_place->u_conn.get();
+    tcp::BaseConnection* p_conn = p_place->u_conn.get();
     if (p_conn->socket().valid()) {
         log::info("Closing connection: " + p_conn->address().str());
         std::lock_guard<std::mutex> lock(p_service_->closing_mutex_);

@@ -6,7 +6,7 @@
 
 namespace {
 
-net::BufferedConnection* get(tcp::IConnection* p_conn) {
+net::BufferedConnection* get(tcp::BaseConnection* p_conn) {
     return dynamic_cast<net::BufferedConnection*>(p_conn);
 }
 

@@ -8,7 +8,7 @@
 
 namespace {
 
-http::HttpConnection* get(tcp::IConnection* p_conn) {
+http::HttpConnection* get(tcp::BaseConnection* p_conn) {
     return dynamic_cast<http::HttpConnection*>(p_conn);
 }
 

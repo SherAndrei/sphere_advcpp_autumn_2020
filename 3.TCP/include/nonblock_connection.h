@@ -1,18 +1,18 @@
 #ifndef TCP_NONBLOCK_CONNECTION_H
 #define TCP_NONBLOCK_CONNECTION_H
 #include <string>
-#include "iConnection.h"
+#include "BaseConnection.h"
 #include "socket.h"
 
 namespace tcp {
 
-class NonBlockConnection : public IConnection {
+class NonBlockConnection : public BaseConnection {
  private:
     friend class Server;
     NonBlockConnection(Socket&& socket, const Address& addr);
 
  public:
-    using IConnection::IConnection;
+    using BaseConnection::BaseConnection;
 
  public:
     void close() override;

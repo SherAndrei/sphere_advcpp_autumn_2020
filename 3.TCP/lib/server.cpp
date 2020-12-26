@@ -24,7 +24,7 @@ void handle_error(int errnum) {
 namespace tcp {
 
 Server::Server(const Address& addr)
-    : IConnection(addr) {
+    : BaseConnection(addr) {
     listen(addr);
 }
 

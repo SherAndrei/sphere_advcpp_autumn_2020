@@ -11,8 +11,8 @@ namespace net {
 class BaseService {
  protected:
     BaseService() = default;
-    explicit BaseService(const tcp::Address& addr, IListener* listener)
-            : server_(addr), listener_(listener) {}
+    BaseService(const tcp::Address& addr, IListener* listener)
+        : server_(addr), listener_(listener) {}
 
  public:
     virtual ~BaseService() = default;

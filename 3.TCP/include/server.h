@@ -5,7 +5,7 @@
 
 namespace tcp {
 
-class Server : public IConnection {
+class Server : public BaseConnection {
  public:
     explicit Server(const Address& addr);
 
