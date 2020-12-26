@@ -16,20 +16,19 @@ ShUniquePtr<T> make_shmem() {
     void* mmap = ::mmap(nullptr, sizeof(T),
                         PROT_WRITE | PROT_READ,
                         MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-    if(mmap == MAP_FAILED)
+    if (mmap == MAP_FAILED)
         throw std::exception();
     
     return {static_cast<T*>(mmap), [](T* t) { ::munmap(t, sizeof(T)); }};
 }
 
 
-int main()
-{
+int main() {
     ShUniquePtr<std::array<int, 5>> sh_ = make_shmem<std::array<int, 5>>();
     *sh_ = {1, 2, 3, 4, 5};
 
     int child = fork();
-    if(child > 0) {
+    if (child > 0) {
         *sh_ = {2, 3, 4, 1, 2};
     } else {
         using namespace std::chrono_literals;

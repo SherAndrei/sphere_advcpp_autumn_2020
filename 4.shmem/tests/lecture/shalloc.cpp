@@ -21,7 +21,7 @@ size_t get_size_in_blocks(size_t bytes, size_t block_size) {
 size_t find_free_blocks(size_t blocks_count, const std::string_view& used_table) {
   std::string pattern(blocks_count, FREE_BLOCK);
   size_t pos = used_table.find(pattern);
-  if(pos == std::string::npos) {
+  if (pos == std::string::npos) {
     throw std::bad_alloc{};
   }
   return pos;
@@ -81,8 +81,7 @@ using CharAlloc = ShAlloc<char>;
 using ShString = std::basic_string<char, std::char_traits<char>, CharAlloc>;
 using ShUPtr = std::unique_ptr<char, std::function<void(char*)>>;
 
-int main()
-{
+int main() {
   size_t blocks_count = 100;
   size_t block_size = 128;
   size_t shmem_size = blocks_count * block_size;
@@ -91,7 +90,7 @@ int main()
                       MAP_ANONYMOUS | MAP_SHARED,
                       -1, 0);
 
-  if(mmap == MAP_FAILED) {
+  if (mmap == MAP_FAILED) {
     std::cerr << "Failed to create shared map" << std::endl;
     return 1;
   }

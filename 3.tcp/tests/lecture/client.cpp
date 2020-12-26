@@ -8,7 +8,7 @@
 #include <sys/socket.h>
 
 static void on_error(int er) {
-    if(er == 0)
+    if (er == 0)
         return;
     std::cerr << std::strerror(errno) << std::endl;
     std::exit(1);

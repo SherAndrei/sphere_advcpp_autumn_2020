@@ -23,8 +23,7 @@ static void func2(void) {
     printf("func2: returning\n");
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     char func1_stack[16384];
     char func2_stack[16384];
 

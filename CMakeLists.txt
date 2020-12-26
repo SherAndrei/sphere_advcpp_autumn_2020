@@ -13,10 +13,10 @@ add_compile_options( -W  -Wall      -Werror         -pedantic
 
 include_directories(utils)
 
-add_subdirectory(1.Process)
-add_subdirectory(2.LOG)
-add_subdirectory(3.TCP)
-add_subdirectory(4.SharedMap)
-add_subdirectory(5.Service)
-add_subdirectory(6.HTTP)
-add_subdirectory(7.Coroutines)
+add_subdirectory(1.proc)
+add_subdirectory(2.log)
+add_subdirectory(3.tcp)
+add_subdirectory(4.shmem)
+add_subdirectory(5.net)
+add_subdirectory(6.http)
+add_subdirectory(7.cor)
